@@ -1,0 +1,16 @@
+{
+  "name": "node-hub",
+  "version": "1.0.0",
+  "description": "Cloudflare Workers VLESS Subscription Generator & Node Management Hub",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "node deploy.js",
+    "build": "esbuild src/index.js --bundle --minify --format=esm --target=es2022 --outfile=_worker.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "wrangler": "^4.119.0"
+  }
+}
