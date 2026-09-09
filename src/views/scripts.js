@@ -163,7 +163,7 @@ async function saveTgConfig() {
 }
 
 function randomGroupId() {
-  document.getElementById('form-group-id').value = generateRandomString(32);
+  document.getElementById('form-group-id').value = generateRandomString(12, 33);
 }
 
 function updateNodeStats() {
@@ -206,8 +206,22 @@ function closeGroupModal() {
   document.getElementById('group-modal').classList.remove('active');
 }
 
-function generateRandomString(length = 12) {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+function generateRandomString(minOrExact = 12, max = null) {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let length;
+  if (max === null) {
+    length = minOrExact;
+  } else {
+    const minLen = Math.min(minOrExact, max);
+    const maxLen = Math.max(minOrExact, max);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const lengthBytes = new Uint8Array(1);
+      crypto.getRandomValues(lengthBytes);
+      length = minLen + (lengthBytes[0] % (maxLen - minLen + 1));
+    } else {
+      length = Math.floor(Math.random() * (maxLen - minLen + 1)) + minLen;
+    }
+  }
   let result = '';
   try {
     if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
@@ -225,35 +239,29 @@ function generateRandomString(length = 12) {
   return result;
 }
 
-function randomSubPath() {
-  document.getElementById('cfg-sub-path').value = generateRandomString(12);
-}
-
 function randomToken() {
-  document.getElementById('cfg-token').value = generateRandomString(24);
+  document.getElementById('cfg-token').value = generateRandomString(12, 33);
 }
 
 function randomizeSecurityConfig() {
-  randomSubPath();
   randomToken();
 }
 
 async function saveSecurityConfig() {
-  const subPath = document.getElementById('cfg-sub-path').value.trim().replace(/^\\/+|\\/+$/g, '');
   const token = document.getElementById('cfg-token').value.trim();
   const rawCountries = document.getElementById('cfg-allowed-countries') ? document.getElementById('cfg-allowed-countries').value.trim() : '';
   const allowedCountries = rawCountries ? rawCountries.split(',').map(c => c.trim().toUpperCase()).filter(Boolean) : [];
   const proxyClientOnly = document.getElementById('cfg-proxy-client-only') ? document.getElementById('cfg-proxy-client-only').checked : true;
 
-  if (!subPath) {
-    showToast('订阅路径不能为空！', 'error');
+  if (!token) {
+    showToast('订阅鉴权令牌 (TOKEN) 不能为空！', 'error');
     return;
   }
 
   const res = await fetch('/api/security-config', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ subPath, token, allowedCountries, proxyClientOnly })
+    body: JSON.stringify({ token, allowedCountries, proxyClientOnly })
   });
 
   if (res.ok) {
@@ -285,7 +293,7 @@ function toggleMobileSidebar(show) {
 
 function switchTab(tabId, pushHash = true) {
   toggleMobileSidebar(false);
-  const validTabs = ['custom-sub', 'cf-sub', 'access-logs', 'security-config', 'tg-config'];
+  const validTabs = ['custom-sub', 'cf-sub', 'access-logs', 'ip-whitelist', 'ip-blacklist', 'security-config', 'tg-config'];
   if (!validTabs.includes(tabId)) {
     tabId = 'custom-sub';
   }
@@ -304,7 +312,9 @@ function switchTab(tabId, pushHash = true) {
   const titles = {
     'custom-sub': '📦 普通订阅管理',
     'cf-sub': '⚡ CF 优选订阅管理',
-    'access-logs': '📊 访问日志与 IP 拦截管理',
+    'access-logs': '📊 客户端访问实时日志',
+    'ip-whitelist': '✨ IP 访问白名单管理',
+    'ip-blacklist': '🛡️ IP 访问黑名单管理',
     'security-config': '🔑 订阅安全配置 (全局)',
     'tg-config': '✈️ TG 订阅通知 (全局)'
   };
@@ -323,13 +333,15 @@ function switchTab(tabId, pushHash = true) {
 function initActiveTab() {
   const hash = window.location.hash ? window.location.hash.replace('#', '') : '';
   const savedTab = localStorage.getItem('active_dashboard_tab') || 'custom-sub';
-  const targetTab = (hash === 'custom-sub' || hash === 'cf-sub' || hash === 'access-logs' || hash === 'security-config' || hash === 'tg-config') ? hash : savedTab;
+  const validTabs = ['custom-sub', 'cf-sub', 'access-logs', 'ip-whitelist', 'ip-blacklist', 'security-config', 'tg-config'];
+  const targetTab = validTabs.includes(hash) ? hash : (validTabs.includes(savedTab) ? savedTab : 'custom-sub');
   switchTab(targetTab, true);
 }
 
 window.addEventListener('hashchange', () => {
   const hash = window.location.hash ? window.location.hash.replace('#', '') : '';
-  if (hash === 'custom-sub' || hash === 'cf-sub' || hash === 'access-logs' || hash === 'security-config' || hash === 'tg-config') {
+  const validTabs = ['custom-sub', 'cf-sub', 'access-logs', 'ip-whitelist', 'ip-blacklist', 'security-config', 'tg-config'];
+  if (validTabs.includes(hash)) {
     switchTab(hash, false);
   }
 });
@@ -368,9 +380,9 @@ async function clearInput(id) {
 
 async function submitGroupForm(e) {
   e.preventDefault();
-  let id = document.getElementById('form-group-id').value.trim().toLowerCase();
+  let id = document.getElementById('form-group-id').value.trim();
   if (!id) {
-    id = generateRandomString(32);
+    id = generateRandomString(12, 33);
     document.getElementById('form-group-id').value = id;
   }
   const name = document.getElementById('form-group-name').value.trim();
@@ -464,7 +476,7 @@ async function deleteGroup(id) {
 // ==========================================
 function openAddCfGroupModal() {
   document.getElementById('modal-cf-group-title').innerText = '添加新 CF 优选订阅';
-  document.getElementById('form-cf-group-id').value = generateRandomString(32);
+  document.getElementById('form-cf-group-id').value = generateRandomString(12, 33);
   document.getElementById('form-cf-group-name').value = '';
   document.getElementById('form-cf-group-max-views').value = '';
   const countryEl = document.getElementById('form-cf-group-allowed-countries');
@@ -500,7 +512,11 @@ function closeCfGroupModal() {
 
 async function submitCfGroupForm(e) {
   e.preventDefault();
-  const id = document.getElementById('form-cf-group-id').value.trim().toLowerCase();
+  let id = document.getElementById('form-cf-group-id').value.trim();
+  if (!id) {
+    id = generateRandomString(12, 33);
+    document.getElementById('form-cf-group-id').value = id;
+  }
   const name = document.getElementById('form-cf-group-name').value.trim();
   const maxViewsRaw = document.getElementById('form-cf-group-max-views').value.trim();
   let maxViews = 0;
@@ -772,31 +788,142 @@ async function testCfGroup(id) {
 // 🛡️ IP 黑白名单与访问日志管理
 // ==========================================
 
-// 批量保存 IP 白名单
-async function saveWhitelistIPsBatch() {
-  const textarea = document.getElementById('textarea-whitelist-ips');
-  if (!textarea) return;
-  const lines = textarea.value.replace(/\\r\\n|\\r/g, '\\n').split('\\n').map(l => l.trim()).filter(Boolean);
-  const uniqueIPs = Array.from(new Set(lines));
+// 兜底空函数
+function toggleBatchPanel() {}
+
+// 校验 IPv4 / IPv6 / CIDR 格式
+function isValidIPOrCIDR(str) {
+  if (!str || typeof str !== 'string') return false;
+  const s = str.trim();
+  const parts = s.split('/');
+  if (parts.length > 2) return false;
+  const ip = parts[0];
+  const mask = parts[1];
+
+  // 如果有网段掩码
+  if (mask !== undefined) {
+    const maskNum = parseInt(mask, 10);
+    if (isNaN(maskNum) || String(maskNum) !== mask) return false;
+    if (ip.includes(':')) {
+      if (maskNum < 0 || maskNum > 128) return false;
+    } else {
+      if (maskNum < 0 || maskNum > 32) return false;
+    }
+  }
+
+  // IPv4 单机校验
+  if (ip.includes('.')) {
+    const octets = ip.split('.');
+    if (octets.length !== 4) return false;
+    return octets.every(octet => {
+      if (!/^[0-9]+$/.test(octet)) return false;
+      const n = parseInt(octet, 10);
+      return n >= 0 && n <= 255 && String(n) === octet;
+    });
+  }
+
+  // IPv6 单机校验
+  if (ip.includes(':')) {
+    const segs = ip.split(':');
+    if (segs.length < 3 || segs.length > 8) return false;
+    return segs.every(seg => seg === '' || /^[0-9a-fA-F]{1,4}$/.test(seg));
+  }
+
+  return false;
+}
+
+// 解析输入框中的多个 IP/CIDR（支持回车、逗号、分号、空格）
+function parseIPInputList(rawVal) {
+  if (!rawVal) return [];
+  const LF = String.fromCharCode(10);
+  const CR = String.fromCharCode(13);
+  return rawVal.split(LF)
+    .flatMap(line => line.split(CR))
+    .flatMap(line => line.split(','))
+    .flatMap(line => line.split(';'))
+    .flatMap(line => line.split(' '))
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+// 快速添加 IP 到白名单（支持单个或多个，支持 CIDR）
+async function quickAddWhitelistIP() {
+  const input = document.getElementById('input-quick-add-whitelist');
+  const rawVal = input?.value?.trim() || '';
+  if (!rawVal) {
+    showToast('请输入有效的 IP 或 CIDR 网段', 'warning');
+    input?.focus();
+    return;
+  }
+
+  // 支持以换行、逗号、分号或空格分隔多个输入
+  const items = parseIPInputList(rawVal);
+  if (items.length === 0) {
+    showToast('请输入有效的 IP 或 CIDR 网段', 'warning');
+    return;
+  }
+
+  // 格式校验
+  const invalidItems = items.filter(item => !isValidIPOrCIDR(item));
+  if (invalidItems.length > 0) {
+    showToast('输入包含不合法的 IP/CIDR 地址: ' + invalidItems.slice(0, 3).join(', '), 'error');
+    return;
+  }
+
+  // 检查是否已在白名单
+  const newItems = items.filter(ip => !whitelistIPsData.includes(ip));
+  if (newItems.length === 0) {
+    showToast('所填 IP 已全部在白名单中，无需重复添加', 'info');
+    return;
+  }
+
+  // 检查是否有与黑名单重叠的项
+  const overlapWithBlacklist = newItems.filter(ip => blockedIPsData.includes(ip));
+
+  const confirmed = await showConfirmDialog({
+    title: '确认加入白名单',
+    message: '确定要将 ' + newItems.length + ' 个 IP/网段加入白名单吗？' + 
+      (overlapWithBlacklist.length > 0 ? '<br><small style="color:#d97706;">⚠️ 其中 ' + overlapWithBlacklist.length + ' 个项原在黑名单中，将自动解除黑名单拦截并转为信任放行。</small>' : ''),
+    icon: '⭐',
+    confirmText: '确认加入 (' + newItems.length + ')',
+    confirmType: 'primary'
+  });
+  if (!confirmed) return;
 
   try {
+    const updatedWhitelist = Array.from(new Set([...whitelistIPsData, ...newItems]));
     const res = await fetch('/api/whitelist-ips', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ips: uniqueIPs })
+      body: JSON.stringify({ ips: updatedWhitelist })
     });
-    if (res.ok) {
-      showToast('IP 白名单已保存成功，当前共放行 ' + uniqueIPs.length + ' 个 IP', 'success');
-      setTimeout(() => location.reload(), 800);
-    } else {
-      showToast('保存 IP 白名单失败', 'error');
+    if (!res.ok) {
+      showToast('加入白名单失败', 'error');
+      return;
     }
+
+    // 若有与黑名单冲突的项，同步从黑名单移出
+    if (overlapWithBlacklist.length > 0) {
+      const updatedBlacklist = blockedIPsData.filter(ip => !overlapWithBlacklist.includes(ip));
+      await fetch('/api/blocked-ips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ips: updatedBlacklist })
+      });
+    }
+
+    showToast('已成功添加 ' + newItems.length + ' 个 IP 到白名单！', 'success');
+    if (input) input.value = '';
+    setTimeout(() => {
+      window.location.hash = '#ip-whitelist';
+      location.reload();
+    }, 600);
   } catch (err) {
     showToast('请求异常: ' + err.message, 'error');
   }
 }
 
-// 快速添加单个 IP 到白名单
+// 快速添加单个 IP 到白名单（来自日志等单条操作）
 async function addWhitelistIP(ip) {
   if (!ip) return;
   const confirmed = await showConfirmDialog({
@@ -816,6 +943,15 @@ async function addWhitelistIP(ip) {
       body: JSON.stringify({ ips: currentIPs })
     });
     if (res.ok) {
+      // 若原在黑名单中，顺带移出
+      if (blockedIPsData.includes(ip.trim())) {
+        const updatedBlacklist = blockedIPsData.filter(item => item !== ip.trim());
+        await fetch('/api/blocked-ips', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ips: updatedBlacklist })
+        });
+      }
       showToast('已成功将 IP: ' + ip + ' 加入白名单', 'success');
       setTimeout(() => location.reload(), 600);
     } else {
@@ -847,7 +983,10 @@ async function removeWhitelistIP(ip) {
     });
     if (res.ok) {
       showToast('已成功从白名单移除 IP: ' + ip, 'success');
-      setTimeout(() => location.reload(), 600);
+      setTimeout(() => {
+        window.location.hash = '#ip-whitelist';
+        location.reload();
+      }, 600);
     } else {
       showToast('移除白名单失败', 'error');
     }
@@ -856,33 +995,172 @@ async function removeWhitelistIP(ip) {
   }
 }
 
-// 批量保存 IP 黑名单
-async function saveBlockedIPsBatch() {
-  const textarea = document.getElementById('textarea-blocked-ips');
-  if (!textarea) return;
-  const lines = textarea.value.replace(/\\r\\n|\\r/g, '\\n').split('\\n').map(l => l.trim()).filter(Boolean);
-  const uniqueIPs = Array.from(new Set(lines));
+// 清空所有白名单 IP
+async function clearAllWhitelistIPs() {
+  if (!whitelistIPsData || whitelistIPsData.length === 0) {
+    showToast('当前白名单列表已为空', 'info');
+    return;
+  }
+
+  const confirmed = await showConfirmDialog({
+    title: '清空所有白名单',
+    message: '确定要清空所有白名单（共 ' + whitelistIPsData.length + ' 项）吗？清空后所有之前放行的 IP 将恢复常规安全检测。',
+    icon: '🗑️',
+    confirmText: '确认清空 (' + whitelistIPsData.length + ')',
+    confirmType: 'danger'
+  });
+  if (!confirmed) return;
 
   try {
-    const res = await fetch('/api/blocked-ips', {
+    const res = await fetch('/api/whitelist-ips', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ips: uniqueIPs })
+      body: JSON.stringify({ ips: [] })
     });
     if (res.ok) {
-      showToast('IP 黑名单已保存成功，当前已屏蔽 ' + uniqueIPs.length + ' 个 IP', 'success');
-      setTimeout(() => location.reload(), 800);
+      showToast('已成功清空所有白名单 IP', 'success');
+      setTimeout(() => {
+        window.location.hash = '#ip-whitelist';
+        location.reload();
+      }, 600);
     } else {
-      showToast('保存 IP 黑名单失败', 'error');
+      showToast('清空白名单失败', 'error');
     }
   } catch (err) {
     showToast('请求异常: ' + err.message, 'error');
   }
 }
 
-// 快速屏蔽单个 IP
+// 从白名单一键转移到黑名单
+async function moveWhitelistToBlacklist(ip) {
+  if (!ip) return;
+  const confirmed = await showConfirmDialog({
+    title: '移入黑名单',
+    message: '确定要将 IP [' + ip + '] 从白名单移除并立即加入黑名单进行阻断拦截吗？',
+    icon: '🚫',
+    confirmText: '确认移入黑名单',
+    confirmType: 'danger'
+  });
+  if (!confirmed) return;
+
+  try {
+    // 1. 从白名单移除
+    const updatedWhitelist = whitelistIPsData.filter(item => item !== ip.trim());
+    await fetch('/api/whitelist-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: updatedWhitelist })
+    });
+
+    // 2. 加入黑名单
+    const updatedBlacklist = Array.from(new Set([...blockedIPsData, ip.trim()]));
+    await fetch('/api/blocked-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: updatedBlacklist })
+    });
+
+    showToast('IP [' + ip + '] 已成功转入黑名单并阻断！', 'success');
+    setTimeout(() => {
+      window.location.hash = '#ip-whitelist';
+      location.reload();
+    }, 600);
+  } catch (err) {
+    showToast('请求异常: ' + err.message, 'error');
+  }
+}
+
+// 快速屏蔽单个或多个 IP / CIDR 网段
+async function quickAddBlockedIP() {
+  const input = document.getElementById('input-quick-add-blacklist');
+  const rawVal = input?.value?.trim() || '';
+  if (!rawVal) {
+    showToast('请输入有效的 IP 或 CIDR 网段', 'warning');
+    input?.focus();
+    return;
+  }
+
+  const items = parseIPInputList(rawVal);
+  if (items.length === 0) {
+    showToast('请输入有效的 IP 或 CIDR 网段', 'warning');
+    return;
+  }
+
+  // 格式校验
+  const invalidItems = items.filter(item => !isValidIPOrCIDR(item));
+  if (invalidItems.length > 0) {
+    showToast('输入包含不合法的 IP/CIDR 地址: ' + invalidItems.slice(0, 3).join(', '), 'error');
+    return;
+  }
+
+  // 防自锁安全保护：禁止将回环地址加入黑名单
+  const loopbackDetected = items.find(ip => ip.startsWith('127.') || ip === '::1' || ip === 'localhost');
+  if (loopbackDetected) {
+    showToast('安全保护：禁止将本地回环地址 (' + loopbackDetected + ') 加入黑名单！', 'error');
+    return;
+  }
+
+  // 检查是否已在黑名单
+  const newItems = items.filter(ip => !blockedIPsData.includes(ip));
+  if (newItems.length === 0) {
+    showToast('所填 IP 已全部在黑名单中，无需重复屏蔽', 'info');
+    return;
+  }
+
+  // 检查是否有与白名单重叠的项
+  const overlapWithWhitelist = newItems.filter(ip => whitelistIPsData.includes(ip));
+
+  const confirmed = await showConfirmDialog({
+    title: '确认屏蔽 IP',
+    message: '确定要将 ' + newItems.length + ' 个 IP/网段列入黑名单吗？被列入后将直接返回 403 阻断访问。' + 
+      (overlapWithWhitelist.length > 0 ? '<br><small style="color:#ef4444;">⚠️ 其中 ' + overlapWithWhitelist.length + ' 个项原在白名单中，将自动从白名单移除并生效封禁。</small>' : ''),
+    icon: '🚫',
+    confirmText: '确认屏蔽 (' + newItems.length + ')',
+    confirmType: 'danger'
+  });
+  if (!confirmed) return;
+
+  try {
+    const updatedBlacklist = Array.from(new Set([...blockedIPsData, ...newItems]));
+    const res = await fetch('/api/blocked-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: updatedBlacklist })
+    });
+    if (!res.ok) {
+      showToast('屏蔽 IP 失败', 'error');
+      return;
+    }
+
+    // 若有与白名单冲突的项，同步从白名单移出
+    if (overlapWithWhitelist.length > 0) {
+      const updatedWhitelist = whitelistIPsData.filter(ip => !overlapWithWhitelist.includes(ip));
+      await fetch('/api/whitelist-ips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ips: updatedWhitelist })
+      });
+    }
+
+    showToast('已成功屏蔽 ' + newItems.length + ' 个 IP！', 'success');
+    if (input) input.value = '';
+    setTimeout(() => {
+      window.location.hash = '#ip-blacklist';
+      location.reload();
+    }, 600);
+  } catch (err) {
+    showToast('请求异常: ' + err.message, 'error');
+  }
+}
+
+// 快速屏蔽单个 IP（来自日志或外部调用）
 async function blockIP(ip) {
   if (!ip) return;
+  if (ip.startsWith('127.') || ip === '::1' || ip === 'localhost') {
+    showToast('安全保护：禁止将本地回环地址加入黑名单！', 'error');
+    return;
+  }
+
   const confirmed = await showConfirmDialog({
     title: '确认屏蔽 IP',
     message: '确定要将 IP [' + ip + '] 加入黑名单并阻止其访问任何订阅和后台吗？',
@@ -900,6 +1178,15 @@ async function blockIP(ip) {
       body: JSON.stringify({ ips: currentIPs })
     });
     if (res.ok) {
+      // 若原在白名单中，同步移出
+      if (whitelistIPsData.includes(ip.trim())) {
+        const updatedWhitelist = whitelistIPsData.filter(item => item !== ip.trim());
+        await fetch('/api/whitelist-ips', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ips: updatedWhitelist })
+        });
+      }
       showToast('已成功屏蔽 IP: ' + ip, 'success');
       setTimeout(() => location.reload(), 600);
     } else {
@@ -931,13 +1218,176 @@ async function unblockIP(ip) {
     });
     if (res.ok) {
       showToast('已成功解封 IP: ' + ip, 'success');
-      setTimeout(() => location.reload(), 600);
+      setTimeout(() => {
+        window.location.hash = '#ip-blacklist';
+        location.reload();
+      }, 600);
     } else {
       showToast('解封 IP 失败', 'error');
     }
   } catch (err) {
     showToast('请求异常: ' + err.message, 'error');
   }
+}
+
+// 清空所有黑名单 IP
+async function clearAllBlockedIPs() {
+  if (!blockedIPsData || blockedIPsData.length === 0) {
+    showToast('当前黑名单列表已为空', 'info');
+    return;
+  }
+
+  const confirmed = await showConfirmDialog({
+    title: '清空所有黑名单',
+    message: '确定要清空所有黑名单（共 ' + blockedIPsData.length + ' 项）吗？清空后所有被屏蔽的 IP 将立即解封并允许正常访问。',
+    icon: '🗑️',
+    confirmText: '确认全部解封 (' + blockedIPsData.length + ')',
+    confirmType: 'danger'
+  });
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch('/api/blocked-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: [] })
+    });
+    if (res.ok) {
+      showToast('已清空所有黑名单 IP，全部解封成功', 'success');
+      setTimeout(() => {
+        window.location.hash = '#ip-blacklist';
+        location.reload();
+      }, 600);
+    } else {
+      showToast('清空黑名单失败', 'error');
+    }
+  } catch (err) {
+    showToast('请求异常: ' + err.message, 'error');
+  }
+}
+
+// 从黑名单一键转移到白名单
+async function moveBlacklistToWhitelist(ip) {
+  if (!ip) return;
+  const confirmed = await showConfirmDialog({
+    title: '解除阻断并加白',
+    message: '确定要解除对 IP [' + ip + '] 的拦截并将其加入信任白名单吗？',
+    icon: '⭐',
+    confirmText: '确认加白放行',
+    confirmType: 'primary'
+  });
+  if (!confirmed) return;
+
+  try {
+    // 1. 从黑名单移除
+    const updatedBlacklist = blockedIPsData.filter(item => item !== ip.trim());
+    await fetch('/api/blocked-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: updatedBlacklist })
+    });
+
+    // 2. 加入白名单
+    const updatedWhitelist = Array.from(new Set([...whitelistIPsData, ip.trim()]));
+    await fetch('/api/whitelist-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: updatedWhitelist })
+    });
+
+    showToast('IP [' + ip + '] 已解除拦截并加入白名单！', 'success');
+    setTimeout(() => {
+      window.location.hash = '#ip-blacklist';
+      location.reload();
+    }, 600);
+  } catch (err) {
+    showToast('请求异常: ' + err.message, 'error');
+  }
+}
+
+// 筛选白名单表格
+function applyWhitelistFilter() {
+  const input = document.getElementById('filter-whitelist-keyword');
+  const clearBtn = document.getElementById('whitelist-keyword-clear');
+  const query = (input?.value || '').toLowerCase().trim();
+  if (clearBtn) clearBtn.style.display = query ? 'inline-block' : 'none';
+
+  const rows = document.querySelectorAll('.whitelist-table-row');
+  let matchCount = 0;
+  rows.forEach(row => {
+    const ip = (row.dataset.ip || '').toLowerCase();
+    const isMatch = !query || ip.includes(query);
+    row.style.display = isMatch ? '' : 'none';
+    if (isMatch) matchCount++;
+  });
+
+  const statsEl = document.getElementById('whitelist-filter-stats');
+  if (statsEl) {
+    statsEl.innerHTML = '显示 <strong>' + matchCount + '</strong> / 共 <strong>' + rows.length + '</strong> 个 IP';
+  }
+  const emptyRow = document.getElementById('whitelist-table-empty-filter-row');
+  if (emptyRow) {
+    emptyRow.style.display = (matchCount === 0 && rows.length > 0) ? '' : 'none';
+  }
+  updateBatchSelection('whitelist');
+}
+
+function clearWhitelistKeyword() {
+  const input = document.getElementById('filter-whitelist-keyword');
+  if (input) input.value = '';
+  applyWhitelistFilter();
+}
+
+// 筛选黑名单表格
+function applyBlacklistFilter() {
+  const input = document.getElementById('filter-blacklist-keyword');
+  const clearBtn = document.getElementById('blacklist-keyword-clear');
+  const query = (input?.value || '').toLowerCase().trim();
+  if (clearBtn) clearBtn.style.display = query ? 'inline-block' : 'none';
+
+  const rows = document.querySelectorAll('.blacklist-table-row');
+  let matchCount = 0;
+  rows.forEach(row => {
+    const ip = (row.dataset.ip || '').toLowerCase();
+    const isMatch = !query || ip.includes(query);
+    row.style.display = isMatch ? '' : 'none';
+    if (isMatch) matchCount++;
+  });
+
+  const statsEl = document.getElementById('blacklist-filter-stats');
+  if (statsEl) {
+    statsEl.innerHTML = '显示 <strong>' + matchCount + '</strong> / 共 <strong>' + rows.length + '</strong> 个 IP';
+  }
+  const emptyRow = document.getElementById('blacklist-table-empty-filter-row');
+  if (emptyRow) {
+    emptyRow.style.display = (matchCount === 0 && rows.length > 0) ? '' : 'none';
+  }
+  updateBatchSelection('blacklist');
+}
+
+function clearBlacklistKeyword() {
+  const input = document.getElementById('filter-blacklist-keyword');
+  if (input) input.value = '';
+  applyBlacklistFilter();
+}
+
+// 批量编辑文本格式化去重
+function formatAndDeduplicateWhitelist() {
+  const textarea = document.getElementById('textarea-whitelist-ips');
+  if (!textarea) return;
+  const lines = textarea.value.replace(/\\r\\n|\\r/g, '\\n').split('\\n').map(l => l.trim()).filter(Boolean);
+  const unique = Array.from(new Set(lines));
+  textarea.value = unique.join('\\n');
+  showToast('已格式化并去重，当前共 ' + unique.length + ' 个独立条目', 'info');
+}
+
+function formatAndDeduplicateBlacklist() {
+  const textarea = document.getElementById('textarea-blocked-ips');
+  if (!textarea) return;
+  const lines = textarea.value.replace(/\\r\\n|\\r/g, '\\n').split('\\n').map(l => l.trim()).filter(Boolean);
+  const unique = Array.from(new Set(lines));
+  textarea.value = unique.join('\\n');
+  showToast('已格式化并去重，当前共 ' + unique.length + ' 个独立条目', 'info');
 }
 
 // ==========================================
@@ -1071,6 +1521,85 @@ async function batchDeleteCfGroups() {
     showToast('请求异常: ' + err.message, 'error');
   }
 }
+
+// 白名单批量移除
+async function batchDeleteWhitelistIPs() {
+  const checkedBoxes = Array.from(document.querySelectorAll('.whitelist-row-checkbox:checked'));
+  const ipsToDelete = checkedBoxes.map(cb => cb.value.trim()).filter(Boolean);
+  if (ipsToDelete.length === 0) {
+    showToast('请先勾选需要移出白名单的 IP！', 'info');
+    return;
+  }
+
+  const confirmed = await showConfirmDialog({
+    title: '批量移除 IP 白名单',
+    message: '确定要批量将选中的 ' + ipsToDelete.length + ' 个 IP 从白名单中移除吗？',
+    icon: '⚠️',
+    confirmText: '确认批量移除 (' + ipsToDelete.length + ')',
+    confirmType: 'danger'
+  });
+  if (!confirmed) return;
+
+  const currentIPs = whitelistIPsData.filter(ip => !ipsToDelete.includes(ip));
+  try {
+    const res = await fetch('/api/whitelist-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: currentIPs })
+    });
+    if (res.ok) {
+      showToast('已成功移除选中的 ' + ipsToDelete.length + ' 个白名单 IP', 'success');
+      setTimeout(() => {
+        window.location.hash = '#ip-whitelist';
+        location.reload();
+      }, 600);
+    } else {
+      showToast('批量移除白名单失败', 'error');
+    }
+  } catch (err) {
+    showToast('请求异常: ' + err.message, 'error');
+  }
+}
+
+// 黑名单批量解封
+async function batchDeleteBlacklistIPs() {
+  const checkedBoxes = Array.from(document.querySelectorAll('.blacklist-row-checkbox:checked'));
+  const ipsToDelete = checkedBoxes.map(cb => cb.value.trim()).filter(Boolean);
+  if (ipsToDelete.length === 0) {
+    showToast('请先勾选需要解除拦截的黑名单 IP！', 'info');
+    return;
+  }
+
+  const confirmed = await showConfirmDialog({
+    title: '批量解除 IP 拦截',
+    message: '确定要批量解封选中的 ' + ipsToDelete.length + ' 个 IP 吗？',
+    icon: '🟢',
+    confirmText: '确认批量解除 (' + ipsToDelete.length + ')',
+    confirmType: 'primary'
+  });
+  if (!confirmed) return;
+
+  const currentIPs = blockedIPsData.filter(ip => !ipsToDelete.includes(ip));
+  try {
+    const res = await fetch('/api/blocked-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: currentIPs })
+    });
+    if (res.ok) {
+      showToast('已成功解除选中的 ' + ipsToDelete.length + ' 个 IP 拦截', 'success');
+      setTimeout(() => {
+        window.location.hash = '#ip-blacklist';
+        location.reload();
+      }, 600);
+    } else {
+      showToast('批量解封黑名单失败', 'error');
+    }
+  } catch (err) {
+    showToast('请求异常: ' + err.message, 'error');
+  }
+}
+const batchDeleteBlockedIPs = batchDeleteBlacklistIPs;
 
 // 3. 访问日志批量删除
 async function batchDeleteLogs() {
@@ -1461,6 +1990,8 @@ function initAllTablePaginators() {
   window._paginators['plain-table-row'] = new TablePaginator('plain-table-body', 'plain-table-row', 'plain-table-pagination', 10, 'plain');
   window._paginators['cf-table-row'] = new TablePaginator('cf-table-body', 'cf-table-row', 'cf-table-pagination', 10, 'cf');
   window._paginators['logs-table-row'] = new TablePaginator('logs-table-body', 'logs-table-row', 'logs-table-pagination', 15, 'logs');
+  window._paginators['whitelist-table-row'] = new TablePaginator('whitelist-table-body', 'whitelist-table-row', 'whitelist-table-pagination', 15, 'whitelist');
+  window._paginators['blacklist-table-row'] = new TablePaginator('blacklist-table-body', 'blacklist-table-row', 'blacklist-table-pagination', 15, 'blacklist');
 }
 
 // 页面加载完成后立即初始化所有表格分页器与会话保活机制
@@ -1472,5 +2003,19 @@ if (document.readyState === 'loading') {
 } else {
   initAllTablePaginators();
   initSessionActivityTracker();
+}
+
+// 退出登录二次确认弹框
+async function handleLogout() {
+  const confirmed = await showConfirmDialog({
+    title: '退出登录',
+    message: '确定要退出订阅控制台吗？退出后需重新输入管理员密码才能登录。',
+    icon: '🚪',
+    confirmText: '确认退出',
+    confirmType: 'danger'
+  });
+  if (confirmed) {
+    window.location.href = '/logout';
+  }
 }
 `;

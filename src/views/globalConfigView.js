@@ -9,8 +9,7 @@ function escapeHtml(str) {
 }
 
 // 渲染订阅安全配置 Tab 独立页面 HTML (铺满屏幕，参考普通订阅板块规范)
-export function renderSecurityConfigTab(currentSubPath, subToken, allowedCountries = [], proxyClientOnly = true) {
-  const safeSubPath = escapeHtml(currentSubPath || "sub");
+export function renderSecurityConfigTab(subToken, allowedCountries = [], proxyClientOnly = true) {
   const safeToken = escapeHtml(subToken || "");
   const countriesStr = Array.isArray(allowedCountries) ? allowedCountries.join(", ") : "";
 
@@ -20,49 +19,40 @@ export function renderSecurityConfigTab(currentSubPath, subToken, allowedCountri
       <div class="section-card">
         <div class="section-header">
           <div class="section-title-group">
-            <h2 class="section-title">🔑 订阅安全与全局路由策略</h2>
+            <h2 class="section-title">🔑 订阅安全与全局访问策略</h2>
             <span class="badge-global-tip">全站生效</span>
           </div>
           <div class="section-header-actions">
-            <button type="button" class="btn-action btn-purple" style="height: 34px; font-size: 12px; padding: 0 14px;" onclick="randomizeSecurityConfig()">🎲 随机生成全部</button>
+            <button type="button" class="btn-action btn-purple" style="height: 34px; font-size: 12px; padding: 0 14px;" onclick="randomToken()">🎲 随机生成 Token</button>
             <button type="button" class="btn-action btn-success" style="height: 34px; font-size: 12px; padding: 0 16px;" onclick="saveSecurityConfig()">💾 保存安全配置</button>
           </div>
         </div>
-        <p class="section-desc">本模块为全局安全基线配置，用于保护全站所有节点与订阅链接。系统采用高熵随机字符作为全局专属聚合路由与安全凭据，并提供 IP 归属地白名单及代理客户端过滤机制，彻底杜绝扫描与盗刷。</p>
+        <p class="section-desc">本模块为全局安全基线配置，用于保护全站所有节点与订阅链接。系统采用高强度防盗刷安全令牌作为鉴权凭据，并提供 IP 归属地白名单及代理客户端过滤机制，彻底杜绝扫描与盗刷。</p>
 
         <!-- 全局生效提示条 -->
         <div class="global-notice-card" style="margin-bottom: 20px; padding: 12px 16px; border-radius: 8px; background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.22); display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 20px; flex-shrink: 0;">🌐</span>
           <div style="font-size: 13px; line-height: 1.6; color: var(--text-title);">
-            <strong>全局作用域说明：</strong>此处设置的<strong>订阅聚合路径、安全 Token、国家/地区 IP 白名单</strong>及<strong>代理客户端拦截过滤</strong>均为全站全局生效，普通订阅、CF 优选订阅与聚合订阅均统一遵循此安全风控规则。
+            <strong>全局作用域说明：</strong>此处设置的<strong>安全 Token、国家/地区 IP 白名单</strong>及<strong>代理客户端拦截过滤</strong>均为全站全局生效，普通订阅与 CF 优选订阅均统一遵循此安全风控规则。
           </div>
         </div>
 
         <!-- 响应式栅格 (PC双栏，平板/手机自动单栏铺满) -->
         <div class="settings-grid">
-          <!-- 左栏: 核心路由路径与安全令牌 -->
+          <!-- 左栏: 核心安全令牌 -->
           <div style="background: var(--hover-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px;">
             <div style="font-size: 14px; font-weight: 600; color: var(--text-title); margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
               <span>🔒</span>
-              <span>订阅路径与鉴权凭证</span>
-            </div>
-
-            <div class="form-field" style="margin-bottom: 16px;">
-              <label>全局聚合订阅路径 (SUB_PATH):</label>
-              <div class="copy-box">
-                <input type="text" class="copy-input" id="cfg-sub-path" value="${safeSubPath}" placeholder="12位高强度随机字符串" />
-                <button type="button" class="btn-action btn-secondary" style="height: 38px;" onclick="randomSubPath()">🎲 随机</button>
-              </div>
-              <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">用于全局聚合订阅直连路由，例如: /${safeSubPath}?token=...</p>
+              <span>全局订阅鉴权凭证</span>
             </div>
 
             <div class="form-field">
               <label>全局订阅鉴权令牌 (TOKEN):</label>
               <div class="copy-box">
-                <input type="text" class="copy-input" id="cfg-token" value="${safeToken}" placeholder="24位高强度随机安全令牌" />
+                <input type="text" class="copy-input" id="cfg-token" value="${safeToken}" placeholder="12-33位高强度随机安全令牌 (a-zA-Z0-9)" />
                 <button type="button" class="btn-action btn-secondary" style="height: 38px;" onclick="randomToken()">🎲 随机</button>
               </div>
-              <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">全站订阅 URL 统一鉴权凭证（未携带正确 Token 的访问请求将被直接阻断拦截）。</p>
+              <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">全站订阅 URL 统一鉴权凭证（例如: /:groupId?token=...，未携带正确 Token 的访问请求将被直接阻断拦截）。</p>
             </div>
           </div>
 
@@ -87,7 +77,7 @@ export function renderSecurityConfigTab(currentSubPath, subToken, allowedCountri
                   <button type="button" class="btn-action btn-danger" style="height: 26px; font-size: 11px; padding: 0 8px;" onclick="clearInput('cfg-allowed-countries')">清空</button>
                 </div>
               </div>
-              <input type="text" id="cfg-allowed-countries" value="${escapeHtml(countriesStr)}" placeholder="例如: CN, HK, TW, JP, SG (留空则对所有国家/地区开放)" />
+              <input type="text" id="cfg-allowed-countries" class="form-input" value="${escapeHtml(countriesStr)}" placeholder="例如: CN, HK, TW, JP, SG (留空则对所有国家/地区开放)" />
               <p style="font-size: 11px; color: var(--text-muted); margin-top: 5px; line-height: 1.5;">
                 基于 Cloudflare 真实 IP 地理位置识别。填写 ISO 两字母大写代码（多个以逗号分隔）。留空表示对所有国家/地区 IP 开放。若某分组配置了专属国家白名单，将优先采用分组配置。
               </p>
@@ -157,13 +147,13 @@ export function renderTgConfigTab(tgConfig = {}) {
 
             <div class="form-field" style="margin-bottom: 16px;">
               <label>Bot Token:</label>
-              <input type="password" id="cfg-tg-token" value="${tgToken}" placeholder="例如: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ" autocomplete="off" />
+              <input type="password" id="cfg-tg-token" class="form-input" value="${tgToken}" placeholder="例如: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ" autocomplete="off" />
               <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">由 Telegram @BotFather 创建机器人后获得的 API Token 凭证。</p>
             </div>
 
             <div class="form-field">
               <label>Chat ID (目标会话 ID):</label>
-              <input type="text" id="cfg-tg-chat-id" value="${tgChatId}" placeholder="群组务必以 -100 开头，例如: -1002147483648" />
+              <input type="text" id="cfg-tg-chat-id" class="form-input" value="${tgChatId}" placeholder="群组务必以 -100 开头，例如: -1002147483648" />
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.6;">
                 <div>💡 <strong>群组推送注意：</strong></div>
                 <div>1. 机器人必须先<strong>加入该 Telegram 群组</strong>并赋予发言权限；</div>
@@ -182,7 +172,7 @@ export function renderTgConfigTab(tgConfig = {}) {
 
             <div class="form-field" style="margin-bottom: 16px;">
               <label>Telegram API 地址 (反代 / 自建端点):</label>
-              <input type="text" id="cfg-tg-api-host" value="${tgApiHost}" placeholder="默认: https://api.telegram.org" />
+              <input type="text" id="cfg-tg-api-host" class="form-input" value="${tgApiHost}" placeholder="默认: https://api.telegram.org" />
               <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">如因网络环境无法直连官方 API，可填写 Cloudflare Worker 反向代理端点或自定义中转地址。</p>
             </div>
 

@@ -127,6 +127,16 @@ export async function getBaseVless(env) {
   return env.BASE_VLESS || '';
 }
 
+// 保存基础节点配置到存储（加密写入 custom_base_vless）
+export async function saveBaseVless(env, baseVless) {
+  const kv = getKV(env);
+  if (kv) {
+    const secret = await getSecretKey(env);
+    const encrypted = encrypt((baseVless || '').trim(), secret);
+    await kv.put('custom_base_vless', encrypted);
+  }
+}
+
 // 读取存储中的优选源列表（从 KV 读取加密密文并解密）
 export async function getSources(env) {
   const kv = getKV(env);
@@ -233,9 +243,19 @@ export async function saveCfNodeGroups(env, groups) {
   }
 }
 
-// 生成高强度安全随机字符串
-function generateSecureRandomString(length = 16) {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+// 生成高强度安全随机字符串（字符集包含大小写字母与数字：a-zA-Z0-9，支持指定长度或动态区间）
+export function generateSecureRandomString(minOrExact = 12, max = null) {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let length;
+  if (max === null) {
+    length = minOrExact;
+  } else {
+    const minLen = Math.min(minOrExact, max);
+    const maxLen = Math.max(minOrExact, max);
+    const lengthBytes = new Uint8Array(1);
+    crypto.getRandomValues(lengthBytes);
+    length = minLen + (lengthBytes[0] % (maxLen - minLen + 1));
+  }
   const randomBytes = new Uint8Array(length);
   crypto.getRandomValues(randomBytes);
   let result = '';
@@ -267,8 +287,8 @@ export async function getSubPath(env) {
     return env.SUB_PATH.trim().replace(/^\/+|\/+$/g, '');
   }
 
-  // 默认自动生成 12 位高强度随机路由路径并持久化覆盖保存
-  const randomPath = generateSecureRandomString(12);
+  // 默认自动生成 12 ~ 33 位高强度随机路由路径 (a-zA-Z0-9) 并持久化覆盖保存
+  const randomPath = generateSecureRandomString(12, 33);
   if (kv) {
     try {
       await saveSubPath(env, randomPath);
@@ -282,7 +302,7 @@ export async function saveSubPath(env, subPath) {
   const kv = getKV(env);
   if (kv) {
     const secret = await getSecretKey(env);
-    const cleanPath = (subPath || generateSecureRandomString(12)).trim().replace(/^\/+|\/+$/g, '');
+    const cleanPath = (subPath || generateSecureRandomString(12, 33)).trim().replace(/^\/+|\/+$/g, '');
     const encrypted = encrypt(cleanPath, secret);
     await kv.put('custom_sub_path', encrypted);
   }
@@ -294,10 +314,11 @@ export async function getToken(env) {
   if (kv) {
     try {
       const stored = await kv.get('custom_token');
-      if (stored && stored.trim()) {
+      if (stored !== null && stored !== undefined) {
         const secret = await getSecretKey(env);
         const decrypted = decrypt(stored.trim(), secret);
-        if (decrypted && decrypted.trim()) {
+        // 若 KV 存在记录且成功解密（即使是空字符串，也代表用户显式清空了 Token），直接采纳
+        if (typeof decrypted === 'string') {
           return decrypted.trim();
         }
       }
@@ -310,8 +331,8 @@ export async function getToken(env) {
     return env.TOKEN.trim();
   }
 
-  // 默认自动生成 24 位高强度防盗刷安全令牌并持久化覆盖保存
-  const randomTokenStr = generateSecureRandomString(24);
+  // 默认自动生成 12 ~ 33 位高强度防盗刷安全令牌 (a-zA-Z0-9) 并持久化覆盖保存
+  const randomTokenStr = generateSecureRandomString(12, 33);
   if (kv) {
     try {
       await saveToken(env, randomTokenStr);
@@ -320,12 +341,12 @@ export async function getToken(env) {
   return randomTokenStr;
 }
 
-// 保存自定义订阅令牌 TOKEN (直接物理覆盖旧值)
+// 保存自定义订阅令牌 TOKEN (允许保存为空串实现免 Token 访问)
 export async function saveToken(env, token) {
   const kv = getKV(env);
   if (kv) {
     const secret = await getSecretKey(env);
-    const val = (token || generateSecureRandomString(24)).trim();
+    const val = (token === undefined || token === null) ? '' : String(token).trim();
     const encrypted = encrypt(val, secret);
     await kv.put('custom_token', encrypted);
   }
@@ -568,19 +589,22 @@ export async function getLoginFailedAttempts(env, ip) {
   return { count: 0, lockUntil: 0, lockSeconds: 0 };
 }
 
-// 递增并记录指定 IP 连续登录失败次数，并根据指数退避算法计算锁定时间 (1, 2, 4, 8, 16分钟)
+// 递增并记录指定 IP 连续登录失败次数，并在连续失败 >= 3 次时根据指数退避算法计算锁定时间 (1, 2, 4, 8, 16分钟)
 export async function recordLoginFailure(env, ip) {
   const kv = getKV(env);
-  if (!kv || !ip) return { count: 1, lockUntil: 0, lockSeconds: 60 };
+  if (!kv || !ip) return { count: 1, lockUntil: 0, lockSeconds: 0 };
   try {
     const info = await getLoginFailedAttempts(env, ip);
     const updatedCount = info.count + 1;
     
-    // 指数退避：第1次错误锁定 1分钟(60s)，第2次 2分钟(120s)，第3次 4分钟(240s)，第4次 8分钟(480s)...
-    // 算法公式：60 * (2 ^ (updatedCount - 1)) 秒
-    const lockDurationSec = 60 * Math.pow(2, updatedCount - 1);
-    const now = Date.now();
-    const lockUntil = now + (lockDurationSec * 1000);
+    // 前 2 次错误不触发冷却锁定；达到第 3 次及以上时才开启指数退避锁定 (60s, 120s, 240s...)
+    let lockDurationSec = 0;
+    let lockUntil = 0;
+    if (updatedCount >= 3) {
+      lockDurationSec = 60 * Math.pow(2, updatedCount - 3);
+      const now = Date.now();
+      lockUntil = now + (lockDurationSec * 1000);
+    }
 
     const recordData = {
       count: updatedCount,
@@ -591,7 +615,6 @@ export async function recordLoginFailure(env, ip) {
     const secret = await getSecretKey(env);
     const encrypted = encrypt(JSON.stringify(recordData), secret);
     
-    // KV 保存时长保证覆盖锁定时长与统计周期（至少保存 1 天）
     const ttl = Math.max(86400, lockDurationSec + 3600);
     await kv.put(key, encrypted, { expirationTtl: ttl });
 
@@ -603,7 +626,7 @@ export async function recordLoginFailure(env, ip) {
   } catch (e) {
     console.error('Failed to update login_fail in KV', e);
   }
-  return { count: 1, lockUntil: Date.now() + 60000, lockSeconds: 60 };
+  return { count: 1, lockUntil: 0, lockSeconds: 0 };
 }
 
 // 登录成功时重置该 IP 失败计数与锁定状态
@@ -682,6 +705,12 @@ function matchCIDR(ip, cidr) {
   }
 
   return false;
+}
+
+export function isLoopbackIP(ip) {
+  if (!ip) return false;
+  const clean = ip.trim().toLowerCase();
+  return clean === '127.0.0.1' || clean === '::1' || clean === 'localhost' || clean.startsWith('127.');
 }
 
 export function isIPInList(ip, list) {

@@ -378,7 +378,8 @@ function buildStandardVless(parsed, overrideOptions = {}) {
 
     const cleanQueryStr = sp.toString().replace(/%2F/g, '/');
     const query = cleanQueryStr ? `?${cleanQueryStr}` : '';
-    const hash = targetRemark ? `#${safeEncodeURIComponent(targetRemark)}` : '';
+    const cleanRemark = String(targetRemark || '').replace(/[\r\n#]/g, '').trim();
+    const hash = cleanRemark ? `#${cleanRemark}` : '';
 
     return `vless://${parsed.uuid}@${targetHost}:${targetPort}${query}${hash}`;
   } catch (err) {
@@ -610,9 +611,13 @@ export async function fetchIPsAndGenerateNodes(baseVless, selectedSources, forma
     });
   }
 
-  // 并发拉取优选接口数据（关联每个 source 的名称，过滤已禁用的源）
-  const validSources = (selectedSources || []).filter(s => s && s.url && s.enabled !== false);
+  // 并发拉取优选接口数据或直接读取静态 IP 文本源（关联每个 source 的名称，过滤已禁用的源）
+  const validSources = (selectedSources || []).filter(s => s && (s.url || s.content) && s.enabled !== false);
   const fetchPromises = validSources.map(async (source) => {
+    if (source.content && typeof source.content === 'string') {
+      return { source, text: source.content };
+    }
+    if (!source.url) return { source, text: '' };
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2500);

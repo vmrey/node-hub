@@ -1,23 +1,21 @@
-var Jt="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Kt=(o="")=>{let e=String(o).trim();if(!e)return{cipherMap:Jt,xorKey:88};let t=Jt.split(""),n=2166136261;for(let i=0;i<e.length;i++)n^=e.charCodeAt(i),n=Math.imul(n,16777619)>>>0;let a=n&255,s=()=>{n=n+1831565813>>>0;let i=Math.imul(n^n>>>15,1|n);return i=i+Math.imul(i^i>>>7,61|i)^i,((i^i>>>14)>>>0)/4294967296};for(let i=t.length-1;i>0;i--){let l=Math.floor(s()*(i+1)),d=t[i];t[i]=t[l],t[l]=d}return{cipherMap:t.join(""),xorKey:a}},Oe=o=>{let e=[];for(let t=0;t<o.length;t++){let n=o.charCodeAt(t);if(n>=55296&&n<=56319){let a=o.charCodeAt(++t);n=(n-55296)*1024+(a-56320)+65536}n<128?e.push(n):n<2048?e.push(192|n>>6,128|n&63):n<65536?e.push(224|n>>12,128|n>>6&63,128|n&63):e.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|n&63)}return e},De=o=>{let e=[],t=0;for(;t<o.length;){let n=o[t],a,s;if(n<128)a=n,s=0;else if((n&224)===192)a=n&31,s=1;else if((n&240)===224)a=n&15,s=2;else if((n&248)===240)a=n&7,s=3;else{e.push(""),t++;continue}if(t+s>=o.length){e.push("");break}for(let i=0;i<s;i++)a=a<<6|o[++t]&63;t++,a>65535?(a-=65536,e.push(String.fromCharCode(55296|a>>10,56320|a&1023))):e.push(String.fromCharCode(a))}return e.join("")},Me=(o,e)=>{let t="";for(let n=0;n<o.length;n+=3){let a=o[n],s=n+1<o.length?o[n+1]:0,i=n+2<o.length?o[n+2]:0;t+=e[a>>2],t+=e[(a&3)<<4|s>>4],t+=n+1<o.length?e[(s&15)<<2|i>>6]:"=",t+=n+2<o.length?e[i&63]:"="}return t},Ve=(o,e)=>{if(!o)return null;let t=String(o).trim();for(;t.endsWith("=");)t=t.slice(0,-1);if(!t)return null;let n=[],a=0,s=0;for(let i=0;i<t.length;i++){let l=e.indexOf(t[i]);if(l<0)return null;a=(a<<6|l)&4294967295,s+=6,s>=8&&(s-=8,n.push(a>>s&255))}return n},z=(o,e="")=>{if(!o)return"";let{cipherMap:t,xorKey:n}=Kt(e),a=Oe(o);for(let s=0;s<a.length;s++)a[s]=(a[s]^n+s&255)&255;return Me(a,t)},L=(o,e="")=>{if(!o)return"";let{cipherMap:t,xorKey:n}=Kt(e),a=Ve(o,t);if(!a)return"";let s=[];for(let i=0;i<a.length;i++)s.push((a[i]^n+i&255)&255);return De(s)};var Fe=[{id:"cmcc",name:"\u4E2D\u56FD\u79FB\u52A8 (CMCC)",url:"https://cf.090227.xyz/cmcc?ips=10",enabled:!0},{id:"cu",name:"\u4E2D\u56FD\u8054\u901A (CU)",url:"https://cf.090227.xyz/cu?ips=10",enabled:!0},{id:"ct",name:"\u4E2D\u56FD\u7535\u4FE1 (CT)",url:"https://cf.090227.xyz/ct?ips=10",enabled:!0}],Z=null;async function k(o){if(Z)return Z;if(o.CIPHER_KEY&&o.CIPHER_KEY.trim())return Z=o.CIPHER_KEY.trim(),Z;let e=C(o);if(e)try{let s=await e.get("sys_cipher_key");if(s&&s.trim()&&s.trim().length>=16)return Z=s.trim(),Z}catch(s){console.error("Failed to read sys_cipher_key from KV",s)}let t=new Uint8Array(1);crypto.getRandomValues(t);let n=64+t[0]%65,a=bt(n);if(e)try{await e.put("sys_cipher_key",a)}catch(s){console.error("Failed to save auto-generated sys_cipher_key to KV",s)}return Z=a,Z}async function Xt(o){let e=new TextEncoder().encode(o),t=await crypto.subtle.digest("SHA-256",e);return Array.from(new Uint8Array(t)).map(a=>a.toString(16).padStart(2,"0")).join("")}function qt(o,e){let t=o.headers.get("Cookie");if(!t)return null;let n=t.split(";").map(a=>a.trim());for(let a of n)if(a.startsWith(e+"="))return decodeURIComponent(a.substring(e.length+1));return null}function dt(o){let e=new TextEncoder().encode(o),t="";for(let n=0;n<e.byteLength;n++)t+=String.fromCharCode(e[n]);return btoa(t)}function at(o){if(!o||typeof o!="string")return"";try{let t=o.trim().replace(/\s+/g,"").replace(/-/g,"+").replace(/_/g,"/");for(;t.length%4;)t+="=";let n=atob(t),a=new Uint8Array(n.length);for(let s=0;s<n.length;s++)a[s]=n.charCodeAt(s);return new TextDecoder().decode(a)}catch{return""}}function C(o){return o.KV||null}async function Qt(o){let e=C(o);if(e)try{let t=await e.get("custom_base_vless");if(t&&t.trim()){let n=await k(o),a=L(t.trim(),n);if(a&&a.trim())return a.trim();if(t.trim().startsWith("vless://"))return t.trim()}}catch(t){console.error("Failed to read custom_base_vless from KV",t)}return o.BASE_VLESS||""}async function Zt(o){let e=C(o);if(e)try{let t=await e.get("custom_sources");if(t&&t.trim()){let n=await k(o),a=L(t.trim(),n),s=null;if(a)try{s=JSON.parse(a)}catch{}if(!s&&(t.startsWith("[")||t.startsWith("{")))try{s=JSON.parse(t)}catch{}if(s&&Array.isArray(s)&&s.length>0)return s}}catch(t){console.error("Failed to read from KV",t)}return Fe}async function Ct(o,e){let t=C(o);if(t){let n=await k(o),a=JSON.stringify(e),s=z(a,n);await t.put("custom_sources",s)}}async function te(o){let e=C(o);if(e)try{let t=await e.get("custom_plain_groups");if(t&&t.trim()){let n=await k(o),a=L(t.trim(),n);if(a)try{let s=JSON.parse(a);if(Array.isArray(s))return s}catch{}}}catch(t){console.error("Failed to read custom_plain_groups from KV",t)}return[]}async function pt(o,e){let t=C(o);if(t){let n=await k(o),a=JSON.stringify(e),s=z(a,n);await t.put("custom_plain_groups",s)}}async function ee(o){let e=C(o);if(e)try{let t=await e.get("custom_cf_groups");if(t&&t.trim()){let n=await k(o),a=L(t.trim(),n);if(a)try{let s=JSON.parse(a);if(Array.isArray(s))return s}catch{}}}catch(t){console.error("Failed to read custom_cf_groups from KV",t)}return[]}async function ut(o,e){let t=C(o);if(t){let n=await k(o),a=JSON.stringify(e),s=z(a,n);await t.put("custom_cf_groups",s)}}function bt(o=16){let e="abcdefghijklmnopqrstuvwxyz0123456789",t=new Uint8Array(o);crypto.getRandomValues(t);let n="";for(let a=0;a<o;a++)n+=e[t[a]%e.length];return n}async function oe(o){let e=C(o);if(e)try{let n=await e.get("custom_sub_path");if(n&&n.trim()){let a=await k(o),s=L(n.trim(),a);if(s&&s.trim())return s.trim().replace(/^\/+|\/+$/g,"")}}catch(n){console.error("Failed to read custom_sub_path from KV",n)}if(o.SUB_PATH&&o.SUB_PATH.trim())return o.SUB_PATH.trim().replace(/^\/+|\/+$/g,"");let t=bt(12);if(e)try{await $t(o,t)}catch{}return t}async function $t(o,e){let t=C(o);if(t){let n=await k(o),a=(e||bt(12)).trim().replace(/^\/+|\/+$/g,""),s=z(a,n);await t.put("custom_sub_path",s)}}async function ne(o){let e=C(o);if(e)try{let n=await e.get("custom_token");if(n&&n.trim()){let a=await k(o),s=L(n.trim(),a);if(s&&s.trim())return s.trim()}}catch(n){console.error("Failed to read custom_token from KV",n)}if(o.TOKEN&&o.TOKEN.trim())return o.TOKEN.trim();let t=bt(24);if(e)try{await Nt(o,t)}catch{}return t}async function Nt(o,e){let t=C(o);if(t){let n=await k(o),a=(e||bt(24)).trim(),s=z(a,n);await t.put("custom_token",s)}}async function ae(o){let e=C(o);if(e)try{let t=await e.get("custom_allowed_countries");if(t&&t.trim()){let n=await k(o),a=L(t.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s.map(i=>String(i).trim().toUpperCase()).filter(Boolean)}}}catch(t){console.error("Failed to read custom_allowed_countries from KV",t)}return o.ALLOWED_COUNTRIES&&o.ALLOWED_COUNTRIES.trim()?o.ALLOWED_COUNTRIES.split(",").map(t=>t.trim().toUpperCase()).filter(Boolean):[]}async function se(o,e){let t=C(o);if(t){let n=await k(o),a=Array.isArray(e)?e.map(i=>String(i).trim().toUpperCase()).filter(Boolean):typeof e=="string"?e.split(",").map(i=>i.trim().toUpperCase()).filter(Boolean):[],s=z(JSON.stringify(a),n);await t.put("custom_allowed_countries",s)}}async function re(o){let e=C(o);if(e)try{let t=await e.get("custom_proxy_client_only");if(t&&t.trim()){let n=await k(o),a=L(t.trim(),n);if(a!=null)return a==="true"||a===!0}}catch(t){console.error("Failed to read custom_proxy_client_only from KV",t)}return o.PROXY_CLIENT_ONLY!==void 0&&o.PROXY_CLIENT_ONLY!==null&&o.PROXY_CLIENT_ONLY!==""?String(o.PROXY_CLIENT_ONLY).toLowerCase()==="true":!0}async function ie(o,e){let t=C(o);if(t){let n=await k(o),s=z(e===!0||e==="true"?"true":"false",n);await t.put("custom_proxy_client_only",s)}}async function ft(o){let e=C(o);if(e)try{let t=await e.get("blocked_ips");if(t&&t.trim()){let n=await k(o),a=L(t.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s}}}catch(t){console.error("Failed to read blocked_ips from KV",t)}return[]}async function tt(o,e){let t=C(o);if(t){let n=await k(o),a=JSON.stringify(e),s=z(a,n);await t.put("blocked_ips",s)}}async function Ut(o){let e=C(o);if(e)try{let t=await e.get("whitelist_ips");if(t&&t.trim()){let n=await k(o),a=L(t.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s}}}catch(t){console.error("Failed to read whitelist_ips from KV",t)}return[]}async function Rt(o,e){let t=C(o);if(t){let n=await k(o),a=JSON.stringify(e),s=z(a,n);await t.put("whitelist_ips",s)}}async function It(o){let e=C(o);if(e)try{let t=await e.get("access_logs");if(t&&t.trim()){let n=await k(o),a=L(t.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s}}}catch(t){console.error("Failed to read access_logs from KV",t)}return[]}async function $(o,e){let t=C(o);if(t)try{let n=await It(o),a=[e,...n].slice(0,100),s=await k(o),i=z(JSON.stringify(a),s);await t.put("access_logs",i)}catch(n){console.error("Failed to record access log in KV",n)}}async function ce(o,e){let t=C(o);if(t)try{let n=await k(o),a=z(JSON.stringify(e.slice(0,100)),n);await t.put("access_logs",a)}catch(n){console.error("Failed to save access logs to KV",n)}}async function le(o){let e=C(o);if(e)try{await e.delete("access_logs")}catch{}}async function St(o,e){let t=C(o);if(!t||!e)return{count:0,lockUntil:0,lockSeconds:0};try{let n="login_fail_"+e.trim(),a=await t.get(n);if(a){let s=await k(o),i=L(a.trim(),s)||a.trim(),l=null;try{l=JSON.parse(i)}catch{let d=parseInt(i,10);isNaN(d)||(l={count:d,lockUntil:0})}if(l&&typeof l.count=="number"){let d=Date.now(),c=Number(l.lockUntil||0),h=c>d?Math.ceil((c-d)/1e3):0;return{count:l.count,lockUntil:c,lockSeconds:h}}}}catch(n){console.error("Failed to read login_fail count from KV",n)}return{count:0,lockUntil:0,lockSeconds:0}}async function de(o,e){let t=C(o);if(!t||!e)return{count:1,lockUntil:0,lockSeconds:60};try{let a=(await St(o,e)).count+1,s=60*Math.pow(2,a-1),l=Date.now()+s*1e3,d={count:a,lockUntil:l},c="login_fail_"+e.trim(),h=await k(o),u=z(JSON.stringify(d),h),m=Math.max(86400,s+3600);return await t.put(c,u,{expirationTtl:m}),{count:a,lockUntil:l,lockSeconds:s}}catch(n){console.error("Failed to update login_fail in KV",n)}return{count:1,lockUntil:Date.now()+6e4,lockSeconds:60}}async function _t(o,e){let t=C(o);if(!(!t||!e))try{let n="login_fail_"+e.trim();await t.delete(n)}catch{}}var je=600*1e3;async function pe(o,e){let t=await k(o),n=Date.now()+je;return z(`${e}:${n}`,t)}async function ue(o,e,t,n){if(!C(o)||!n||!e||!e.trim())return!1;try{let a=await k(o),s=L(e.trim(),a);if(!s||!s.includes(":"))return s===t;let[i,l]=s.split(":"),d=parseInt(l,10);return Date.now()>d?!1:i===t}catch{return!1}}function Yt(o){let e=o.split(".").map(t=>parseInt(t,10));return e.length!==4||e.some(t=>isNaN(t)||t<0||t>255)?null:(e[0]<<24>>>0)+(e[1]<<16>>>0)+(e[2]<<8>>>0)+(e[3]>>>0)}function He(o,e){if(!e.includes("/"))return o.toLowerCase()===e.toLowerCase();let[t,n]=e.split("/"),a=parseInt(n,10);if(isNaN(a))return!1;let s=Yt(o),i=Yt(t);if(s!==null&&i!==null){if(a<=0)return!0;if(a>32)return!1;let l=a===32?4294967295:~((1<<32-a)-1)>>>0;return(s&l)===(i&l)}if(o.includes(":")&&t.includes(":")){let l=o.toLowerCase(),d=t.toLowerCase();if(a<=64&&l.startsWith(d.replace(/::?$/,"")))return!0}return!1}function st(o,e){if(!o||!Array.isArray(e)||e.length===0)return!1;let t=o.trim();for(let n of e){let a=String(n).trim();if(a)try{if(He(t,a))return!0}catch{if(t.toLowerCase()===a.toLowerCase())return!0}}return!1}async function fe(o,e){let t=C(o);if(!t||!e)return 1;try{let n="sub_fail_"+e.trim(),a=await t.get(n),s=0;if(a){let d=await k(o),c=L(a.trim(),d);s=parseInt(c,10)||0}s+=1;let i=await k(o),l=z(String(s),i);return await t.put(n,l,{expirationTtl:3600}),s}catch{return 1}}async function Pt(o,e){let t=C(o);if(!(!t||!e))try{await t.delete("sub_fail_"+e.trim())}catch{}}async function Ot(o){let e=(o.TG_BOT_TOKEN||"").trim(),t=(o.TG_CHAT_ID||"").trim(),n=(o.TG_API_HOST||"").trim().replace(/\/+$/,"")||"https://api.telegram.org",a=o.TG_NOTIFY_ENABLED!==void 0&&o.TG_NOTIFY_ENABLED!==null&&o.TG_NOTIFY_ENABLED!==""?String(o.TG_NOTIFY_ENABLED).toLowerCase()==="true":!1,s=C(o);if(s)try{let i=await s.get("custom_tg_config");if(i&&i.trim()){let l=await k(o),d=L(i.trim(),l);if(d){let c=JSON.parse(d);c&&typeof c=="object"&&(c.token!==void 0&&(e=String(c.token).trim()),c.chatId!==void 0&&(t=String(c.chatId).trim()),c.apiHost!==void 0&&String(c.apiHost).trim()&&(n=String(c.apiHost).trim().replace(/\/+$/,"")),c.enabled!==void 0&&(a=c.enabled===!0||c.enabled==="true"))}}}catch(i){console.error("Failed to read custom_tg_config from KV",i)}return{token:e,chatId:t,apiHost:n,enabled:a}}function ge(o){if(!o)return"";let e=String(o).trim();return e.toLowerCase().startsWith("bot")&&(e=e.slice(3).trim()),e}function me(o){if(!o)return"";let e=String(o).trim(),t=e.match(/t\.me\/c\/(\d+)/i);if(t)return`-100${t[1]}`;let n=e.match(/t\.me\/([a-zA-Z0-9_]+)/i);return n&&!["c","joinchat","addstickers"].includes(n[1].toLowerCase())?`@${n[1]}`:e}async function he(o,e){let t=C(o);if(t){let n=await k(o),a={token:ge(e.token),chatId:me(e.chatId),apiHost:(e.apiHost||"").trim().replace(/\/+$/,"")||"https://api.telegram.org",enabled:e.enabled===!0||e.enabled==="true"},s=z(JSON.stringify(a),n);await t.put("custom_tg_config",s)}}async function Dt(o,e,t=null){try{let n=t||await Ot(o);if(!n.enabled&&!t?.force)return{success:!1,error:"Telegram \u901A\u77E5\u63A8\u9001\u672A\u5F00\u542F"};let a=ge(n.token),s=me(n.chatId);if(!a||!s)return{success:!1,error:"Bot Token \u6216 Chat ID \u4E3A\u7A7A"};let l=`${(n.apiHost||"https://api.telegram.org").replace(/\/+$/,"")}/bot${a}/sendMessage`,d=await fetch(l,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:s,text:e,parse_mode:"HTML",disable_web_page_preview:!0})}),c=await d.json().catch(()=>null);if(!d.ok||c&&!c.ok){let h=c?.description||await d.text().catch(()=>"")||`HTTP ${d.status}`;return{success:!1,error:`TG API \u54CD\u5E94\u9519\u8BEF [HTTP ${d.status}]: ${h}`}}return{success:!0,chat:c?.result?.chat||null,messageId:c?.result?.message_id||null}}catch(n){return{success:!1,error:`\u7F51\u7EDC\u8BF7\u6C42\u5931\u8D25: ${n.message}`}}}var be="23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";function We(o=4){let e="",t=new Uint8Array(o);crypto.getRandomValues(t);for(let n=0;n<o;n++)e+=be[t[n]%be.length];return e}function Ge(o){let n=o.split(""),a="",s=["#94a3b8","#cbd5e1","#64748b","#0284c7","#8b5cf6"];for(let u=0;u<3;u++){let m=Math.floor(Math.random()*20),y=Math.floor(Math.random()*42),w=120-Math.floor(Math.random()*20),T=Math.floor(Math.random()*42),g=120/2+(Math.random()*40-20),I=Math.floor(Math.random()*42),R=s[u%s.length];a+=`<path d="M ${m} ${y} Q ${g} ${I} ${w} ${T}" stroke="${R}" stroke-width="1.5" fill="none" opacity="0.65"/>`}let i="";for(let u=0;u<20;u++){let m=Math.floor(Math.random()*120),y=Math.floor(Math.random()*42),w=(Math.random()*1.5+.5).toFixed(1);i+=`<circle cx="${m}" cy="${y}" r="${w}" fill="#94a3b8" opacity="0.5"/>`}let l=["#0f172a","#0369a1","#4338ca","#6d28d9","#b91c1c","#047857"],d="",c=120/(n.length+1);n.forEach((u,m)=>{let y=Math.floor((m+.8)*c),w=28+Math.floor(Math.random()*6-3),T=Math.floor(Math.random()*36-18),g=l[(m+Math.floor(Math.random()*l.length))%l.length],I=22+Math.floor(Math.random()*4);d+=`<text x="${y}" y="${w}" font-family="monospace, Arial" font-size="${I}" font-weight="bold" fill="${g}" transform="rotate(${T}, ${y}, ${w})">${u}</text>`});let h=`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="42" viewBox="0 0 120 42" style="border-radius: 6px; background: #f8fafc; border: 1px solid #cbd5e1; cursor: pointer; user-select: none;">
+var Ft="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Wt=(t="")=>{let e=String(t).trim();if(!e)return{cipherMap:Ft,xorKey:88};let o=Ft.split(""),n=2166136261;for(let i=0;i<e.length;i++)n^=e.charCodeAt(i),n=Math.imul(n,16777619)>>>0;let a=n&255,s=()=>{n=n+1831565813>>>0;let i=Math.imul(n^n>>>15,1|n);return i=i+Math.imul(i^i>>>7,61|i)^i,((i^i>>>14)>>>0)/4294967296};for(let i=o.length-1;i>0;i--){let l=Math.floor(s()*(i+1)),p=o[i];o[i]=o[l],o[l]=p}return{cipherMap:o.join(""),xorKey:a}},Ue=t=>{let e=[];for(let o=0;o<t.length;o++){let n=t.charCodeAt(o);if(n>=55296&&n<=56319){let a=t.charCodeAt(++o);n=(n-55296)*1024+(a-56320)+65536}n<128?e.push(n):n<2048?e.push(192|n>>6,128|n&63):n<65536?e.push(224|n>>12,128|n>>6&63,128|n&63):e.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|n&63)}return e},Me=t=>{let e=[],o=0;for(;o<t.length;){let n=t[o],a,s;if(n<128)a=n,s=0;else if((n&224)===192)a=n&31,s=1;else if((n&240)===224)a=n&15,s=2;else if((n&248)===240)a=n&7,s=3;else{e.push(""),o++;continue}if(o+s>=t.length){e.push("");break}for(let i=0;i<s;i++)a=a<<6|t[++o]&63;o++,a>65535?(a-=65536,e.push(String.fromCharCode(55296|a>>10,56320|a&1023))):e.push(String.fromCharCode(a))}return e.join("")},_e=(t,e)=>{let o="";for(let n=0;n<t.length;n+=3){let a=t[n],s=n+1<t.length?t[n+1]:0,i=n+2<t.length?t[n+2]:0;o+=e[a>>2],o+=e[(a&3)<<4|s>>4],o+=n+1<t.length?e[(s&15)<<2|i>>6]:"=",o+=n+2<t.length?e[i&63]:"="}return o},Ve=(t,e)=>{if(!t)return null;let o=String(t).trim();for(;o.endsWith("=");)o=o.slice(0,-1);if(!o)return null;let n=[],a=0,s=0;for(let i=0;i<o.length;i++){let l=e.indexOf(o[i]);if(l<0)return null;a=(a<<6|l)&4294967295,s+=6,s>=8&&(s-=8,n.push(a>>s&255))}return n},$=(t,e="")=>{if(!t)return"";let{cipherMap:o,xorKey:n}=Wt(e),a=Ue(t);for(let s=0;s<a.length;s++)a[s]=(a[s]^n+s&255)&255;return _e(a,o)},N=(t,e="")=>{if(!t)return"";let{cipherMap:o,xorKey:n}=Wt(e),a=Ve(t,o);if(!a)return"";let s=[];for(let i=0;i<a.length;i++)s.push((a[i]^n+i&255)&255);return Me(s)};var je=[{id:"cmcc",name:"\u4E2D\u56FD\u79FB\u52A8 (CMCC)",url:"https://cf.090227.xyz/cmcc?ips=10",enabled:!0},{id:"cu",name:"\u4E2D\u56FD\u8054\u901A (CU)",url:"https://cf.090227.xyz/cu?ips=10",enabled:!0},{id:"ct",name:"\u4E2D\u56FD\u7535\u4FE1 (CT)",url:"https://cf.090227.xyz/ct?ips=10",enabled:!0}],q=null;async function k(t){if(q)return q;if(t.CIPHER_KEY&&t.CIPHER_KEY.trim())return q=t.CIPHER_KEY.trim(),q;let e=T(t);if(e)try{let s=await e.get("sys_cipher_key");if(s&&s.trim()&&s.trim().length>=16)return q=s.trim(),q}catch(s){console.error("Failed to read sys_cipher_key from KV",s)}let o=new Uint8Array(1);crypto.getRandomValues(o);let n=64+o[0]%65,a=rt(n);if(e)try{await e.put("sys_cipher_key",a)}catch(s){console.error("Failed to save auto-generated sys_cipher_key to KV",s)}return q=a,q}async function Jt(t){let e=new TextEncoder().encode(t),o=await crypto.subtle.digest("SHA-256",e);return Array.from(new Uint8Array(o)).map(a=>a.toString(16).padStart(2,"0")).join("")}function Kt(t,e){let o=t.headers.get("Cookie");if(!o)return null;let n=o.split(";").map(a=>a.trim());for(let a of n)if(a.startsWith(e+"="))return decodeURIComponent(a.substring(e.length+1));return null}function xt(t){let e=new TextEncoder().encode(t),o="";for(let n=0;n<e.byteLength;n++)o+=String.fromCharCode(e[n]);return btoa(o)}function et(t){if(!t||typeof t!="string")return"";try{let o=t.trim().replace(/\s+/g,"").replace(/-/g,"+").replace(/_/g,"/");for(;o.length%4;)o+="=";let n=atob(o),a=new Uint8Array(n.length);for(let s=0;s<n.length;s++)a[s]=n.charCodeAt(s);return new TextDecoder().decode(a)}catch{return""}}function T(t){return t.KV||null}async function Gt(t){let e=T(t);if(e)try{let o=await e.get("custom_base_vless");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a&&a.trim())return a.trim();if(o.trim().startsWith("vless://"))return o.trim()}}catch(o){console.error("Failed to read custom_base_vless from KV",o)}return t.BASE_VLESS||""}async function qt(t){let e=T(t);if(e)try{let o=await e.get("custom_sources");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n),s=null;if(a)try{s=JSON.parse(a)}catch{}if(!s&&(o.startsWith("[")||o.startsWith("{")))try{s=JSON.parse(o)}catch{}if(s&&Array.isArray(s)&&s.length>0)return s}}catch(o){console.error("Failed to read from KV",o)}return je}async function wt(t,e){let o=T(t);if(o){let n=await k(t),a=JSON.stringify(e),s=$(a,n);await o.put("custom_sources",s)}}async function Yt(t){let e=T(t);if(e)try{let o=await e.get("custom_plain_groups");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a)try{let s=JSON.parse(a);if(Array.isArray(s))return s}catch{}}}catch(o){console.error("Failed to read custom_plain_groups from KV",o)}return[]}async function st(t,e){let o=T(t);if(o){let n=await k(t),a=JSON.stringify(e),s=$(a,n);await o.put("custom_plain_groups",s)}}async function Xt(t){let e=T(t);if(e)try{let o=await e.get("custom_cf_groups");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a)try{let s=JSON.parse(a);if(Array.isArray(s))return s}catch{}}}catch(o){console.error("Failed to read custom_cf_groups from KV",o)}return[]}async function it(t,e){let o=T(t);if(o){let n=await k(t),a=JSON.stringify(e),s=$(a,n);await o.put("custom_cf_groups",s)}}function rt(t=12,e=null){let o="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",n;if(e===null)n=t;else{let i=Math.min(t,e),l=Math.max(t,e),p=new Uint8Array(1);crypto.getRandomValues(p),n=i+p[0]%(l-i+1)}let a=new Uint8Array(n);crypto.getRandomValues(a);let s="";for(let i=0;i<n;i++)s+=o[a[i]%o.length];return s}async function Qt(t){let e=T(t);if(e)try{let n=await e.get("custom_token");if(n!=null){let a=await k(t),s=N(n.trim(),a);if(typeof s=="string")return s.trim()}}catch(n){console.error("Failed to read custom_token from KV",n)}if(t.TOKEN&&t.TOKEN.trim())return t.TOKEN.trim();let o=rt(12,33);if(e)try{await At(t,o)}catch{}return o}async function At(t,e){let o=T(t);if(o){let n=await k(t),a=e==null?"":String(e).trim(),s=$(a,n);await o.put("custom_token",s)}}async function Zt(t){let e=T(t);if(e)try{let o=await e.get("custom_allowed_countries");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s.map(i=>String(i).trim().toUpperCase()).filter(Boolean)}}}catch(o){console.error("Failed to read custom_allowed_countries from KV",o)}return t.ALLOWED_COUNTRIES&&t.ALLOWED_COUNTRIES.trim()?t.ALLOWED_COUNTRIES.split(",").map(o=>o.trim().toUpperCase()).filter(Boolean):[]}async function te(t,e){let o=T(t);if(o){let n=await k(t),a=Array.isArray(e)?e.map(i=>String(i).trim().toUpperCase()).filter(Boolean):typeof e=="string"?e.split(",").map(i=>i.trim().toUpperCase()).filter(Boolean):[],s=$(JSON.stringify(a),n);await o.put("custom_allowed_countries",s)}}async function ee(t){let e=T(t);if(e)try{let o=await e.get("custom_proxy_client_only");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a!=null)return a==="true"||a===!0}}catch(o){console.error("Failed to read custom_proxy_client_only from KV",o)}return t.PROXY_CLIENT_ONLY!==void 0&&t.PROXY_CLIENT_ONLY!==null&&t.PROXY_CLIENT_ONLY!==""?String(t.PROXY_CLIENT_ONLY).toLowerCase()==="true":!0}async function oe(t,e){let o=T(t);if(o){let n=await k(t),s=$(e===!0||e==="true"?"true":"false",n);await o.put("custom_proxy_client_only",s)}}async function ct(t){let e=T(t);if(e)try{let o=await e.get("blocked_ips");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s}}}catch(o){console.error("Failed to read blocked_ips from KV",o)}return[]}async function Y(t,e){let o=T(t);if(o){let n=await k(t),a=JSON.stringify(e),s=$(a,n);await o.put("blocked_ips",s)}}async function ne(t){let e=T(t);if(e)try{let o=await e.get("whitelist_ips");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s}}}catch(o){console.error("Failed to read whitelist_ips from KV",o)}return[]}async function ae(t,e){let o=T(t);if(o){let n=await k(t),a=JSON.stringify(e),s=$(a,n);await o.put("whitelist_ips",s)}}async function vt(t){let e=T(t);if(e)try{let o=await e.get("access_logs");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s}}}catch(o){console.error("Failed to read access_logs from KV",o)}return[]}async function O(t,e){let o=T(t);if(o)try{let n=await vt(t),a=[e,...n].slice(0,100),s=await k(t),i=$(JSON.stringify(a),s);await o.put("access_logs",i)}catch(n){console.error("Failed to record access log in KV",n)}}async function se(t,e){let o=T(t);if(o)try{let n=await k(t),a=$(JSON.stringify(e.slice(0,100)),n);await o.put("access_logs",a)}catch(n){console.error("Failed to save access logs to KV",n)}}async function ie(t){let e=T(t);if(e)try{await e.delete("access_logs")}catch{}}async function kt(t,e){let o=T(t);if(!o||!e)return{count:0,lockUntil:0,lockSeconds:0};try{let n="login_fail_"+e.trim(),a=await o.get(n);if(a){let s=await k(t),i=N(a.trim(),s)||a.trim(),l=null;try{l=JSON.parse(i)}catch{let p=parseInt(i,10);isNaN(p)||(l={count:p,lockUntil:0})}if(l&&typeof l.count=="number"){let p=Date.now(),c=Number(l.lockUntil||0),h=c>p?Math.ceil((c-p)/1e3):0;return{count:l.count,lockUntil:c,lockSeconds:h}}}}catch(n){console.error("Failed to read login_fail count from KV",n)}return{count:0,lockUntil:0,lockSeconds:0}}async function re(t,e){let o=T(t);if(!o||!e)return{count:1,lockUntil:0,lockSeconds:0};try{let a=(await kt(t,e)).count+1,s=0,i=0;a>=3&&(s=60*Math.pow(2,a-3),i=Date.now()+s*1e3);let l={count:a,lockUntil:i},p="login_fail_"+e.trim(),c=await k(t),h=$(JSON.stringify(l),c),u=Math.max(86400,s+3600);return await o.put(p,h,{expirationTtl:u}),{count:a,lockUntil:i,lockSeconds:s}}catch(n){console.error("Failed to update login_fail in KV",n)}return{count:1,lockUntil:0,lockSeconds:0}}async function zt(t,e){let o=T(t);if(!(!o||!e))try{let n="login_fail_"+e.trim();await o.delete(n)}catch{}}var Fe=600*1e3;async function ce(t,e){let o=await k(t),n=Date.now()+Fe;return $(`${e}:${n}`,o)}async function le(t,e,o,n){if(!T(t)||!n||!e||!e.trim())return!1;try{let a=await k(t),s=N(e.trim(),a);if(!s||!s.includes(":"))return s===o;let[i,l]=s.split(":"),p=parseInt(l,10);return Date.now()>p?!1:i===o}catch{return!1}}function Ht(t){let e=t.split(".").map(o=>parseInt(o,10));return e.length!==4||e.some(o=>isNaN(o)||o<0||o>255)?null:(e[0]<<24>>>0)+(e[1]<<16>>>0)+(e[2]<<8>>>0)+(e[3]>>>0)}function We(t,e){if(!e.includes("/"))return t.toLowerCase()===e.toLowerCase();let[o,n]=e.split("/"),a=parseInt(n,10);if(isNaN(a))return!1;let s=Ht(t),i=Ht(o);if(s!==null&&i!==null){if(a<=0)return!0;if(a>32)return!1;let l=a===32?4294967295:~((1<<32-a)-1)>>>0;return(s&l)===(i&l)}if(t.includes(":")&&o.includes(":")){let l=t.toLowerCase(),p=o.toLowerCase();if(a<=64&&l.startsWith(p.replace(/::?$/,"")))return!0}return!1}function Lt(t){if(!t)return!1;let e=t.trim().toLowerCase();return e==="127.0.0.1"||e==="::1"||e==="localhost"||e.startsWith("127.")}function lt(t,e){if(!t||!Array.isArray(e)||e.length===0)return!1;let o=t.trim();for(let n of e){let a=String(n).trim();if(a)try{if(We(o,a))return!0}catch{if(o.toLowerCase()===a.toLowerCase())return!0}}return!1}async function de(t,e){let o=T(t);if(!o||!e)return 1;try{let n="sub_fail_"+e.trim(),a=await o.get(n),s=0;if(a){let p=await k(t),c=N(a.trim(),p);s=parseInt(c,10)||0}s+=1;let i=await k(t),l=$(String(s),i);return await o.put(n,l,{expirationTtl:3600}),s}catch{return 1}}async function $t(t,e){let o=T(t);if(!(!o||!e))try{await o.delete("sub_fail_"+e.trim())}catch{}}async function Nt(t){let e=(t.TG_BOT_TOKEN||"").trim(),o=(t.TG_CHAT_ID||"").trim(),n=(t.TG_API_HOST||"").trim().replace(/\/+$/,"")||"https://api.telegram.org",a=t.TG_NOTIFY_ENABLED!==void 0&&t.TG_NOTIFY_ENABLED!==null&&t.TG_NOTIFY_ENABLED!==""?String(t.TG_NOTIFY_ENABLED).toLowerCase()==="true":!1,s=T(t);if(s)try{let i=await s.get("custom_tg_config");if(i&&i.trim()){let l=await k(t),p=N(i.trim(),l);if(p){let c=JSON.parse(p);c&&typeof c=="object"&&(c.token!==void 0&&(e=String(c.token).trim()),c.chatId!==void 0&&(o=String(c.chatId).trim()),c.apiHost!==void 0&&String(c.apiHost).trim()&&(n=String(c.apiHost).trim().replace(/\/+$/,"")),c.enabled!==void 0&&(a=c.enabled===!0||c.enabled==="true"))}}}catch(i){console.error("Failed to read custom_tg_config from KV",i)}return{token:e,chatId:o,apiHost:n,enabled:a}}function pe(t){if(!t)return"";let e=String(t).trim();return e.toLowerCase().startsWith("bot")&&(e=e.slice(3).trim()),e}function ue(t){if(!t)return"";let e=String(t).trim(),o=e.match(/t\.me\/c\/(\d+)/i);if(o)return`-100${o[1]}`;let n=e.match(/t\.me\/([a-zA-Z0-9_]+)/i);return n&&!["c","joinchat","addstickers"].includes(n[1].toLowerCase())?`@${n[1]}`:e}async function fe(t,e){let o=T(t);if(o){let n=await k(t),a={token:pe(e.token),chatId:ue(e.chatId),apiHost:(e.apiHost||"").trim().replace(/\/+$/,"")||"https://api.telegram.org",enabled:e.enabled===!0||e.enabled==="true"},s=$(JSON.stringify(a),n);await o.put("custom_tg_config",s)}}async function Dt(t,e,o=null){try{let n=o||await Nt(t);if(!n.enabled&&!o?.force)return{success:!1,error:"Telegram \u901A\u77E5\u63A8\u9001\u672A\u5F00\u542F"};let a=pe(n.token),s=ue(n.chatId);if(!a||!s)return{success:!1,error:"Bot Token \u6216 Chat ID \u4E3A\u7A7A"};let l=`${(n.apiHost||"https://api.telegram.org").replace(/\/+$/,"")}/bot${a}/sendMessage`,p=await fetch(l,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:s,text:e,parse_mode:"HTML",disable_web_page_preview:!0})}),c=await p.json().catch(()=>null);if(!p.ok||c&&!c.ok){let h=c?.description||await p.text().catch(()=>"")||`HTTP ${p.status}`;return{success:!1,error:`TG API \u54CD\u5E94\u9519\u8BEF [HTTP ${p.status}]: ${h}`}}return{success:!0,chat:c?.result?.chat||null,messageId:c?.result?.message_id||null}}catch(n){return{success:!1,error:`\u7F51\u7EDC\u8BF7\u6C42\u5931\u8D25: ${n.message}`}}}var ge="23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";function He(t=4){let e="",o=new Uint8Array(t);crypto.getRandomValues(o);for(let n=0;n<t;n++)e+=ge[o[n]%ge.length];return e}function Je(t){let n=t.split(""),a="",s=["#94a3b8","#cbd5e1","#64748b","#0284c7","#8b5cf6"];for(let u=0;u<3;u++){let m=Math.floor(Math.random()*20),v=Math.floor(Math.random()*42),w=120-Math.floor(Math.random()*20),I=Math.floor(Math.random()*42),f=120/2+(Math.random()*40-20),B=Math.floor(Math.random()*42),M=s[u%s.length];a+=`<path d="M ${m} ${v} Q ${f} ${B} ${w} ${I}" stroke="${M}" stroke-width="1.5" fill="none" opacity="0.65"/>`}let i="";for(let u=0;u<20;u++){let m=Math.floor(Math.random()*120),v=Math.floor(Math.random()*42),w=(Math.random()*1.5+.5).toFixed(1);i+=`<circle cx="${m}" cy="${v}" r="${w}" fill="#94a3b8" opacity="0.5"/>`}let l=["#0f172a","#0369a1","#4338ca","#6d28d9","#b91c1c","#047857"],p="",c=120/(n.length+1);n.forEach((u,m)=>{let v=Math.floor((m+.8)*c),w=28+Math.floor(Math.random()*6-3),I=Math.floor(Math.random()*36-18),f=l[(m+Math.floor(Math.random()*l.length))%l.length],B=22+Math.floor(Math.random()*4);p+=`<text x="${v}" y="${w}" font-family="monospace, Arial" font-size="${B}" font-weight="bold" fill="${f}" transform="rotate(${I}, ${v}, ${w})">${u}</text>`});let h=`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="42" viewBox="0 0 120 42" style="border-radius: 6px; background: #f8fafc; border: 1px solid #cbd5e1; cursor: pointer; user-select: none;">
     ${a}
     ${i}
-    ${d}
-  </svg>`;return"data:image/svg+xml;utf8,"+encodeURIComponent(h)}async function ye(o,e,t){let n=We(4),a=Ge(n),s=await e(o),i=Date.now()+300*1e3,l=t(`${n.toUpperCase()}:${i}`,s);return{svgDataUri:a,captchaToken:l}}async function xe(o,e,t,n,a){if(!o||!e)return!1;try{let s=await n(t),i=a(e.trim(),s);if(!i||!i.includes(":"))return!1;let[l,d]=i.split(":"),c=parseInt(d,10);return Date.now()>c?!1:o.trim().toUpperCase()===l.trim().toUpperCase()}catch{return!1}}function we(o){if(!o||typeof o!="string")return"";try{return decodeURIComponent(o)}catch{return o}}function Je(o){if(!o||typeof o!="string")return"";try{return encodeURIComponent(o)}catch{return o}}function ve(o){if(!o||typeof o!="string")return null;try{let e=o.trim();if(!e)return null;if(!e.startsWith("vless://")){let g=at(e);return g&&g.includes("vless://")?Te(g):null}let t=e.slice(8).trim();if(!t.includes("@")&&!t.includes("?")&&!t.includes("#")){let g=at(t);g&&g.includes("@")&&(g.includes(":")||g.includes("?"))&&(t=g.trim())}let n="",a=t.indexOf("#");a!==-1&&(n=we(t.slice(a+1)),t=t.slice(0,a));let s="",i=t.indexOf("?");i!==-1&&(s=t.slice(i+1),t=t.slice(0,i));let l=t,d=!1;if(!l.includes("@")){let g=at(l);g&&g.includes("@")&&(l=g,d=!0)}let c=l.lastIndexOf("@");if(c===-1)return null;let h=l.slice(0,c),u=l.slice(c+1),m="",y="443";if(u.startsWith("[")){let g=u.indexOf("]");if(g!==-1){m=u.slice(0,g+1);let I=u.slice(g+1);I.startsWith(":")&&(y=I.slice(1))}else m=u}else{let g=u.lastIndexOf(":");g!==-1?(m=u.slice(0,g),y=u.slice(g+1)):m=u}if(m=m.trim(),!m||m.includes("?")||m.includes("/")||m.includes("#")||m.includes(" "))return null;let w=h.trim();if(h.includes(":")){let g=h.split(":"),I=R=>/^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(R);I(g[0])?w=g[0]:I(g[1])?w=g[1]:g[0].length>=32?w=g[0]:w=g[1]||g[0]}if(!w||w.length<6||w.includes("?")||w.includes("/")||w.includes("#"))return null;let T=new URLSearchParams(s);return n||(n=T.get("remarks")||T.get("remark")||T.get("name")||""),{isBase64Encoded:d,userInfo:h,uuid:w,host:m,port:y,queryStr:s,searchParams:T,remark:n}}catch(e){return console.error("Error in parseSingleVless:",e),null}}var Ke={fieldAliases:{security:["security","tls"],sni:["sni","peer","obfsParam","host"],host:["host","obfsParam","peer","sni"],fp:["fp","fingerprint"],type:["type","net","obfs","network"],path:["path"],pbk:["pbk","publicKey"],sid:["sid","shortId"],spx:["spx","spiderX"],serviceName:["serviceName","service_name"],mode:["mode"],flow:["flow"],alpn:["alpn"],allowInsecure:["allowInsecure","insecure"],headerType:["headerType","header_type"],seed:["seed","kcpSeed"],quicSecurity:["quicSecurity","quic_security"],key:["key","quicKey"]},valueTransformers:{type:{xhttp:"xhttp",splithttp:"xhttp",websocket:"ws",ws:"ws",httpupgrade:"httpupgrade",grpc:"grpc",gun:"grpc",multi:"grpc",http:"tcp",tcp:"tcp",raw:"tcp",h2:"h2",kcp:"kcp",mkcp:"kcp",quic:"quic"},security:{1:"tls",true:"tls",tls:"tls",reality:"reality",none:"none",0:"none",false:"none"}},tlsDefaultPorts:["443","8443","2053","2083","2087","2096"]};function Mt(o){if(!o||typeof o!="string")return!1;let e=o.trim().replace(/^\[|\]$/g,"");return!!(/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})$/.test(e)||(e.match(/:/g)||[]).length>=2)}function Ye(o){if(!o||typeof o!="string")return"";let e=o.trim();return e.startsWith("[")&&e.endsWith("]")?e:(e.match(/:/g)||[]).length>=2?`[${e}]`:e}function A(o,e=[]){if(!o||!Array.isArray(e))return"";for(let t of e)if(o.has(t)){let n=o.get(t);if(n!=null&&n!=="")return n}return""}function Et(o,e={}){if(!o||!o.uuid)return"";try{let t=e.host||o.host||"",n=Ye(t),a=e.port||o.port||"443",s=e.remark!==void 0?e.remark:o.remark||"",i=o.searchParams||new URLSearchParams(o.queryStr||""),l=new URLSearchParams,{fieldAliases:d,valueTransformers:c,tlsDefaultPorts:h}=Ke,u=A(i,d.pbk),m=A(i,d.security),y=c.security[m.toLowerCase()]||m;u?y="reality":y||(y=h.includes(a)?"tls":"none"),l.set("security",y),l.set("encryption",i.get("encryption")||"none");let w=A(i,d.type),T=c.type[w.toLowerCase()];T||(i.has("path")&&w!=="tcp"?T="ws":y==="reality"?T="tcp":w?T=w:T="tcp"),l.set("type",T);let g=A(i,d.headerType);g&&l.set("headerType",g);let I=A(i,d.flow);I&&T==="tcp"&&l.set("flow",I);let R=A(i,d.alpn);R&&l.set("alpn",R);let X=A(i,d.allowInsecure);X&&l.set("allowInsecure",X);let et=A(i,d.seed);et&&l.set("seed",et);let q=A(i,d.quicSecurity);q&&l.set("quicSecurity",q);let N=A(i,d.key);N&&l.set("key",N);let Tt=Mt(o.host)?"":o.host,mt=A(i,d.sni),G=A(i,d.host),Q=mt||Tt,D=G||Tt;Mt(Q)&&!Mt(D)&&(Q=D),Q&&y!=="none"&&l.set("sni",Q);let H=["ws","xhttp","splithttp","httpupgrade","h2"].includes(T)||T==="tcp"&&g==="http";H&&D&&l.set("host",D);let ot=A(i,d.fp);ot&&l.set("fp",ot);let V=A(i,d.path);if(V&&(H||T==="ws"||T==="xhttp")&&(V=we(V),V.startsWith("/")||(V="/"+V),l.set("path",V)),y==="reality"){let J=A(i,d.pbk);J&&l.set("pbk",J);let B=A(i,d.sid);B&&l.set("sid",B);let P=A(i,d.spx);P&&l.set("spx",P)}if(T==="grpc"){let J=A(i,d.serviceName);J&&l.set("serviceName",J);let B=A(i,d.mode);B&&l.set("mode",B)}let nt=l.toString().replace(/%2F/g,"/"),rt=nt?`?${nt}`:"",it=s?`#${Je(s)}`:"";return`vless://${o.uuid}@${n}:${a}${rt}${it}`}catch(t){return console.error("Error in buildStandardVless:",t),""}}function Xe(o){if(!o||typeof o!="string")return null;let e=o.trim();if(!e.toLowerCase().startsWith("vless="))return null;try{let n=e.slice(6).trim().split(",").map(u=>u.trim());if(n.length===0)return null;let a=n[0],s={};for(let u=1;u<n.length;u++){let m=n[u],y=m.indexOf("=");y!==-1&&(s[m.slice(0,y).trim().toLowerCase()]=m.slice(y+1).trim())}let i=s.password||s.uuid||"";if(!i)return null;let l=a,d="443";if(a.includes(":")){let u=a.lastIndexOf(":");l=a.slice(0,u),d=a.slice(u+1)}let c=new URLSearchParams,h=s.tls==="true"||s.tls==="1";return c.set("security",h?"tls":"none"),c.set("type",s.obfs||"ws"),s["obfs-host"]&&c.set("host",s["obfs-host"]),s["obfs-uri"]&&c.set("path",s["obfs-uri"]),s.pbk&&(c.set("security","reality"),c.set("pbk",s.pbk)),s.sid&&c.set("sid",s.sid),Et({uuid:i,host:l,port:d,remark:s.tag||"",searchParams:c})}catch{return null}}function ke(o){if(!o||typeof o!="string")return"";try{let e=o.trim();if(!e||e.startsWith("#")||e.startsWith("//")||e.startsWith(";")||e.startsWith("!"))return"";if(e.toLowerCase().startsWith("vless=")){let t=Xe(e);if(t)return t}if(e.toLowerCase().startsWith("vless://")){let t=ve(e);if(t&&t.uuid&&t.port){let n=Et(t);if(n)return n}return e}if(!e.includes("://")){let t=at(e);if(t&&(t.includes("://")||t.toLowerCase().includes("vless=")))return t.replace(/\r\n|\r/g,`
+    ${p}
+  </svg>`;return"data:image/svg+xml;utf8,"+encodeURIComponent(h)}async function me(t,e,o){let n=He(4),a=Je(n),s=await e(t),i=Date.now()+300*1e3,l=o(`${n.toUpperCase()}:${i}`,s);return{svgDataUri:a,captchaToken:l}}async function he(t,e,o,n,a){if(!t||!e)return!1;try{let s=await n(o),i=a(e.trim(),s);if(!i||!i.includes(":"))return!1;let[l,p]=i.split(":"),c=parseInt(p,10);return Date.now()>c?!1:t.trim().toUpperCase()===l.trim().toUpperCase()}catch{return!1}}function be(t){if(!t||typeof t!="string")return"";try{return decodeURIComponent(t)}catch{return t}}function ye(t){if(!t||typeof t!="string")return null;try{let e=t.trim();if(!e)return null;if(!e.startsWith("vless://")){let f=et(e);return f&&f.includes("vless://")?we(f):null}let o=e.slice(8).trim();if(!o.includes("@")&&!o.includes("?")&&!o.includes("#")){let f=et(o);f&&f.includes("@")&&(f.includes(":")||f.includes("?"))&&(o=f.trim())}let n="",a=o.indexOf("#");a!==-1&&(n=be(o.slice(a+1)),o=o.slice(0,a));let s="",i=o.indexOf("?");i!==-1&&(s=o.slice(i+1),o=o.slice(0,i));let l=o,p=!1;if(!l.includes("@")){let f=et(l);f&&f.includes("@")&&(l=f,p=!0)}let c=l.lastIndexOf("@");if(c===-1)return null;let h=l.slice(0,c),u=l.slice(c+1),m="",v="443";if(u.startsWith("[")){let f=u.indexOf("]");if(f!==-1){m=u.slice(0,f+1);let B=u.slice(f+1);B.startsWith(":")&&(v=B.slice(1))}else m=u}else{let f=u.lastIndexOf(":");f!==-1?(m=u.slice(0,f),v=u.slice(f+1)):m=u}if(m=m.trim(),!m||m.includes("?")||m.includes("/")||m.includes("#")||m.includes(" "))return null;let w=h.trim();if(h.includes(":")){let f=h.split(":"),B=M=>/^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(M);B(f[0])?w=f[0]:B(f[1])?w=f[1]:f[0].length>=32?w=f[0]:w=f[1]||f[0]}if(!w||w.length<6||w.includes("?")||w.includes("/")||w.includes("#"))return null;let I=new URLSearchParams(s);return n||(n=I.get("remarks")||I.get("remark")||I.get("name")||""),{isBase64Encoded:p,userInfo:h,uuid:w,host:m,port:v,queryStr:s,searchParams:I,remark:n}}catch(e){return console.error("Error in parseSingleVless:",e),null}}var Ke={fieldAliases:{security:["security","tls"],sni:["sni","peer","obfsParam","host"],host:["host","obfsParam","peer","sni"],fp:["fp","fingerprint"],type:["type","net","obfs","network"],path:["path"],pbk:["pbk","publicKey"],sid:["sid","shortId"],spx:["spx","spiderX"],serviceName:["serviceName","service_name"],mode:["mode"],flow:["flow"],alpn:["alpn"],allowInsecure:["allowInsecure","insecure"],headerType:["headerType","header_type"],seed:["seed","kcpSeed"],quicSecurity:["quicSecurity","quic_security"],key:["key","quicKey"]},valueTransformers:{type:{xhttp:"xhttp",splithttp:"xhttp",websocket:"ws",ws:"ws",httpupgrade:"httpupgrade",grpc:"grpc",gun:"grpc",multi:"grpc",http:"tcp",tcp:"tcp",raw:"tcp",h2:"h2",kcp:"kcp",mkcp:"kcp",quic:"quic"},security:{1:"tls",true:"tls",tls:"tls",reality:"reality",none:"none",0:"none",false:"none"}},tlsDefaultPorts:["443","8443","2053","2083","2087","2096"]};function Rt(t){if(!t||typeof t!="string")return!1;let e=t.trim().replace(/^\[|\]$/g,"");return!!(/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})$/.test(e)||(e.match(/:/g)||[]).length>=2)}function Ge(t){if(!t||typeof t!="string")return"";let e=t.trim();return e.startsWith("[")&&e.endsWith("]")?e:(e.match(/:/g)||[]).length>=2?`[${e}]`:e}function z(t,e=[]){if(!t||!Array.isArray(e))return"";for(let o of e)if(t.has(o)){let n=t.get(o);if(n!=null&&n!=="")return n}return""}function Tt(t,e={}){if(!t||!t.uuid)return"";try{let o=e.host||t.host||"",n=Ge(o),a=e.port||t.port||"443",s=e.remark!==void 0?e.remark:t.remark||"",i=t.searchParams||new URLSearchParams(t.queryStr||""),l=new URLSearchParams,{fieldAliases:p,valueTransformers:c,tlsDefaultPorts:h}=Ke,u=z(i,p.pbk),m=z(i,p.security),v=c.security[m.toLowerCase()]||m;u?v="reality":v||(v=h.includes(a)?"tls":"none"),l.set("security",v),l.set("encryption",i.get("encryption")||"none");let w=z(i,p.type),I=c.type[w.toLowerCase()];I||(i.has("path")&&w!=="tcp"?I="ws":v==="reality"?I="tcp":w?I=w:I="tcp"),l.set("type",I);let f=z(i,p.headerType);f&&l.set("headerType",f);let B=z(i,p.flow);B&&I==="tcp"&&l.set("flow",B);let M=z(i,p.alpn);M&&l.set("alpn",M);let K=z(i,p.allowInsecure);K&&l.set("allowInsecure",K);let X=z(i,p.seed);X&&l.set("seed",X);let G=z(i,p.quicSecurity);G&&l.set("quicSecurity",G);let L=z(i,p.key);L&&l.set("key",L);let D=Rt(t.host)?"":t.host,St=z(i,p.sni),ht=z(i,p.host),F=St||D,Q=ht||D;Rt(F)&&!Rt(Q)&&(F=Q),F&&v!=="none"&&l.set("sni",F);let W=["ws","xhttp","splithttp","httpupgrade","h2"].includes(I)||I==="tcp"&&f==="http";W&&Q&&l.set("host",Q);let H=z(i,p.fp);H&&l.set("fp",H);let _=z(i,p.path);if(_&&(W||I==="ws"||I==="xhttp")&&(_=be(_),_.startsWith("/")||(_="/"+_),l.set("path",_)),v==="reality"){let E=z(i,p.pbk);E&&l.set("pbk",E);let S=z(i,p.sid);S&&l.set("sid",S);let x=z(i,p.spx);x&&l.set("spx",x)}if(I==="grpc"){let E=z(i,p.serviceName);E&&l.set("serviceName",E);let S=z(i,p.mode);S&&l.set("mode",S)}let nt=l.toString().replace(/%2F/g,"/"),dt=nt?`?${nt}`:"",at=String(s||"").replace(/[\r\n#]/g,"").trim(),bt=at?`#${at}`:"";return`vless://${t.uuid}@${n}:${a}${dt}${bt}`}catch(o){return console.error("Error in buildStandardVless:",o),""}}function qe(t){if(!t||typeof t!="string")return null;let e=t.trim();if(!e.toLowerCase().startsWith("vless="))return null;try{let n=e.slice(6).trim().split(",").map(u=>u.trim());if(n.length===0)return null;let a=n[0],s={};for(let u=1;u<n.length;u++){let m=n[u],v=m.indexOf("=");v!==-1&&(s[m.slice(0,v).trim().toLowerCase()]=m.slice(v+1).trim())}let i=s.password||s.uuid||"";if(!i)return null;let l=a,p="443";if(a.includes(":")){let u=a.lastIndexOf(":");l=a.slice(0,u),p=a.slice(u+1)}let c=new URLSearchParams,h=s.tls==="true"||s.tls==="1";return c.set("security",h?"tls":"none"),c.set("type",s.obfs||"ws"),s["obfs-host"]&&c.set("host",s["obfs-host"]),s["obfs-uri"]&&c.set("path",s["obfs-uri"]),s.pbk&&(c.set("security","reality"),c.set("pbk",s.pbk)),s.sid&&c.set("sid",s.sid),Tt({uuid:i,host:l,port:p,remark:s.tag||"",searchParams:c})}catch{return null}}function xe(t){if(!t||typeof t!="string")return"";try{let e=t.trim();if(!e||e.startsWith("#")||e.startsWith("//")||e.startsWith(";")||e.startsWith("!"))return"";if(e.toLowerCase().startsWith("vless=")){let o=qe(e);if(o)return o}if(e.toLowerCase().startsWith("vless://")){let o=ye(e);if(o&&o.uuid&&o.port){let n=Tt(o);if(n)return n}return e}if(!e.includes("://")){let o=et(e);if(o&&(o.includes("://")||o.toLowerCase().includes("vless=")))return o.replace(/\r\n|\r/g,`
 `).split(`
-`).map(s=>s.trim()).filter(Boolean).map(ke).filter(Boolean).join(`
-`)}return e.includes("://")?e:""}catch(e){return console.error("Error in standardizeNode:",e),String(o||"").trim()}}function yt(o){if(!o)return[];try{let e="";if(Array.isArray(o)?e=o.join(`
-`):e=String(o||""),!e.includes("://")){let a=at(e.trim());a&&a.includes("://")&&(e=a)}let t=e.replace(/\r\n|\r/g,`
+`).map(s=>s.trim()).filter(Boolean).map(xe).filter(Boolean).join(`
+`)}return e.includes("://")?e:""}catch(e){return console.error("Error in standardizeNode:",e),String(t||"").trim()}}function Ot(t){if(!t)return[];try{let e="";if(Array.isArray(t)?e=t.join(`
+`):e=String(t||""),!e.includes("://")){let a=et(e.trim());a&&a.includes("://")&&(e=a)}let o=e.replace(/\r\n|\r/g,`
 `).split(`
-`).map(a=>a.trim()).filter(Boolean),n=[];for(let a of t){let s=ke(a);if(s){let i=s.split(`
-`).map(l=>l.trim()).filter(Boolean);n.push(...i)}}return[...new Set(n)]}catch(e){return console.error("Error in standardizeNodesText:",e),Array.isArray(o)?o.map(String).filter(Boolean):String(o||"").split(`
-`).map(t=>t.trim()).filter(Boolean)}}function Te(o){if(!o||typeof o!="string")return null;let e=o.trim();if(!e)return null;if(!e.startsWith("vless://")){let n=at(e);n&&n.includes("vless://")&&(e=n.trim())}let t=e.replace(/\r\n|\r/g,`
+`).map(a=>a.trim()).filter(Boolean),n=[];for(let a of o){let s=xe(a);if(s){let i=s.split(`
+`).map(l=>l.trim()).filter(Boolean);n.push(...i)}}return[...new Set(n)]}catch(e){return console.error("Error in standardizeNodesText:",e),Array.isArray(t)?t.map(String).filter(Boolean):String(t||"").split(`
+`).map(o=>o.trim()).filter(Boolean)}}function we(t){if(!t||typeof t!="string")return null;let e=t.trim();if(!e)return null;if(!e.startsWith("vless://")){let n=et(e);n&&n.includes("vless://")&&(e=n.trim())}let o=e.replace(/\r\n|\r/g,`
 `).split(`
-`);for(let n of t){if(n=n.trim(),!n)continue;let a=ve(n);if(a&&a.uuid&&a.port)return a}return null}function qe(o){let e=o.trim();if(!e)return"";if(e.startsWith("[")){let a=e.match(/^\[([^\]]+)\](?::\d+)?/);if(a)return`[${a[1]}]`}if((e.match(/:/g)||[]).length>=2)return`[${e}]`;let t=e.match(/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})(?::\d+)?/);if(t)return t[1];let n=e.match(/^([a-zA-Z0-9.-]+)(?::\d+)?/);return n?n[1]:e.split(":")[0].trim()}async function Bt(o,e,t="base64"){if(!o)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let n=Te(o);if(!n)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let s=(e||[]).filter(u=>u&&u.url&&u.enabled!==!1).map(async u=>{try{let m=new AbortController,y=setTimeout(()=>m.abort(),2500),w=await fetch(u.url,{signal:m.signal,headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"}});if(clearTimeout(y),!w.ok)return{source:u,text:""};let T=await w.text();return{source:u,text:T}}catch{return{source:u,text:""}}}),i=await Promise.all(s),l=[];i.forEach(({source:u,text:m})=>{if(!m)return;m.replace(/,|\r\n|\r/g,`
+`);for(let n of o){if(n=n.trim(),!n)continue;let a=ye(n);if(a&&a.uuid&&a.port)return a}return null}function Ye(t){let e=t.trim();if(!e)return"";if(e.startsWith("[")){let a=e.match(/^\[([^\]]+)\](?::\d+)?/);if(a)return`[${a[1]}]`}if((e.match(/:/g)||[]).length>=2)return`[${e}]`;let o=e.match(/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})(?::\d+)?/);if(o)return o[1];let n=e.match(/^([a-zA-Z0-9.-]+)(?::\d+)?/);return n?n[1]:e.split(":")[0].trim()}async function Ut(t,e,o="base64"){if(!t)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let n=we(t);if(!n)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let s=(e||[]).filter(u=>u&&(u.url||u.content)&&u.enabled!==!1).map(async u=>{if(u.content&&typeof u.content=="string")return{source:u,text:u.content};if(!u.url)return{source:u,text:""};try{let m=new AbortController,v=setTimeout(()=>m.abort(),2500),w=await fetch(u.url,{signal:m.signal,headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"}});if(clearTimeout(v),!w.ok)return{source:u,text:""};let I=await w.text();return{source:u,text:I}}catch{return{source:u,text:""}}}),i=await Promise.all(s),l=[];i.forEach(({source:u,text:m})=>{if(!m)return;m.replace(/,|\r\n|\r/g,`
 `).split(`
-`).forEach(w=>{if(w=w.trim(),!w)return;let T="",g="";if(w.includes("#")){let N=w.split("#");T=N[0].trim(),g=N.slice(1).join("#").trim()}else T=w.trim();let I=qe(T);if(!I)return;let R="";g?R=g.replace(/^CF\s*/i,"").trim():u&&u.name&&!u.name.startsWith("\u6E90-")&&!u.name.startsWith("http")&&(R=u.name.replace(/\s*\(.*?\)/g,"").trim());let X=I.replace(/^\[|\]$/g,""),et=R?`${R}-${X}`:X,q=Et(n,{host:I,remark:et});q&&l.push(q)})});let d=[...new Set(l)];d.length===0&&d.push(Et(n));let c=d.join(`
-`),h=t==="base64"?dt(c):c;return new Response(h,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate, max-age=0",Pragma:"no-cache","Access-Control-Allow-Origin":"*","Subscription-Userinfo":"upload=0; download=0; total=1073741824000; expire=0","Profile-Update-Interval":"24"}})}async function Ce(o,e,t,n="",a=[]){let s=new URL(o.url),i=s.searchParams.get("type")||"",l=s.searchParams.get("format")||"base64";if(i==="custom"){let u=(s.searchParams.get("group")||"").toLowerCase(),m=a;u&&(m=a.filter(I=>I.id.toLowerCase()===u));let y=[];if(m.forEach(I=>{let R=yt(I.nodes);y.push(...R)}),y.length===0)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let T=[...new Set(y)].join(`
-`),g=l==="base64"?dt(T):T;return new Response(g,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate, max-age=0",Pragma:"no-cache","Access-Control-Allow-Origin":"*","Subscription-Userinfo":"upload=0; download=0; total=1073741824000; expire=0","Profile-Update-Interval":"24"}})}let d=s.searchParams.get("base")||n||e.BASE_VLESS;if(!d){let u=[];if(a.forEach(m=>{let y=yt(m.nodes);u.push(...y)}),u.length>0){let y=[...new Set(u)].join(`
-`),w=l==="base64"?dt(y):y;return new Response(w,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate, max-age=0",Pragma:"no-cache","Access-Control-Allow-Origin":"*","Subscription-Userinfo":"upload=0; download=0; total=1073741824000; expire=0","Profile-Update-Interval":"24"}})}return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let c=(s.searchParams.get("isp")||"").toLowerCase(),h=[];return c?(h=t.filter(u=>u.id.toLowerCase()===c),h.length===0&&(h=t)):h=t,await Bt(d,h,l)}function Ie(o){return o==null?"":String(o).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function At(o="",e="",t="",n=0){let a=n>0;return`<!DOCTYPE html>
+`).forEach(w=>{if(w=w.trim(),!w)return;let I="",f="";if(w.includes("#")){let L=w.split("#");I=L[0].trim(),f=L.slice(1).join("#").trim()}else I=w.trim();let B=Ye(I);if(!B)return;let M="";f?M=f.replace(/^CF\s*/i,"").trim():u&&u.name&&!u.name.startsWith("\u6E90-")&&!u.name.startsWith("http")&&(M=u.name.replace(/\s*\(.*?\)/g,"").trim());let K=B.replace(/^\[|\]$/g,""),X=M?`${M}-${K}`:K,G=Tt(n,{host:B,remark:X});G&&l.push(G)})});let p=[...new Set(l)];p.length===0&&p.push(Tt(n));let c=p.join(`
+`),h=o==="base64"?xt(c):c;return new Response(h,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate, max-age=0",Pragma:"no-cache","Access-Control-Allow-Origin":"*","Subscription-Userinfo":"upload=0; download=0; total=1073741824000; expire=0","Profile-Update-Interval":"24"}})}function ve(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function It(t="",e="",o="",n=0){let a=n>0;return`<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -274,9 +272,9 @@ var Jt="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Kt=(o=
     <div class="card-icon">\u26A1</div>
     <h2>\u767B\u9646\u9762\u677F</h2>
     <p class="subtitle">\u8BF7\u8F93\u5165\u7BA1\u7406\u5458\u5BC6\u7801\u53CA\u9A8C\u8BC1\u7801\u4EE5\u8FDB\u5165\u63A7\u5236\u9762\u677F</p>
-    ${o?`<div class="error-msg" id="error-alert">${Ie(o)}</div>`:""}
+    ${t?`<div class="error-msg" id="error-alert">${ve(t)}</div>`:""}
     <form method="POST" id="login-form">
-      <input type="hidden" name="captcha_token" id="captcha-token-input" value="${Ie(t)}" />
+      <input type="hidden" name="captcha_token" id="captcha-token-input" value="${ve(o)}" />
       
       <div class="form-group">
         <label for="password">\u7BA1\u7406\u5458\u5BC6\u7801</label>
@@ -371,14 +369,14 @@ var Jt="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Kt=(o=
     }
   <\/script>
 </body>
-</html>`}function zt({hasKV:o=!1,hasAdmin:e=!1}={}){let t="\u7CFB\u7EDF\u521D\u59CB\u5316\u914D\u7F6E\u672A\u5B8C\u6210",n="\u51FA\u4E8E\u5B89\u5168\u9632\u62A4\u4E0E\u6570\u636E\u6301\u4E45\u5316\u8981\u6C42\uFF0C\u5F53\u524D\u670D\u52A1\u5DF2\u963B\u6B62\u76F4\u63A5\u8FDB\u5165\u63A7\u5236\u53F0",a="\u26A1",s="";!o&&!e?(t="\u672A\u7ED1\u5B9A KV \u4E14\u672A\u914D\u7F6E\u5BC6\u7801",a="\u26A0\uFE0F",s="\u7CFB\u7EDF\u68C0\u6D4B\u5230\u65E2\u672A\u7ED1\u5B9A <code>KV</code> \u5B58\u50A8\u6570\u636E\u5E93\uFF0C\u4E5F\u672A\u8BBE\u7F6E <code>ADMIN</code> \u7BA1\u7406\u5458\u5BC6\u7801\u3002\u7CFB\u7EDF\u65E0\u6CD5\u6301\u4E45\u5316\u8282\u70B9\u914D\u7F6E\uFF0C\u4E14\u672A\u6388\u6743\u76F4\u63A5\u8BBF\u95EE\u5B58\u5728\u5B89\u5168\u9690\u60A3\u3002"):o?(t="\u672A\u914D\u7F6E\u7BA1\u7406\u5458\u5BC6\u7801",a="\u{1F510}",s="\u7CFB\u7EDF\u672A\u68C0\u6D4B\u5230 <code>ADMIN</code> \u73AF\u5883\u53D8\u91CF\u3002\u4E3A\u907F\u514D\u672A\u6388\u6743\u8BBF\u95EE\u53CA\u8282\u70B9\u914D\u7F6E\u6CC4\u9732\uFF0C\u5FC5\u987B\u5148\u5728 Cloudflare \u540E\u53F0\u8BBE\u7F6E\u7BA1\u7406\u5458\u5BC6\u7801\u3002"):(t="\u672A\u7ED1\u5B9A KV \u547D\u540D\u7A7A\u95F4",a="\u{1F5C4}\uFE0F",s="\u7CFB\u7EDF\u68C0\u6D4B\u5230\u5C1A\u672A\u7ED1\u5B9A <code>KV</code> \u547D\u540D\u7A7A\u95F4\u3002\u6240\u6709\u8282\u70B9\u6570\u636E\u3001\u4F18\u9009\u6E90\u53CA\u52A0\u5BC6\u5BC6\u94A5\u5747\u4F9D\u8D56 Cloudflare KV \u8FDB\u884C\u6301\u4E45\u5316\u52A0\u5BC6\u5B58\u50A8\uFF0C\u672A\u7ED1\u5B9A KV \u7CFB\u7EDF\u65E0\u6CD5\u6B63\u5E38\u8FD0\u884C\u3002");let i=[];return!o&&!e?(i.push("\u5728 Cloudflare \u63A7\u5236\u53F0\u5DE6\u4FA7\u5BFC\u822A\u680F\u70B9\u51FB <strong>\u201C\u5B58\u50A8\u4E0E\u6570\u636E\u5E93\u201D</strong> -> <strong>\u201CKV\u201D</strong> -> \u70B9\u51FB <strong>\u201C\u521B\u5EFA\u547D\u540D\u7A7A\u95F4\u201D</strong>\uFF08\u540D\u79F0\u586B\u5199 <code>KV</code>\uFF09\u3002"),i.push("\u8FDB\u5165 <strong>Workers \u548C Pages</strong> -> \u9009\u62E9\u5F53\u524D Worker -> \u70B9\u51FB <strong>\u8BBE\u7F6E (Settings)</strong> -> <strong>\u53D8\u91CF\u4E0E\u673A\u5BC6 (Variables and Secrets)</strong>\u3002"),i.push("\u5728 <strong>KV \u547D\u540D\u7A7A\u95F4\u7ED1\u5B9A</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0\u7ED1\u5B9A</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u5FC5\u987B\u4E25\u683C\u586B\u5199\u4E3A <code>KV</code>\uFF0C\u9009\u62E9\u521A\u521B\u5EFA\u7684 KV \u547D\u540D\u7A7A\u95F4\u3002"),i.push("\u5728\u4E0B\u65B9 <strong>\u73AF\u5883\u53D8\u91CF</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u586B\u5199 <code>ADMIN</code>\uFF0C\u53D8\u91CF\u503C\u586B\u5199\u60A8\u7684\u7BA1\u7406\u5BC6\u7801\u3002"),i.push("\u70B9\u51FB <strong>\u4FDD\u5B58\u5E76\u90E8\u7F72</strong>\uFF0C\u5B8C\u6210\u540E\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u5237\u65B0\u9875\u9762\u3002")):o?(i.push("\u767B\u5F55 <strong>Cloudflare \u63A7\u5236\u53F0</strong> \u5E76\u8FDB\u5165 <strong>Workers \u548C Pages</strong>\uFF0C\u70B9\u51FB\u8FDB\u5165\u5F53\u524D Worker\u3002"),i.push("\u5207\u6362\u81F3 <strong>\u8BBE\u7F6E (Settings)</strong> \u9009\u9879\u5361 -> \u9009\u62E9 <strong>\u53D8\u91CF\u4E0E\u673A\u5BC6 (Variables and Secrets)</strong>\u3002"),i.push("\u5728 <strong>\u73AF\u5883\u53D8\u91CF</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u586B\u5199 <code>ADMIN</code>\uFF0C\u53D8\u91CF\u503C\u586B\u5199\u60A8\u7684\u7BA1\u7406\u5BC6\u7801\u3002"),i.push("\u70B9\u51FB <strong>\u4FDD\u5B58\u5E76\u90E8\u7F72</strong>\uFF0C\u5B8C\u6210\u540E\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u5237\u65B0\u9875\u9762\u3002")):(i.push("\u5728 Cloudflare \u63A7\u5236\u53F0\u5DE6\u4FA7\u5BFC\u822A\u680F\u70B9\u51FB <strong>\u201C\u5B58\u50A8\u4E0E\u6570\u636E\u5E93\u201D</strong> -> <strong>\u201CKV\u201D</strong> -> \u70B9\u51FB <strong>\u201C\u521B\u5EFA\u547D\u540D\u7A7A\u95F4\u201D</strong>\uFF08\u540D\u79F0\u586B\u5199 <code>KV</code>\uFF09\u3002"),i.push("\u8FDB\u5165 <strong>Workers \u548C Pages</strong> -> \u9009\u62E9\u5F53\u524D Worker -> \u70B9\u51FB <strong>\u8BBE\u7F6E (Settings)</strong> -> <strong>\u53D8\u91CF\u4E0E\u673A\u5BC6 (Variables and Secrets)</strong>\u3002"),i.push("\u5728 <strong>KV \u547D\u540D\u7A7A\u95F4\u7ED1\u5B9A</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0\u7ED1\u5B9A</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u5FC5\u987B\u4E25\u683C\u586B\u5199\u4E3A <code>KV</code>\uFF0C\u9009\u62E9\u521A\u521B\u5EFA\u7684 KV \u547D\u540D\u7A7A\u95F4\u3002"),i.push("\u70B9\u51FB <strong>\u4FDD\u5B58\u5E76\u90E8\u7F72</strong>\uFF0C\u5B8C\u6210\u540E\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u5237\u65B0\u9875\u9762\u3002")),`<!DOCTYPE html>
+</html>`}function Ct({hasKV:t=!1,hasAdmin:e=!1}={}){let o="\u7CFB\u7EDF\u521D\u59CB\u5316\u914D\u7F6E\u672A\u5B8C\u6210",n="\u51FA\u4E8E\u5B89\u5168\u9632\u62A4\u4E0E\u6570\u636E\u6301\u4E45\u5316\u8981\u6C42\uFF0C\u5F53\u524D\u670D\u52A1\u5DF2\u963B\u6B62\u76F4\u63A5\u8FDB\u5165\u63A7\u5236\u53F0",a="\u26A1",s="";!t&&!e?(o="\u672A\u7ED1\u5B9A KV \u4E14\u672A\u914D\u7F6E\u5BC6\u7801",a="\u26A0\uFE0F",s="\u7CFB\u7EDF\u68C0\u6D4B\u5230\u65E2\u672A\u7ED1\u5B9A <code>KV</code> \u5B58\u50A8\u6570\u636E\u5E93\uFF0C\u4E5F\u672A\u8BBE\u7F6E <code>ADMIN</code> \u7BA1\u7406\u5458\u5BC6\u7801\u3002\u7CFB\u7EDF\u65E0\u6CD5\u6301\u4E45\u5316\u8282\u70B9\u914D\u7F6E\uFF0C\u4E14\u672A\u6388\u6743\u76F4\u63A5\u8BBF\u95EE\u5B58\u5728\u5B89\u5168\u9690\u60A3\u3002"):t?(o="\u672A\u914D\u7F6E\u7BA1\u7406\u5458\u5BC6\u7801",a="\u{1F510}",s="\u7CFB\u7EDF\u672A\u68C0\u6D4B\u5230 <code>ADMIN</code> \u73AF\u5883\u53D8\u91CF\u3002\u4E3A\u907F\u514D\u672A\u6388\u6743\u8BBF\u95EE\u53CA\u8282\u70B9\u914D\u7F6E\u6CC4\u9732\uFF0C\u5FC5\u987B\u5148\u5728 Cloudflare \u540E\u53F0\u8BBE\u7F6E\u7BA1\u7406\u5458\u5BC6\u7801\u3002"):(o="\u672A\u7ED1\u5B9A KV \u547D\u540D\u7A7A\u95F4",a="\u{1F5C4}\uFE0F",s="\u7CFB\u7EDF\u68C0\u6D4B\u5230\u5C1A\u672A\u7ED1\u5B9A <code>KV</code> \u547D\u540D\u7A7A\u95F4\u3002\u6240\u6709\u8282\u70B9\u6570\u636E\u3001\u4F18\u9009\u6E90\u53CA\u52A0\u5BC6\u5BC6\u94A5\u5747\u4F9D\u8D56 Cloudflare KV \u8FDB\u884C\u6301\u4E45\u5316\u52A0\u5BC6\u5B58\u50A8\uFF0C\u672A\u7ED1\u5B9A KV \u7CFB\u7EDF\u65E0\u6CD5\u6B63\u5E38\u8FD0\u884C\u3002");let i=[];return!t&&!e?(i.push("\u5728 Cloudflare \u63A7\u5236\u53F0\u5DE6\u4FA7\u5BFC\u822A\u680F\u70B9\u51FB <strong>\u201C\u5B58\u50A8\u4E0E\u6570\u636E\u5E93\u201D</strong> -> <strong>\u201CKV\u201D</strong> -> \u70B9\u51FB <strong>\u201C\u521B\u5EFA\u547D\u540D\u7A7A\u95F4\u201D</strong>\uFF08\u540D\u79F0\u586B\u5199 <code>KV</code>\uFF09\u3002"),i.push("\u8FDB\u5165 <strong>Workers \u548C Pages</strong> -> \u9009\u62E9\u5F53\u524D Worker -> \u70B9\u51FB <strong>\u8BBE\u7F6E (Settings)</strong> -> <strong>\u53D8\u91CF\u4E0E\u673A\u5BC6 (Variables and Secrets)</strong>\u3002"),i.push("\u5728 <strong>KV \u547D\u540D\u7A7A\u95F4\u7ED1\u5B9A</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0\u7ED1\u5B9A</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u5FC5\u987B\u4E25\u683C\u586B\u5199\u4E3A <code>KV</code>\uFF0C\u9009\u62E9\u521A\u521B\u5EFA\u7684 KV \u547D\u540D\u7A7A\u95F4\u3002"),i.push("\u5728\u4E0B\u65B9 <strong>\u73AF\u5883\u53D8\u91CF</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u586B\u5199 <code>ADMIN</code>\uFF0C\u53D8\u91CF\u503C\u586B\u5199\u60A8\u7684\u7BA1\u7406\u5BC6\u7801\u3002"),i.push("\u70B9\u51FB <strong>\u4FDD\u5B58\u5E76\u90E8\u7F72</strong>\uFF0C\u5B8C\u6210\u540E\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u5237\u65B0\u9875\u9762\u3002")):t?(i.push("\u767B\u5F55 <strong>Cloudflare \u63A7\u5236\u53F0</strong> \u5E76\u8FDB\u5165 <strong>Workers \u548C Pages</strong>\uFF0C\u70B9\u51FB\u8FDB\u5165\u5F53\u524D Worker\u3002"),i.push("\u5207\u6362\u81F3 <strong>\u8BBE\u7F6E (Settings)</strong> \u9009\u9879\u5361 -> \u9009\u62E9 <strong>\u53D8\u91CF\u4E0E\u673A\u5BC6 (Variables and Secrets)</strong>\u3002"),i.push("\u5728 <strong>\u73AF\u5883\u53D8\u91CF</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u586B\u5199 <code>ADMIN</code>\uFF0C\u53D8\u91CF\u503C\u586B\u5199\u60A8\u7684\u7BA1\u7406\u5BC6\u7801\u3002"),i.push("\u70B9\u51FB <strong>\u4FDD\u5B58\u5E76\u90E8\u7F72</strong>\uFF0C\u5B8C\u6210\u540E\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u5237\u65B0\u9875\u9762\u3002")):(i.push("\u5728 Cloudflare \u63A7\u5236\u53F0\u5DE6\u4FA7\u5BFC\u822A\u680F\u70B9\u51FB <strong>\u201C\u5B58\u50A8\u4E0E\u6570\u636E\u5E93\u201D</strong> -> <strong>\u201CKV\u201D</strong> -> \u70B9\u51FB <strong>\u201C\u521B\u5EFA\u547D\u540D\u7A7A\u95F4\u201D</strong>\uFF08\u540D\u79F0\u586B\u5199 <code>KV</code>\uFF09\u3002"),i.push("\u8FDB\u5165 <strong>Workers \u548C Pages</strong> -> \u9009\u62E9\u5F53\u524D Worker -> \u70B9\u51FB <strong>\u8BBE\u7F6E (Settings)</strong> -> <strong>\u53D8\u91CF\u4E0E\u673A\u5BC6 (Variables and Secrets)</strong>\u3002"),i.push("\u5728 <strong>KV \u547D\u540D\u7A7A\u95F4\u7ED1\u5B9A</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0\u7ED1\u5B9A</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u5FC5\u987B\u4E25\u683C\u586B\u5199\u4E3A <code>KV</code>\uFF0C\u9009\u62E9\u521A\u521B\u5EFA\u7684 KV \u547D\u540D\u7A7A\u95F4\u3002"),i.push("\u70B9\u51FB <strong>\u4FDD\u5B58\u5E76\u90E8\u7F72</strong>\uFF0C\u5B8C\u6210\u540E\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u5237\u65B0\u9875\u9762\u3002")),`<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="cloudflare-insights-beacon" content="false">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>\u26A1</text></svg>">
-  <title>${t} - \u8282\u70B9\u7BA1\u7406\u7CFB\u7EDF</title>
+  <title>${o} - \u8282\u70B9\u7BA1\u7406\u7CFB\u7EDF</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -572,12 +570,12 @@ var Jt="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Kt=(o=
 <body>
   <div class="card">
     <div class="card-icon">${a}</div>
-    <h2>${t}</h2>
+    <h2>${o}</h2>
     <p class="subtitle">${n}</p>
 
     <div class="status-box">
-      <div class="status-item ${o?"status-ok":"status-err"}">
-        <span class="status-badge">${o?"\u2713 \u5DF2\u7ED1\u5B9A":"\u2715 \u672A\u7ED1\u5B9A"}</span>
+      <div class="status-item ${t?"status-ok":"status-err"}">
+        <span class="status-badge">${t?"\u2713 \u5DF2\u7ED1\u5B9A":"\u2715 \u672A\u7ED1\u5B9A"}</span>
         <span class="status-name">KV \u547D\u540D\u7A7A\u95F4 (KV)</span>
       </div>
       <div class="status-item ${e?"status-ok":"status-err"}">
@@ -611,7 +609,7 @@ var Jt="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Kt=(o=
     </div>
   </div>
 </body>
-</html>`}var Se=`
+</html>`}var ke=`
 :root {
   --bg-body: #f1f5f9;
   --bg-main: #f8fafc;
@@ -770,6 +768,52 @@ body {
   padding: 1px 6px;
   border-radius: 10px;
   font-weight: 600;
+}
+.badge-success-pill {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #059669 !important;
+}
+.badge-danger-pill {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #dc2626 !important;
+}
+.nav-item.active .badge-success-pill,
+.nav-item.active .badge-danger-pill {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+.quick-add-bar {
+  display: flex;
+  align-items: center;
+  margin: 14px 0 16px 0;
+  gap: 10px;
+}
+.quick-add-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.quick-add-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+  pointer-events: none;
+  z-index: 2;
+  user-select: none;
+}
+.quick-add-wrap .form-input {
+  padding-left: 36px !important;
+  height: 38px;
+}
+.batch-editor-panel {
+  background: var(--bg-main, #f8fafc);
+  border: 1px dashed var(--border-color, #cbd5e1);
+  border-radius: 8px;
+  padding: 14px;
+  margin: 12px 0 16px 0;
+  animation: fadeIn 0.2s ease;
 }
 .nav-badge-tag {
   font-size: 10px;
@@ -1017,6 +1061,41 @@ code {
   margin-bottom: 8px;
   display: block;
   font-weight: 500;
+}
+.form-input,
+input[type="text"]:not(.copy-input):not(.filter-input):not(.table-checkbox),
+input[type="password"],
+input[type="number"] {
+  width: 100%;
+  height: 38px;
+  padding: 0 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.25s ease;
+  box-sizing: border-box;
+}
+.form-input:focus,
+input[type="text"]:not(.copy-input):not(.filter-input):not(.table-checkbox):focus,
+input[type="password"]:focus,
+input[type="number"]:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  background: var(--bg-card);
+}
+.form-input::placeholder,
+input::placeholder {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.form-input:disabled,
+input:disabled {
+  background: var(--hover-bg);
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 .form-textarea {
   width: 100%;
@@ -1390,9 +1469,9 @@ code {
   box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
 }
 .pagination-select {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  color: #1e293b;
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  color: var(--text-main);
   padding: 4px 10px;
   border-radius: 6px;
   font-size: 12px;
@@ -1401,10 +1480,11 @@ code {
   outline: none;
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 .pagination-select:focus {
   border-color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
 }
 
 /* \u62BD\u5C49\u5F0F\u4FA7\u62C9\u5F39\u7A97\u6837\u5F0F (\u4ECE\u53F3\u8FB9\u63A8\u62C9\u6ED1\u51FA) */
@@ -2004,7 +2084,7 @@ code {
     padding: 18px;
   }
 }
-`;var Pe=`
+`;var Te=`
 // \u9875\u9762\u5185\u5168\u5C40\u7EC4\u6570\u636E
 const allGroupsData = JSON.parse(document.getElementById('data-plain-groups').textContent);
 const allCfGroupsData = JSON.parse(document.getElementById('data-cf-groups').textContent);
@@ -2169,7 +2249,7 @@ async function saveTgConfig() {
 }
 
 function randomGroupId() {
-  document.getElementById('form-group-id').value = generateRandomString(32);
+  document.getElementById('form-group-id').value = generateRandomString(12, 33);
 }
 
 function updateNodeStats() {
@@ -2212,8 +2292,22 @@ function closeGroupModal() {
   document.getElementById('group-modal').classList.remove('active');
 }
 
-function generateRandomString(length = 12) {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+function generateRandomString(minOrExact = 12, max = null) {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let length;
+  if (max === null) {
+    length = minOrExact;
+  } else {
+    const minLen = Math.min(minOrExact, max);
+    const maxLen = Math.max(minOrExact, max);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const lengthBytes = new Uint8Array(1);
+      crypto.getRandomValues(lengthBytes);
+      length = minLen + (lengthBytes[0] % (maxLen - minLen + 1));
+    } else {
+      length = Math.floor(Math.random() * (maxLen - minLen + 1)) + minLen;
+    }
+  }
   let result = '';
   try {
     if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
@@ -2231,35 +2325,29 @@ function generateRandomString(length = 12) {
   return result;
 }
 
-function randomSubPath() {
-  document.getElementById('cfg-sub-path').value = generateRandomString(12);
-}
-
 function randomToken() {
-  document.getElementById('cfg-token').value = generateRandomString(24);
+  document.getElementById('cfg-token').value = generateRandomString(12, 33);
 }
 
 function randomizeSecurityConfig() {
-  randomSubPath();
   randomToken();
 }
 
 async function saveSecurityConfig() {
-  const subPath = document.getElementById('cfg-sub-path').value.trim().replace(/^\\/+|\\/+$/g, '');
   const token = document.getElementById('cfg-token').value.trim();
   const rawCountries = document.getElementById('cfg-allowed-countries') ? document.getElementById('cfg-allowed-countries').value.trim() : '';
   const allowedCountries = rawCountries ? rawCountries.split(',').map(c => c.trim().toUpperCase()).filter(Boolean) : [];
   const proxyClientOnly = document.getElementById('cfg-proxy-client-only') ? document.getElementById('cfg-proxy-client-only').checked : true;
 
-  if (!subPath) {
-    showToast('\u8BA2\u9605\u8DEF\u5F84\u4E0D\u80FD\u4E3A\u7A7A\uFF01', 'error');
+  if (!token) {
+    showToast('\u8BA2\u9605\u9274\u6743\u4EE4\u724C (TOKEN) \u4E0D\u80FD\u4E3A\u7A7A\uFF01', 'error');
     return;
   }
 
   const res = await fetch('/api/security-config', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ subPath, token, allowedCountries, proxyClientOnly })
+    body: JSON.stringify({ token, allowedCountries, proxyClientOnly })
   });
 
   if (res.ok) {
@@ -2291,7 +2379,7 @@ function toggleMobileSidebar(show) {
 
 function switchTab(tabId, pushHash = true) {
   toggleMobileSidebar(false);
-  const validTabs = ['custom-sub', 'cf-sub', 'access-logs', 'security-config', 'tg-config'];
+  const validTabs = ['custom-sub', 'cf-sub', 'access-logs', 'ip-whitelist', 'ip-blacklist', 'security-config', 'tg-config'];
   if (!validTabs.includes(tabId)) {
     tabId = 'custom-sub';
   }
@@ -2310,7 +2398,9 @@ function switchTab(tabId, pushHash = true) {
   const titles = {
     'custom-sub': '\u{1F4E6} \u666E\u901A\u8BA2\u9605\u7BA1\u7406',
     'cf-sub': '\u26A1 CF \u4F18\u9009\u8BA2\u9605\u7BA1\u7406',
-    'access-logs': '\u{1F4CA} \u8BBF\u95EE\u65E5\u5FD7\u4E0E IP \u62E6\u622A\u7BA1\u7406',
+    'access-logs': '\u{1F4CA} \u5BA2\u6237\u7AEF\u8BBF\u95EE\u5B9E\u65F6\u65E5\u5FD7',
+    'ip-whitelist': '\u2728 IP \u8BBF\u95EE\u767D\u540D\u5355\u7BA1\u7406',
+    'ip-blacklist': '\u{1F6E1}\uFE0F IP \u8BBF\u95EE\u9ED1\u540D\u5355\u7BA1\u7406',
     'security-config': '\u{1F511} \u8BA2\u9605\u5B89\u5168\u914D\u7F6E (\u5168\u5C40)',
     'tg-config': '\u2708\uFE0F TG \u8BA2\u9605\u901A\u77E5 (\u5168\u5C40)'
   };
@@ -2329,13 +2419,15 @@ function switchTab(tabId, pushHash = true) {
 function initActiveTab() {
   const hash = window.location.hash ? window.location.hash.replace('#', '') : '';
   const savedTab = localStorage.getItem('active_dashboard_tab') || 'custom-sub';
-  const targetTab = (hash === 'custom-sub' || hash === 'cf-sub' || hash === 'access-logs' || hash === 'security-config' || hash === 'tg-config') ? hash : savedTab;
+  const validTabs = ['custom-sub', 'cf-sub', 'access-logs', 'ip-whitelist', 'ip-blacklist', 'security-config', 'tg-config'];
+  const targetTab = validTabs.includes(hash) ? hash : (validTabs.includes(savedTab) ? savedTab : 'custom-sub');
   switchTab(targetTab, true);
 }
 
 window.addEventListener('hashchange', () => {
   const hash = window.location.hash ? window.location.hash.replace('#', '') : '';
-  if (hash === 'custom-sub' || hash === 'cf-sub' || hash === 'access-logs' || hash === 'security-config' || hash === 'tg-config') {
+  const validTabs = ['custom-sub', 'cf-sub', 'access-logs', 'ip-whitelist', 'ip-blacklist', 'security-config', 'tg-config'];
+  if (validTabs.includes(hash)) {
     switchTab(hash, false);
   }
 });
@@ -2374,9 +2466,9 @@ async function clearInput(id) {
 
 async function submitGroupForm(e) {
   e.preventDefault();
-  let id = document.getElementById('form-group-id').value.trim().toLowerCase();
+  let id = document.getElementById('form-group-id').value.trim();
   if (!id) {
-    id = generateRandomString(32);
+    id = generateRandomString(12, 33);
     document.getElementById('form-group-id').value = id;
   }
   const name = document.getElementById('form-group-name').value.trim();
@@ -2470,7 +2562,7 @@ async function deleteGroup(id) {
 // ==========================================
 function openAddCfGroupModal() {
   document.getElementById('modal-cf-group-title').innerText = '\u6DFB\u52A0\u65B0 CF \u4F18\u9009\u8BA2\u9605';
-  document.getElementById('form-cf-group-id').value = generateRandomString(32);
+  document.getElementById('form-cf-group-id').value = generateRandomString(12, 33);
   document.getElementById('form-cf-group-name').value = '';
   document.getElementById('form-cf-group-max-views').value = '';
   const countryEl = document.getElementById('form-cf-group-allowed-countries');
@@ -2506,7 +2598,11 @@ function closeCfGroupModal() {
 
 async function submitCfGroupForm(e) {
   e.preventDefault();
-  const id = document.getElementById('form-cf-group-id').value.trim().toLowerCase();
+  let id = document.getElementById('form-cf-group-id').value.trim();
+  if (!id) {
+    id = generateRandomString(12, 33);
+    document.getElementById('form-cf-group-id').value = id;
+  }
   const name = document.getElementById('form-cf-group-name').value.trim();
   const maxViewsRaw = document.getElementById('form-cf-group-max-views').value.trim();
   let maxViews = 0;
@@ -2778,31 +2874,142 @@ async function testCfGroup(id) {
 // \u{1F6E1}\uFE0F IP \u9ED1\u767D\u540D\u5355\u4E0E\u8BBF\u95EE\u65E5\u5FD7\u7BA1\u7406
 // ==========================================
 
-// \u6279\u91CF\u4FDD\u5B58 IP \u767D\u540D\u5355
-async function saveWhitelistIPsBatch() {
-  const textarea = document.getElementById('textarea-whitelist-ips');
-  if (!textarea) return;
-  const lines = textarea.value.replace(/\\r\\n|\\r/g, '\\n').split('\\n').map(l => l.trim()).filter(Boolean);
-  const uniqueIPs = Array.from(new Set(lines));
+// \u515C\u5E95\u7A7A\u51FD\u6570
+function toggleBatchPanel() {}
+
+// \u6821\u9A8C IPv4 / IPv6 / CIDR \u683C\u5F0F
+function isValidIPOrCIDR(str) {
+  if (!str || typeof str !== 'string') return false;
+  const s = str.trim();
+  const parts = s.split('/');
+  if (parts.length > 2) return false;
+  const ip = parts[0];
+  const mask = parts[1];
+
+  // \u5982\u679C\u6709\u7F51\u6BB5\u63A9\u7801
+  if (mask !== undefined) {
+    const maskNum = parseInt(mask, 10);
+    if (isNaN(maskNum) || String(maskNum) !== mask) return false;
+    if (ip.includes(':')) {
+      if (maskNum < 0 || maskNum > 128) return false;
+    } else {
+      if (maskNum < 0 || maskNum > 32) return false;
+    }
+  }
+
+  // IPv4 \u5355\u673A\u6821\u9A8C
+  if (ip.includes('.')) {
+    const octets = ip.split('.');
+    if (octets.length !== 4) return false;
+    return octets.every(octet => {
+      if (!/^[0-9]+$/.test(octet)) return false;
+      const n = parseInt(octet, 10);
+      return n >= 0 && n <= 255 && String(n) === octet;
+    });
+  }
+
+  // IPv6 \u5355\u673A\u6821\u9A8C
+  if (ip.includes(':')) {
+    const segs = ip.split(':');
+    if (segs.length < 3 || segs.length > 8) return false;
+    return segs.every(seg => seg === '' || /^[0-9a-fA-F]{1,4}$/.test(seg));
+  }
+
+  return false;
+}
+
+// \u89E3\u6790\u8F93\u5165\u6846\u4E2D\u7684\u591A\u4E2A IP/CIDR\uFF08\u652F\u6301\u56DE\u8F66\u3001\u9017\u53F7\u3001\u5206\u53F7\u3001\u7A7A\u683C\uFF09
+function parseIPInputList(rawVal) {
+  if (!rawVal) return [];
+  const LF = String.fromCharCode(10);
+  const CR = String.fromCharCode(13);
+  return rawVal.split(LF)
+    .flatMap(line => line.split(CR))
+    .flatMap(line => line.split(','))
+    .flatMap(line => line.split(';'))
+    .flatMap(line => line.split(' '))
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+// \u5FEB\u901F\u6DFB\u52A0 IP \u5230\u767D\u540D\u5355\uFF08\u652F\u6301\u5355\u4E2A\u6216\u591A\u4E2A\uFF0C\u652F\u6301 CIDR\uFF09
+async function quickAddWhitelistIP() {
+  const input = document.getElementById('input-quick-add-whitelist');
+  const rawVal = input?.value?.trim() || '';
+  if (!rawVal) {
+    showToast('\u8BF7\u8F93\u5165\u6709\u6548\u7684 IP \u6216 CIDR \u7F51\u6BB5', 'warning');
+    input?.focus();
+    return;
+  }
+
+  // \u652F\u6301\u4EE5\u6362\u884C\u3001\u9017\u53F7\u3001\u5206\u53F7\u6216\u7A7A\u683C\u5206\u9694\u591A\u4E2A\u8F93\u5165
+  const items = parseIPInputList(rawVal);
+  if (items.length === 0) {
+    showToast('\u8BF7\u8F93\u5165\u6709\u6548\u7684 IP \u6216 CIDR \u7F51\u6BB5', 'warning');
+    return;
+  }
+
+  // \u683C\u5F0F\u6821\u9A8C
+  const invalidItems = items.filter(item => !isValidIPOrCIDR(item));
+  if (invalidItems.length > 0) {
+    showToast('\u8F93\u5165\u5305\u542B\u4E0D\u5408\u6CD5\u7684 IP/CIDR \u5730\u5740: ' + invalidItems.slice(0, 3).join(', '), 'error');
+    return;
+  }
+
+  // \u68C0\u67E5\u662F\u5426\u5DF2\u5728\u767D\u540D\u5355
+  const newItems = items.filter(ip => !whitelistIPsData.includes(ip));
+  if (newItems.length === 0) {
+    showToast('\u6240\u586B IP \u5DF2\u5168\u90E8\u5728\u767D\u540D\u5355\u4E2D\uFF0C\u65E0\u9700\u91CD\u590D\u6DFB\u52A0', 'info');
+    return;
+  }
+
+  // \u68C0\u67E5\u662F\u5426\u6709\u4E0E\u9ED1\u540D\u5355\u91CD\u53E0\u7684\u9879
+  const overlapWithBlacklist = newItems.filter(ip => blockedIPsData.includes(ip));
+
+  const confirmed = await showConfirmDialog({
+    title: '\u786E\u8BA4\u52A0\u5165\u767D\u540D\u5355',
+    message: '\u786E\u5B9A\u8981\u5C06 ' + newItems.length + ' \u4E2A IP/\u7F51\u6BB5\u52A0\u5165\u767D\u540D\u5355\u5417\uFF1F' + 
+      (overlapWithBlacklist.length > 0 ? '<br><small style="color:#d97706;">\u26A0\uFE0F \u5176\u4E2D ' + overlapWithBlacklist.length + ' \u4E2A\u9879\u539F\u5728\u9ED1\u540D\u5355\u4E2D\uFF0C\u5C06\u81EA\u52A8\u89E3\u9664\u9ED1\u540D\u5355\u62E6\u622A\u5E76\u8F6C\u4E3A\u4FE1\u4EFB\u653E\u884C\u3002</small>' : ''),
+    icon: '\u2B50',
+    confirmText: '\u786E\u8BA4\u52A0\u5165 (' + newItems.length + ')',
+    confirmType: 'primary'
+  });
+  if (!confirmed) return;
 
   try {
+    const updatedWhitelist = Array.from(new Set([...whitelistIPsData, ...newItems]));
     const res = await fetch('/api/whitelist-ips', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ips: uniqueIPs })
+      body: JSON.stringify({ ips: updatedWhitelist })
     });
-    if (res.ok) {
-      showToast('IP \u767D\u540D\u5355\u5DF2\u4FDD\u5B58\u6210\u529F\uFF0C\u5F53\u524D\u5171\u653E\u884C ' + uniqueIPs.length + ' \u4E2A IP', 'success');
-      setTimeout(() => location.reload(), 800);
-    } else {
-      showToast('\u4FDD\u5B58 IP \u767D\u540D\u5355\u5931\u8D25', 'error');
+    if (!res.ok) {
+      showToast('\u52A0\u5165\u767D\u540D\u5355\u5931\u8D25', 'error');
+      return;
     }
+
+    // \u82E5\u6709\u4E0E\u9ED1\u540D\u5355\u51B2\u7A81\u7684\u9879\uFF0C\u540C\u6B65\u4ECE\u9ED1\u540D\u5355\u79FB\u51FA
+    if (overlapWithBlacklist.length > 0) {
+      const updatedBlacklist = blockedIPsData.filter(ip => !overlapWithBlacklist.includes(ip));
+      await fetch('/api/blocked-ips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ips: updatedBlacklist })
+      });
+    }
+
+    showToast('\u5DF2\u6210\u529F\u6DFB\u52A0 ' + newItems.length + ' \u4E2A IP \u5230\u767D\u540D\u5355\uFF01', 'success');
+    if (input) input.value = '';
+    setTimeout(() => {
+      window.location.hash = '#ip-whitelist';
+      location.reload();
+    }, 600);
   } catch (err) {
     showToast('\u8BF7\u6C42\u5F02\u5E38: ' + err.message, 'error');
   }
 }
 
-// \u5FEB\u901F\u6DFB\u52A0\u5355\u4E2A IP \u5230\u767D\u540D\u5355
+// \u5FEB\u901F\u6DFB\u52A0\u5355\u4E2A IP \u5230\u767D\u540D\u5355\uFF08\u6765\u81EA\u65E5\u5FD7\u7B49\u5355\u6761\u64CD\u4F5C\uFF09
 async function addWhitelistIP(ip) {
   if (!ip) return;
   const confirmed = await showConfirmDialog({
@@ -2822,6 +3029,15 @@ async function addWhitelistIP(ip) {
       body: JSON.stringify({ ips: currentIPs })
     });
     if (res.ok) {
+      // \u82E5\u539F\u5728\u9ED1\u540D\u5355\u4E2D\uFF0C\u987A\u5E26\u79FB\u51FA
+      if (blockedIPsData.includes(ip.trim())) {
+        const updatedBlacklist = blockedIPsData.filter(item => item !== ip.trim());
+        await fetch('/api/blocked-ips', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ips: updatedBlacklist })
+        });
+      }
       showToast('\u5DF2\u6210\u529F\u5C06 IP: ' + ip + ' \u52A0\u5165\u767D\u540D\u5355', 'success');
       setTimeout(() => location.reload(), 600);
     } else {
@@ -2853,7 +3069,10 @@ async function removeWhitelistIP(ip) {
     });
     if (res.ok) {
       showToast('\u5DF2\u6210\u529F\u4ECE\u767D\u540D\u5355\u79FB\u9664 IP: ' + ip, 'success');
-      setTimeout(() => location.reload(), 600);
+      setTimeout(() => {
+        window.location.hash = '#ip-whitelist';
+        location.reload();
+      }, 600);
     } else {
       showToast('\u79FB\u9664\u767D\u540D\u5355\u5931\u8D25', 'error');
     }
@@ -2862,33 +3081,172 @@ async function removeWhitelistIP(ip) {
   }
 }
 
-// \u6279\u91CF\u4FDD\u5B58 IP \u9ED1\u540D\u5355
-async function saveBlockedIPsBatch() {
-  const textarea = document.getElementById('textarea-blocked-ips');
-  if (!textarea) return;
-  const lines = textarea.value.replace(/\\r\\n|\\r/g, '\\n').split('\\n').map(l => l.trim()).filter(Boolean);
-  const uniqueIPs = Array.from(new Set(lines));
+// \u6E05\u7A7A\u6240\u6709\u767D\u540D\u5355 IP
+async function clearAllWhitelistIPs() {
+  if (!whitelistIPsData || whitelistIPsData.length === 0) {
+    showToast('\u5F53\u524D\u767D\u540D\u5355\u5217\u8868\u5DF2\u4E3A\u7A7A', 'info');
+    return;
+  }
+
+  const confirmed = await showConfirmDialog({
+    title: '\u6E05\u7A7A\u6240\u6709\u767D\u540D\u5355',
+    message: '\u786E\u5B9A\u8981\u6E05\u7A7A\u6240\u6709\u767D\u540D\u5355\uFF08\u5171 ' + whitelistIPsData.length + ' \u9879\uFF09\u5417\uFF1F\u6E05\u7A7A\u540E\u6240\u6709\u4E4B\u524D\u653E\u884C\u7684 IP \u5C06\u6062\u590D\u5E38\u89C4\u5B89\u5168\u68C0\u6D4B\u3002',
+    icon: '\u{1F5D1}\uFE0F',
+    confirmText: '\u786E\u8BA4\u6E05\u7A7A (' + whitelistIPsData.length + ')',
+    confirmType: 'danger'
+  });
+  if (!confirmed) return;
 
   try {
-    const res = await fetch('/api/blocked-ips', {
+    const res = await fetch('/api/whitelist-ips', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ips: uniqueIPs })
+      body: JSON.stringify({ ips: [] })
     });
     if (res.ok) {
-      showToast('IP \u9ED1\u540D\u5355\u5DF2\u4FDD\u5B58\u6210\u529F\uFF0C\u5F53\u524D\u5DF2\u5C4F\u853D ' + uniqueIPs.length + ' \u4E2A IP', 'success');
-      setTimeout(() => location.reload(), 800);
+      showToast('\u5DF2\u6210\u529F\u6E05\u7A7A\u6240\u6709\u767D\u540D\u5355 IP', 'success');
+      setTimeout(() => {
+        window.location.hash = '#ip-whitelist';
+        location.reload();
+      }, 600);
     } else {
-      showToast('\u4FDD\u5B58 IP \u9ED1\u540D\u5355\u5931\u8D25', 'error');
+      showToast('\u6E05\u7A7A\u767D\u540D\u5355\u5931\u8D25', 'error');
     }
   } catch (err) {
     showToast('\u8BF7\u6C42\u5F02\u5E38: ' + err.message, 'error');
   }
 }
 
-// \u5FEB\u901F\u5C4F\u853D\u5355\u4E2A IP
+// \u4ECE\u767D\u540D\u5355\u4E00\u952E\u8F6C\u79FB\u5230\u9ED1\u540D\u5355
+async function moveWhitelistToBlacklist(ip) {
+  if (!ip) return;
+  const confirmed = await showConfirmDialog({
+    title: '\u79FB\u5165\u9ED1\u540D\u5355',
+    message: '\u786E\u5B9A\u8981\u5C06 IP [' + ip + '] \u4ECE\u767D\u540D\u5355\u79FB\u9664\u5E76\u7ACB\u5373\u52A0\u5165\u9ED1\u540D\u5355\u8FDB\u884C\u963B\u65AD\u62E6\u622A\u5417\uFF1F',
+    icon: '\u{1F6AB}',
+    confirmText: '\u786E\u8BA4\u79FB\u5165\u9ED1\u540D\u5355',
+    confirmType: 'danger'
+  });
+  if (!confirmed) return;
+
+  try {
+    // 1. \u4ECE\u767D\u540D\u5355\u79FB\u9664
+    const updatedWhitelist = whitelistIPsData.filter(item => item !== ip.trim());
+    await fetch('/api/whitelist-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: updatedWhitelist })
+    });
+
+    // 2. \u52A0\u5165\u9ED1\u540D\u5355
+    const updatedBlacklist = Array.from(new Set([...blockedIPsData, ip.trim()]));
+    await fetch('/api/blocked-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: updatedBlacklist })
+    });
+
+    showToast('IP [' + ip + '] \u5DF2\u6210\u529F\u8F6C\u5165\u9ED1\u540D\u5355\u5E76\u963B\u65AD\uFF01', 'success');
+    setTimeout(() => {
+      window.location.hash = '#ip-whitelist';
+      location.reload();
+    }, 600);
+  } catch (err) {
+    showToast('\u8BF7\u6C42\u5F02\u5E38: ' + err.message, 'error');
+  }
+}
+
+// \u5FEB\u901F\u5C4F\u853D\u5355\u4E2A\u6216\u591A\u4E2A IP / CIDR \u7F51\u6BB5
+async function quickAddBlockedIP() {
+  const input = document.getElementById('input-quick-add-blacklist');
+  const rawVal = input?.value?.trim() || '';
+  if (!rawVal) {
+    showToast('\u8BF7\u8F93\u5165\u6709\u6548\u7684 IP \u6216 CIDR \u7F51\u6BB5', 'warning');
+    input?.focus();
+    return;
+  }
+
+  const items = parseIPInputList(rawVal);
+  if (items.length === 0) {
+    showToast('\u8BF7\u8F93\u5165\u6709\u6548\u7684 IP \u6216 CIDR \u7F51\u6BB5', 'warning');
+    return;
+  }
+
+  // \u683C\u5F0F\u6821\u9A8C
+  const invalidItems = items.filter(item => !isValidIPOrCIDR(item));
+  if (invalidItems.length > 0) {
+    showToast('\u8F93\u5165\u5305\u542B\u4E0D\u5408\u6CD5\u7684 IP/CIDR \u5730\u5740: ' + invalidItems.slice(0, 3).join(', '), 'error');
+    return;
+  }
+
+  // \u9632\u81EA\u9501\u5B89\u5168\u4FDD\u62A4\uFF1A\u7981\u6B62\u5C06\u56DE\u73AF\u5730\u5740\u52A0\u5165\u9ED1\u540D\u5355
+  const loopbackDetected = items.find(ip => ip.startsWith('127.') || ip === '::1' || ip === 'localhost');
+  if (loopbackDetected) {
+    showToast('\u5B89\u5168\u4FDD\u62A4\uFF1A\u7981\u6B62\u5C06\u672C\u5730\u56DE\u73AF\u5730\u5740 (' + loopbackDetected + ') \u52A0\u5165\u9ED1\u540D\u5355\uFF01', 'error');
+    return;
+  }
+
+  // \u68C0\u67E5\u662F\u5426\u5DF2\u5728\u9ED1\u540D\u5355
+  const newItems = items.filter(ip => !blockedIPsData.includes(ip));
+  if (newItems.length === 0) {
+    showToast('\u6240\u586B IP \u5DF2\u5168\u90E8\u5728\u9ED1\u540D\u5355\u4E2D\uFF0C\u65E0\u9700\u91CD\u590D\u5C4F\u853D', 'info');
+    return;
+  }
+
+  // \u68C0\u67E5\u662F\u5426\u6709\u4E0E\u767D\u540D\u5355\u91CD\u53E0\u7684\u9879
+  const overlapWithWhitelist = newItems.filter(ip => whitelistIPsData.includes(ip));
+
+  const confirmed = await showConfirmDialog({
+    title: '\u786E\u8BA4\u5C4F\u853D IP',
+    message: '\u786E\u5B9A\u8981\u5C06 ' + newItems.length + ' \u4E2A IP/\u7F51\u6BB5\u5217\u5165\u9ED1\u540D\u5355\u5417\uFF1F\u88AB\u5217\u5165\u540E\u5C06\u76F4\u63A5\u8FD4\u56DE 403 \u963B\u65AD\u8BBF\u95EE\u3002' + 
+      (overlapWithWhitelist.length > 0 ? '<br><small style="color:#ef4444;">\u26A0\uFE0F \u5176\u4E2D ' + overlapWithWhitelist.length + ' \u4E2A\u9879\u539F\u5728\u767D\u540D\u5355\u4E2D\uFF0C\u5C06\u81EA\u52A8\u4ECE\u767D\u540D\u5355\u79FB\u9664\u5E76\u751F\u6548\u5C01\u7981\u3002</small>' : ''),
+    icon: '\u{1F6AB}',
+    confirmText: '\u786E\u8BA4\u5C4F\u853D (' + newItems.length + ')',
+    confirmType: 'danger'
+  });
+  if (!confirmed) return;
+
+  try {
+    const updatedBlacklist = Array.from(new Set([...blockedIPsData, ...newItems]));
+    const res = await fetch('/api/blocked-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: updatedBlacklist })
+    });
+    if (!res.ok) {
+      showToast('\u5C4F\u853D IP \u5931\u8D25', 'error');
+      return;
+    }
+
+    // \u82E5\u6709\u4E0E\u767D\u540D\u5355\u51B2\u7A81\u7684\u9879\uFF0C\u540C\u6B65\u4ECE\u767D\u540D\u5355\u79FB\u51FA
+    if (overlapWithWhitelist.length > 0) {
+      const updatedWhitelist = whitelistIPsData.filter(ip => !overlapWithWhitelist.includes(ip));
+      await fetch('/api/whitelist-ips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ips: updatedWhitelist })
+      });
+    }
+
+    showToast('\u5DF2\u6210\u529F\u5C4F\u853D ' + newItems.length + ' \u4E2A IP\uFF01', 'success');
+    if (input) input.value = '';
+    setTimeout(() => {
+      window.location.hash = '#ip-blacklist';
+      location.reload();
+    }, 600);
+  } catch (err) {
+    showToast('\u8BF7\u6C42\u5F02\u5E38: ' + err.message, 'error');
+  }
+}
+
+// \u5FEB\u901F\u5C4F\u853D\u5355\u4E2A IP\uFF08\u6765\u81EA\u65E5\u5FD7\u6216\u5916\u90E8\u8C03\u7528\uFF09
 async function blockIP(ip) {
   if (!ip) return;
+  if (ip.startsWith('127.') || ip === '::1' || ip === 'localhost') {
+    showToast('\u5B89\u5168\u4FDD\u62A4\uFF1A\u7981\u6B62\u5C06\u672C\u5730\u56DE\u73AF\u5730\u5740\u52A0\u5165\u9ED1\u540D\u5355\uFF01', 'error');
+    return;
+  }
+
   const confirmed = await showConfirmDialog({
     title: '\u786E\u8BA4\u5C4F\u853D IP',
     message: '\u786E\u5B9A\u8981\u5C06 IP [' + ip + '] \u52A0\u5165\u9ED1\u540D\u5355\u5E76\u963B\u6B62\u5176\u8BBF\u95EE\u4EFB\u4F55\u8BA2\u9605\u548C\u540E\u53F0\u5417\uFF1F',
@@ -2906,6 +3264,15 @@ async function blockIP(ip) {
       body: JSON.stringify({ ips: currentIPs })
     });
     if (res.ok) {
+      // \u82E5\u539F\u5728\u767D\u540D\u5355\u4E2D\uFF0C\u540C\u6B65\u79FB\u51FA
+      if (whitelistIPsData.includes(ip.trim())) {
+        const updatedWhitelist = whitelistIPsData.filter(item => item !== ip.trim());
+        await fetch('/api/whitelist-ips', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ips: updatedWhitelist })
+        });
+      }
       showToast('\u5DF2\u6210\u529F\u5C4F\u853D IP: ' + ip, 'success');
       setTimeout(() => location.reload(), 600);
     } else {
@@ -2937,13 +3304,176 @@ async function unblockIP(ip) {
     });
     if (res.ok) {
       showToast('\u5DF2\u6210\u529F\u89E3\u5C01 IP: ' + ip, 'success');
-      setTimeout(() => location.reload(), 600);
+      setTimeout(() => {
+        window.location.hash = '#ip-blacklist';
+        location.reload();
+      }, 600);
     } else {
       showToast('\u89E3\u5C01 IP \u5931\u8D25', 'error');
     }
   } catch (err) {
     showToast('\u8BF7\u6C42\u5F02\u5E38: ' + err.message, 'error');
   }
+}
+
+// \u6E05\u7A7A\u6240\u6709\u9ED1\u540D\u5355 IP
+async function clearAllBlockedIPs() {
+  if (!blockedIPsData || blockedIPsData.length === 0) {
+    showToast('\u5F53\u524D\u9ED1\u540D\u5355\u5217\u8868\u5DF2\u4E3A\u7A7A', 'info');
+    return;
+  }
+
+  const confirmed = await showConfirmDialog({
+    title: '\u6E05\u7A7A\u6240\u6709\u9ED1\u540D\u5355',
+    message: '\u786E\u5B9A\u8981\u6E05\u7A7A\u6240\u6709\u9ED1\u540D\u5355\uFF08\u5171 ' + blockedIPsData.length + ' \u9879\uFF09\u5417\uFF1F\u6E05\u7A7A\u540E\u6240\u6709\u88AB\u5C4F\u853D\u7684 IP \u5C06\u7ACB\u5373\u89E3\u5C01\u5E76\u5141\u8BB8\u6B63\u5E38\u8BBF\u95EE\u3002',
+    icon: '\u{1F5D1}\uFE0F',
+    confirmText: '\u786E\u8BA4\u5168\u90E8\u89E3\u5C01 (' + blockedIPsData.length + ')',
+    confirmType: 'danger'
+  });
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch('/api/blocked-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: [] })
+    });
+    if (res.ok) {
+      showToast('\u5DF2\u6E05\u7A7A\u6240\u6709\u9ED1\u540D\u5355 IP\uFF0C\u5168\u90E8\u89E3\u5C01\u6210\u529F', 'success');
+      setTimeout(() => {
+        window.location.hash = '#ip-blacklist';
+        location.reload();
+      }, 600);
+    } else {
+      showToast('\u6E05\u7A7A\u9ED1\u540D\u5355\u5931\u8D25', 'error');
+    }
+  } catch (err) {
+    showToast('\u8BF7\u6C42\u5F02\u5E38: ' + err.message, 'error');
+  }
+}
+
+// \u4ECE\u9ED1\u540D\u5355\u4E00\u952E\u8F6C\u79FB\u5230\u767D\u540D\u5355
+async function moveBlacklistToWhitelist(ip) {
+  if (!ip) return;
+  const confirmed = await showConfirmDialog({
+    title: '\u89E3\u9664\u963B\u65AD\u5E76\u52A0\u767D',
+    message: '\u786E\u5B9A\u8981\u89E3\u9664\u5BF9 IP [' + ip + '] \u7684\u62E6\u622A\u5E76\u5C06\u5176\u52A0\u5165\u4FE1\u4EFB\u767D\u540D\u5355\u5417\uFF1F',
+    icon: '\u2B50',
+    confirmText: '\u786E\u8BA4\u52A0\u767D\u653E\u884C',
+    confirmType: 'primary'
+  });
+  if (!confirmed) return;
+
+  try {
+    // 1. \u4ECE\u9ED1\u540D\u5355\u79FB\u9664
+    const updatedBlacklist = blockedIPsData.filter(item => item !== ip.trim());
+    await fetch('/api/blocked-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: updatedBlacklist })
+    });
+
+    // 2. \u52A0\u5165\u767D\u540D\u5355
+    const updatedWhitelist = Array.from(new Set([...whitelistIPsData, ip.trim()]));
+    await fetch('/api/whitelist-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: updatedWhitelist })
+    });
+
+    showToast('IP [' + ip + '] \u5DF2\u89E3\u9664\u62E6\u622A\u5E76\u52A0\u5165\u767D\u540D\u5355\uFF01', 'success');
+    setTimeout(() => {
+      window.location.hash = '#ip-blacklist';
+      location.reload();
+    }, 600);
+  } catch (err) {
+    showToast('\u8BF7\u6C42\u5F02\u5E38: ' + err.message, 'error');
+  }
+}
+
+// \u7B5B\u9009\u767D\u540D\u5355\u8868\u683C
+function applyWhitelistFilter() {
+  const input = document.getElementById('filter-whitelist-keyword');
+  const clearBtn = document.getElementById('whitelist-keyword-clear');
+  const query = (input?.value || '').toLowerCase().trim();
+  if (clearBtn) clearBtn.style.display = query ? 'inline-block' : 'none';
+
+  const rows = document.querySelectorAll('.whitelist-table-row');
+  let matchCount = 0;
+  rows.forEach(row => {
+    const ip = (row.dataset.ip || '').toLowerCase();
+    const isMatch = !query || ip.includes(query);
+    row.style.display = isMatch ? '' : 'none';
+    if (isMatch) matchCount++;
+  });
+
+  const statsEl = document.getElementById('whitelist-filter-stats');
+  if (statsEl) {
+    statsEl.innerHTML = '\u663E\u793A <strong>' + matchCount + '</strong> / \u5171 <strong>' + rows.length + '</strong> \u4E2A IP';
+  }
+  const emptyRow = document.getElementById('whitelist-table-empty-filter-row');
+  if (emptyRow) {
+    emptyRow.style.display = (matchCount === 0 && rows.length > 0) ? '' : 'none';
+  }
+  updateBatchSelection('whitelist');
+}
+
+function clearWhitelistKeyword() {
+  const input = document.getElementById('filter-whitelist-keyword');
+  if (input) input.value = '';
+  applyWhitelistFilter();
+}
+
+// \u7B5B\u9009\u9ED1\u540D\u5355\u8868\u683C
+function applyBlacklistFilter() {
+  const input = document.getElementById('filter-blacklist-keyword');
+  const clearBtn = document.getElementById('blacklist-keyword-clear');
+  const query = (input?.value || '').toLowerCase().trim();
+  if (clearBtn) clearBtn.style.display = query ? 'inline-block' : 'none';
+
+  const rows = document.querySelectorAll('.blacklist-table-row');
+  let matchCount = 0;
+  rows.forEach(row => {
+    const ip = (row.dataset.ip || '').toLowerCase();
+    const isMatch = !query || ip.includes(query);
+    row.style.display = isMatch ? '' : 'none';
+    if (isMatch) matchCount++;
+  });
+
+  const statsEl = document.getElementById('blacklist-filter-stats');
+  if (statsEl) {
+    statsEl.innerHTML = '\u663E\u793A <strong>' + matchCount + '</strong> / \u5171 <strong>' + rows.length + '</strong> \u4E2A IP';
+  }
+  const emptyRow = document.getElementById('blacklist-table-empty-filter-row');
+  if (emptyRow) {
+    emptyRow.style.display = (matchCount === 0 && rows.length > 0) ? '' : 'none';
+  }
+  updateBatchSelection('blacklist');
+}
+
+function clearBlacklistKeyword() {
+  const input = document.getElementById('filter-blacklist-keyword');
+  if (input) input.value = '';
+  applyBlacklistFilter();
+}
+
+// \u6279\u91CF\u7F16\u8F91\u6587\u672C\u683C\u5F0F\u5316\u53BB\u91CD
+function formatAndDeduplicateWhitelist() {
+  const textarea = document.getElementById('textarea-whitelist-ips');
+  if (!textarea) return;
+  const lines = textarea.value.replace(/\\r\\n|\\r/g, '\\n').split('\\n').map(l => l.trim()).filter(Boolean);
+  const unique = Array.from(new Set(lines));
+  textarea.value = unique.join('\\n');
+  showToast('\u5DF2\u683C\u5F0F\u5316\u5E76\u53BB\u91CD\uFF0C\u5F53\u524D\u5171 ' + unique.length + ' \u4E2A\u72EC\u7ACB\u6761\u76EE', 'info');
+}
+
+function formatAndDeduplicateBlacklist() {
+  const textarea = document.getElementById('textarea-blocked-ips');
+  if (!textarea) return;
+  const lines = textarea.value.replace(/\\r\\n|\\r/g, '\\n').split('\\n').map(l => l.trim()).filter(Boolean);
+  const unique = Array.from(new Set(lines));
+  textarea.value = unique.join('\\n');
+  showToast('\u5DF2\u683C\u5F0F\u5316\u5E76\u53BB\u91CD\uFF0C\u5F53\u524D\u5171 ' + unique.length + ' \u4E2A\u72EC\u7ACB\u6761\u76EE', 'info');
 }
 
 // ==========================================
@@ -3077,6 +3607,85 @@ async function batchDeleteCfGroups() {
     showToast('\u8BF7\u6C42\u5F02\u5E38: ' + err.message, 'error');
   }
 }
+
+// \u767D\u540D\u5355\u6279\u91CF\u79FB\u9664
+async function batchDeleteWhitelistIPs() {
+  const checkedBoxes = Array.from(document.querySelectorAll('.whitelist-row-checkbox:checked'));
+  const ipsToDelete = checkedBoxes.map(cb => cb.value.trim()).filter(Boolean);
+  if (ipsToDelete.length === 0) {
+    showToast('\u8BF7\u5148\u52FE\u9009\u9700\u8981\u79FB\u51FA\u767D\u540D\u5355\u7684 IP\uFF01', 'info');
+    return;
+  }
+
+  const confirmed = await showConfirmDialog({
+    title: '\u6279\u91CF\u79FB\u9664 IP \u767D\u540D\u5355',
+    message: '\u786E\u5B9A\u8981\u6279\u91CF\u5C06\u9009\u4E2D\u7684 ' + ipsToDelete.length + ' \u4E2A IP \u4ECE\u767D\u540D\u5355\u4E2D\u79FB\u9664\u5417\uFF1F',
+    icon: '\u26A0\uFE0F',
+    confirmText: '\u786E\u8BA4\u6279\u91CF\u79FB\u9664 (' + ipsToDelete.length + ')',
+    confirmType: 'danger'
+  });
+  if (!confirmed) return;
+
+  const currentIPs = whitelistIPsData.filter(ip => !ipsToDelete.includes(ip));
+  try {
+    const res = await fetch('/api/whitelist-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: currentIPs })
+    });
+    if (res.ok) {
+      showToast('\u5DF2\u6210\u529F\u79FB\u9664\u9009\u4E2D\u7684 ' + ipsToDelete.length + ' \u4E2A\u767D\u540D\u5355 IP', 'success');
+      setTimeout(() => {
+        window.location.hash = '#ip-whitelist';
+        location.reload();
+      }, 600);
+    } else {
+      showToast('\u6279\u91CF\u79FB\u9664\u767D\u540D\u5355\u5931\u8D25', 'error');
+    }
+  } catch (err) {
+    showToast('\u8BF7\u6C42\u5F02\u5E38: ' + err.message, 'error');
+  }
+}
+
+// \u9ED1\u540D\u5355\u6279\u91CF\u89E3\u5C01
+async function batchDeleteBlacklistIPs() {
+  const checkedBoxes = Array.from(document.querySelectorAll('.blacklist-row-checkbox:checked'));
+  const ipsToDelete = checkedBoxes.map(cb => cb.value.trim()).filter(Boolean);
+  if (ipsToDelete.length === 0) {
+    showToast('\u8BF7\u5148\u52FE\u9009\u9700\u8981\u89E3\u9664\u62E6\u622A\u7684\u9ED1\u540D\u5355 IP\uFF01', 'info');
+    return;
+  }
+
+  const confirmed = await showConfirmDialog({
+    title: '\u6279\u91CF\u89E3\u9664 IP \u62E6\u622A',
+    message: '\u786E\u5B9A\u8981\u6279\u91CF\u89E3\u5C01\u9009\u4E2D\u7684 ' + ipsToDelete.length + ' \u4E2A IP \u5417\uFF1F',
+    icon: '\u{1F7E2}',
+    confirmText: '\u786E\u8BA4\u6279\u91CF\u89E3\u9664 (' + ipsToDelete.length + ')',
+    confirmType: 'primary'
+  });
+  if (!confirmed) return;
+
+  const currentIPs = blockedIPsData.filter(ip => !ipsToDelete.includes(ip));
+  try {
+    const res = await fetch('/api/blocked-ips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ips: currentIPs })
+    });
+    if (res.ok) {
+      showToast('\u5DF2\u6210\u529F\u89E3\u9664\u9009\u4E2D\u7684 ' + ipsToDelete.length + ' \u4E2A IP \u62E6\u622A', 'success');
+      setTimeout(() => {
+        window.location.hash = '#ip-blacklist';
+        location.reload();
+      }, 600);
+    } else {
+      showToast('\u6279\u91CF\u89E3\u5C01\u9ED1\u540D\u5355\u5931\u8D25', 'error');
+    }
+  } catch (err) {
+    showToast('\u8BF7\u6C42\u5F02\u5E38: ' + err.message, 'error');
+  }
+}
+const batchDeleteBlockedIPs = batchDeleteBlacklistIPs;
 
 // 3. \u8BBF\u95EE\u65E5\u5FD7\u6279\u91CF\u5220\u9664
 async function batchDeleteLogs() {
@@ -3467,6 +4076,8 @@ function initAllTablePaginators() {
   window._paginators['plain-table-row'] = new TablePaginator('plain-table-body', 'plain-table-row', 'plain-table-pagination', 10, 'plain');
   window._paginators['cf-table-row'] = new TablePaginator('cf-table-body', 'cf-table-row', 'cf-table-pagination', 10, 'cf');
   window._paginators['logs-table-row'] = new TablePaginator('logs-table-body', 'logs-table-row', 'logs-table-pagination', 15, 'logs');
+  window._paginators['whitelist-table-row'] = new TablePaginator('whitelist-table-body', 'whitelist-table-row', 'whitelist-table-pagination', 15, 'whitelist');
+  window._paginators['blacklist-table-row'] = new TablePaginator('blacklist-table-body', 'blacklist-table-row', 'blacklist-table-pagination', 15, 'blacklist');
 }
 
 // \u9875\u9762\u52A0\u8F7D\u5B8C\u6210\u540E\u7ACB\u5373\u521D\u59CB\u5316\u6240\u6709\u8868\u683C\u5206\u9875\u5668\u4E0E\u4F1A\u8BDD\u4FDD\u6D3B\u673A\u5236
@@ -3479,7 +4090,21 @@ if (document.readyState === 'loading') {
   initAllTablePaginators();
   initSessionActivityTracker();
 }
-`;function xt(o){return o==null?"":String(o).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Ee(o,e,t){return`
+
+// \u9000\u51FA\u767B\u5F55\u4E8C\u6B21\u786E\u8BA4\u5F39\u6846
+async function handleLogout() {
+  const confirmed = await showConfirmDialog({
+    title: '\u9000\u51FA\u767B\u5F55',
+    message: '\u786E\u5B9A\u8981\u9000\u51FA\u8BA2\u9605\u63A7\u5236\u53F0\u5417\uFF1F\u9000\u51FA\u540E\u9700\u91CD\u65B0\u8F93\u5165\u7BA1\u7406\u5458\u5BC6\u7801\u624D\u80FD\u767B\u5F55\u3002',
+    icon: '\u{1F6AA}',
+    confirmText: '\u786E\u8BA4\u9000\u51FA',
+    confirmType: 'danger'
+  });
+  if (confirmed) {
+    window.location.href = '/logout';
+  }
+}
+`;function pt(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Ie(t,e,o){return`
     <!-- \u89C6\u56FE 1: \u666E\u901A\u8BA2\u9605\u7BA1\u7406 -->
     <section class="tab-content active" id="tab-custom-sub">
       <div class="section-card">
@@ -3515,13 +4140,13 @@ if (document.readyState === 'loading') {
               </tr>
             </thead>
             <tbody id="plain-table-body">
-              ${t.length===0?`
+              ${o.length===0?`
                 <tr>
                   <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 36px;">
                     \u6682\u65E0\u666E\u901A\u8BA2\u9605\uFF0C\u70B9\u51FB\u53F3\u4E0A\u89D2 \u201C+ \u6DFB\u52A0\u65B0\u8BA2\u9605\u201D \u5F00\u59CB\u521B\u5EFA
                   </td>
                 </tr>
-              `:t.map((n,a)=>{let s=`${o}/${n.id}${e?`?token=${encodeURIComponent(e)}`:""}`,i=n.maxViews!==void 0&&n.maxViews!==null&&n.maxViews>0?n.maxViews:0,l=n.views||0,d=xt(n.name||"\u672A\u547D\u540D\u8BA2\u9605"),c=xt(n.id),h=n.nodes?n.nodes.split(`
+              `:o.map((n,a)=>{let s=`${t}/${n.id}${e?`?token=${encodeURIComponent(e)}`:""}`,i=n.maxViews!==void 0&&n.maxViews!==null&&n.maxViews>0?n.maxViews:0,l=n.views||0,p=pt(n.name||"\u672A\u547D\u540D\u8BA2\u9605"),c=pt(n.id),h=n.nodes?n.nodes.split(`
 `).map(u=>u.trim()).filter(Boolean).length:0;return`
                   <tr class="plain-table-row" data-index="${a}" data-id="${c}">
                     <td class="checkbox-cell">
@@ -3529,7 +4154,7 @@ if (document.readyState === 'loading') {
                     </td>
                     <td>
                       <div class="copy-box" style="gap: 6px;">
-                        <input type="text" class="copy-input" id="plain-link-${a}" value="${xt(s)}" readonly style="padding: 6px 10px; font-size: 12px; width: 100%; min-width: 160px;" />
+                        <input type="text" class="copy-input" id="plain-link-${a}" value="${pt(s)}" readonly style="padding: 6px 10px; font-size: 12px; width: 100%; min-width: 160px;" />
                         <button class="btn-action" style="height: 32px; padding: 0 10px; font-size: 12px; flex-shrink: 0;" onclick="copyText('plain-link-${a}')">\u{1F4CB} \u590D\u5236</button>
                       </div>
                     </td>
@@ -3544,9 +4169,9 @@ if (document.readyState === 'loading') {
                         </span>
                       `}
                     </td>
-                    <td style="font-weight: 600; color: var(--text-title); font-size: 14px;" title="${d}">
+                    <td style="font-weight: 600; color: var(--text-title); font-size: 14px;" title="${p}">
                       <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                        <span>${d}</span>
+                        <span>${p}</span>
                         ${h>0?`
                           <span class="node-count-badge" style="background: #eef2ff; color: #4338ca; font-size: 11px;">
                             \u{1F4E6} ${h} \u4E2A\u8282\u70B9
@@ -3557,8 +4182,8 @@ if (document.readyState === 'loading') {
                           </span>
                         `}
                         ${n.allowedCountries&&n.allowedCountries.length>0?`
-                          <span class="node-count-badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px;" title="\u4EC5\u5F00\u653E\u6307\u5B9A\u56FD\u5BB6: ${xt(n.allowedCountries.join(", "))}">
-                            \u{1F30D} ${xt(n.allowedCountries.join(", "))}
+                          <span class="node-count-badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px;" title="\u4EC5\u5F00\u653E\u6307\u5B9A\u56FD\u5BB6: ${pt(n.allowedCountries.join(", "))}">
+                            \u{1F30D} ${pt(n.allowedCountries.join(", "))}
                           </span>
                         `:""}
                       </div>
@@ -3590,11 +4215,11 @@ if (document.readyState === 'loading') {
           <div class="drawer-body">
             <div class="form-field">
               <label>\u8BA2\u9605\u540D\u79F0 / \u5907\u6CE8 (\u6700\u591A30\u5B57):</label>
-              <input type="text" id="form-group-name" placeholder="\u4F8B\u5982: \u9999\u6E2F\u81EA\u5EFA\u4E13\u7EBF / \u65E5\u672C\u5907\u7528\u8282\u70B9" maxlength="30" required />
+              <input type="text" id="form-group-name" class="form-input" placeholder="\u4F8B\u5982: \u9999\u6E2F\u81EA\u5EFA\u4E13\u7EBF / \u65E5\u672C\u5907\u7528\u8282\u70B9" maxlength="30" required />
             </div>
             <div class="form-field">
               <label>\u6700\u5927\u8BBF\u95EE\u6B21\u6570\u9650\u5236 (1~999 \u6B21\uFF0C\u8FBE\u5230\u6B21\u6570\u540E\u81EA\u52A8\u7269\u7406\u9500\u6BC1\u8BE5\u8BA2\u9605\uFF0C0 \u6216\u7559\u7A7A\u8868\u793A\u4E0D\u9650\u5236):</label>
-              <input type="number" id="form-group-max-views" min="0" max="999" placeholder="0 (\u4E0D\u9650\u5236) \u6216\u8F93\u5165 1 ~ 999" />
+              <input type="number" id="form-group-max-views" class="form-input" min="0" max="999" placeholder="0 (\u4E0D\u9650\u5236) \u6216\u8F93\u5165 1 ~ 999" />
             </div>
             <div class="form-field">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
@@ -3610,7 +4235,7 @@ if (document.readyState === 'loading') {
                   <button type="button" class="btn-action btn-danger" style="height: 22px; font-size: 10px; padding: 0 6px;" onclick="clearInput('form-group-allowed-countries')">\u6E05\u7A7A</button>
                 </div>
               </div>
-              <input type="text" id="form-group-allowed-countries" placeholder="\u4F8B\u5982: CN, HK, JP (\u7559\u7A7A\u7EE7\u627F\u5168\u5C40\u5B89\u5168\u914D\u7F6E)" />
+              <input type="text" id="form-group-allowed-countries" class="form-input" placeholder="\u4F8B\u5982: CN, HK, JP (\u7559\u7A7A\u7EE7\u627F\u5168\u5C40\u5B89\u5168\u914D\u7F6E)" />
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
                 <span>\u{1F4A1} \u5141\u8BB8\u8BBF\u95EE\u6B64\u8BA2\u9605\u7684 IP \u5730\u533A\u4EE3\u7801\uFF0C\u591A\u4E2A\u4EE5\u9017\u53F7\u5206\u9694\uFF1B\u7559\u7A7A\u5219\u4F7F\u7528\u5168\u5C40\u8BA2\u9605\u5B89\u5168\u914D\u7F6E</span>
               </div>
@@ -3637,7 +4262,7 @@ if (document.readyState === 'loading') {
         </form>
       </div>
     </div>
-  `}function wt(o){return o==null?"":String(o).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Be(o,e,t,n){return`
+  `}function ut(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Ce(t,e,o,n){return`
     <!-- \u89C6\u56FE 2: CF \u4F18\u9009\u8BA2\u9605\u7BA1\u7406 -->
     <section class="tab-content" id="tab-cf-sub">
       <div class="section-card">
@@ -3673,39 +4298,39 @@ if (document.readyState === 'loading') {
               </tr>
             </thead>
             <tbody id="cf-table-body">
-              ${t.length===0?`
+              ${o.length===0?`
                 <tr>
                   <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 36px;">
                     \u6682\u65E0\u72EC\u7ACB CF \u4F18\u9009\u8BA2\u9605\uFF0C\u70B9\u51FB\u53F3\u4E0A\u89D2 \u201C+ \u6DFB\u52A0\u4F18\u9009\u8BA2\u9605\u201D \u521B\u5EFA\u4E2A\u6027\u5316\u4F18\u9009\u8BA2\u9605\u7EC4
                   </td>
                 </tr>
-              `:t.map((a,s)=>{let i=`${o}/${a.id}${e?`?token=${encodeURIComponent(e)}`:""}`,l=a.maxViews!==void 0&&a.maxViews!==null&&a.maxViews>0?a.maxViews:0,d=a.views||0,c=wt(a.name||"\u672A\u547D\u540D\u4F18\u9009\u8BA2\u9605"),h=wt(a.id);return`
+              `:o.map((a,s)=>{let i=`${t}/${a.id}${e?`?token=${encodeURIComponent(e)}`:""}`,l=a.maxViews!==void 0&&a.maxViews!==null&&a.maxViews>0?a.maxViews:0,p=a.views||0,c=ut(a.name||"\u672A\u547D\u540D\u4F18\u9009\u8BA2\u9605"),h=ut(a.id);return`
                   <tr class="cf-table-row" data-index="${s}" data-id="${h}">
                     <td class="checkbox-cell">
                       <input type="checkbox" class="table-checkbox cf-row-checkbox" value="${h}" onchange="updateBatchSelection('cf')" />
                     </td>
                     <td>
                       <div class="copy-box" style="gap: 6px;">
-                        <input type="text" class="copy-input" id="cf-link-${s}" value="${wt(i)}" readonly style="padding: 6px 10px; font-size: 12px; width: 100%; min-width: 160px;" />
+                        <input type="text" class="copy-input" id="cf-link-${s}" value="${ut(i)}" readonly style="padding: 6px 10px; font-size: 12px; width: 100%; min-width: 160px;" />
                         <button class="btn-action" style="height: 32px; padding: 0 10px; font-size: 12px; flex-shrink: 0;" onclick="copyText('cf-link-${s}')">\u{1F4CB} \u590D\u5236</button>
                       </div>
                     </td>
                     <td style="white-space: nowrap;">
                       ${l>0?`
                         <span class="node-count-badge badge-limit">
-                          \u{1F525} ${d} / ${l} \u6B21
+                          \u{1F525} ${p} / ${l} \u6B21
                         </span>
                       `:`
                         <span class="node-count-badge badge-unlimited">
-                          \u267E\uFE0F \u65E0\u9650\u5236 (${d} \u6B21)
+                          \u267E\uFE0F \u65E0\u9650\u5236 (${p} \u6B21)
                         </span>
                       `}
                     </td>
                     <td style="font-weight: 600; color: var(--text-title); font-size: 14px;" title="${c}">
                       ${c}
                       ${a.allowedCountries&&a.allowedCountries.length>0?`
-                        <span class="node-count-badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px; margin-left: 6px;" title="\u4EC5\u5F00\u653E\u6307\u5B9A\u56FD\u5BB6: ${wt(a.allowedCountries.join(", "))}">
-                          \u{1F30D} ${wt(a.allowedCountries.join(", "))}
+                        <span class="node-count-badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px; margin-left: 6px;" title="\u4EC5\u5F00\u653E\u6307\u5B9A\u56FD\u5BB6: ${ut(a.allowedCountries.join(", "))}">
+                          \u{1F30D} ${ut(a.allowedCountries.join(", "))}
                         </span>
                       `:""}
                     </td>
@@ -3737,11 +4362,11 @@ if (document.readyState === 'loading') {
           <div class="drawer-body">
             <div class="form-field">
               <label>\u8BA2\u9605\u540D\u79F0 / \u5907\u6CE8 (\u6700\u591A30\u5B57):</label>
-              <input type="text" id="form-cf-group-name" placeholder="\u4F8B\u5982: \u6781\u901F 4K \u4F18\u9009\u4E13\u7EBF / \u79FB\u52A8\u4E13\u4EAB\u4F18\u9009" maxlength="30" required />
+              <input type="text" id="form-cf-group-name" class="form-input" placeholder="\u4F8B\u5982: \u6781\u901F 4K \u4F18\u9009\u4E13\u7EBF / \u79FB\u52A8\u4E13\u4EAB\u4F18\u9009" maxlength="30" required />
             </div>
             <div class="form-field">
               <label>\u6700\u5927\u8BBF\u95EE\u6B21\u6570\u9650\u5236 (1~999 \u6B21\uFF0C\u8FBE\u5230\u6B21\u6570\u540E\u81EA\u52A8\u7269\u7406\u9500\u6BC1\u8BE5\u8BA2\u9605\uFF0C0 \u6216\u7559\u7A7A\u8868\u793A\u4E0D\u9650\u5236):</label>
-              <input type="number" id="form-cf-group-max-views" min="0" max="999" placeholder="0 (\u4E0D\u9650\u5236) \u6216\u8F93\u5165 1 ~ 999" />
+              <input type="number" id="form-cf-group-max-views" class="form-input" min="0" max="999" placeholder="0 (\u4E0D\u9650\u5236) \u6216\u8F93\u5165 1 ~ 999" />
             </div>
             <div class="form-field">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
@@ -3757,7 +4382,7 @@ if (document.readyState === 'loading') {
                   <button type="button" class="btn-action btn-danger" style="height: 22px; font-size: 10px; padding: 0 6px;" onclick="clearInput('form-cf-group-allowed-countries')">\u6E05\u7A7A</button>
                 </div>
               </div>
-              <input type="text" id="form-cf-group-allowed-countries" placeholder="\u4F8B\u5982: CN, HK, JP (\u7559\u7A7A\u7EE7\u627F\u5168\u5C40\u5B89\u5168\u914D\u7F6E)" />
+              <input type="text" id="form-cf-group-allowed-countries" class="form-input" placeholder="\u4F8B\u5982: CN, HK, JP (\u7559\u7A7A\u7EE7\u627F\u5168\u5C40\u5B89\u5168\u914D\u7F6E)" />
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
                 <span>\u{1F4A1} \u5141\u8BB8\u8BBF\u95EE\u6B64\u8BA2\u9605\u7684 IP \u5730\u533A\u4EE3\u7801\uFF0C\u591A\u4E2A\u4EE5\u9017\u53F7\u5206\u9694\uFF1B\u7559\u7A7A\u5219\u4F7F\u7528\u5168\u5C40\u8BA2\u9605\u5B89\u5168\u914D\u7F6E</span>
               </div>
@@ -3800,72 +4425,16 @@ if (document.readyState === 'loading') {
         </form>
       </div>
     </div>
-  `}function Y(o){return o==null?"":String(o).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Ae(o=[],e=[],t=[]){return`
+  `}function ot(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Se(t=[],e=[],o=[]){return`
     <!-- \u89C6\u56FE 3: \u8BBF\u95EE\u65E5\u5FD7\u4E0E IP \u62E6\u622A\u7BA1\u7406 -->
     <section class="tab-content" id="tab-access-logs">
-      <!-- \u5DE6\u53F3\u53CC\u680F\uFF1AIP \u767D\u540D\u5355\u4E0E\u9ED1\u540D\u5355\u7BA1\u7406 -->
-      <div class="ip-management-grid">
-        <!-- \u5DE6\u4FA7: IP \u767D\u540D\u5355\u653E\u884C\u914D\u7F6E\u5361\u7247 -->
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title-group">
-              <h2 class="section-title">\u2728 IP \u8BBF\u95EE\u767D\u540D\u5355</h2>
-              <span class="node-count-badge badge-success">\u6C38\u4E45\u8C41\u514D\u62E6\u622A</span>
-            </div>
-            <button class="btn-action btn-success" onclick="saveWhitelistIPsBatch()">\u{1F4BE} \u4FDD\u5B58\u767D\u540D\u5355</button>
-          </div>
-          <p class="section-desc">\u52A0\u5165\u767D\u540D\u5355\u7684 IP \u62E5\u6709\u6700\u9AD8\u653E\u884C\u6743\u9650\uFF1A\u8C41\u514D\u9ED1\u540D\u5355\u62E6\u622A\u3001\u8C41\u514D\u767B\u5F55\u5931\u8D25\u8FDE\u7EED\u5C01\u7981\uFF0C\u4E14\u53EF\u4E00\u952E\u76F4\u63A5\u52A0\u5165\uFF08\u652F\u6301\u4E00\u884C\u4E00\u4E2A IP\uFF09\u3002</p>
-          
-          <div class="form-field" style="margin-bottom: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <label style="margin-bottom: 0;">\u5DF2\u653E\u884C\u7684 IP \u5217\u8868\uFF08\u4E00\u884C\u4E00\u4E2A IP\uFF09:</label>
-              <div style="display: flex; gap: 6px;">
-                <button type="button" class="btn-action btn-secondary" style="height: 26px; font-size: 11px; padding: 0 8px;" onclick="pasteClipboard('textarea-whitelist-ips')">\u{1F4CB} \u7C98\u8D34</button>
-                <button type="button" class="btn-action btn-danger" style="height: 26px; font-size: 11px; padding: 0 8px;" onclick="clearInput('textarea-whitelist-ips')">\u6E05\u7A7A</button>
-              </div>
-            </div>
-            <textarea id="textarea-whitelist-ips" class="form-textarea" style="min-height: 100px; font-family: monospace; font-size: 12px; line-height: 1.6;" placeholder="1.1.1.1&#10;8.8.8.8">${Y(t.join(`
-`))}</textarea>
-            <div style="font-size: 12px; color: var(--text-muted); padding: 0 2px; margin-top: 4px;">
-              <span>\u{1F4A1} \u5F53\u524D\u5171\u653E\u884C <strong>${t.length}</strong> \u4E2A\u767D\u540D\u5355 IP</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- \u53F3\u4FA7: IP \u9ED1\u540D\u5355\u5C4F\u853D\u914D\u7F6E\u5361\u7247 -->
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title-group">
-              <h2 class="section-title">\u{1F6E1}\uFE0F IP \u8BBF\u95EE\u9ED1\u540D\u5355 / \u5C4F\u853D</h2>
-              <span class="node-count-badge badge-danger">403 \u5F3A\u5236\u963B\u65AD</span>
-            </div>
-            <button class="btn-action btn-purple" onclick="saveBlockedIPsBatch()">\u{1F4BE} \u4FDD\u5B58\u9ED1\u540D\u5355</button>
-          </div>
-          <p class="section-desc">\u88AB\u5217\u5165\u9ED1\u540D\u5355\u7684 IP \u8BBF\u95EE\u4EFB\u4F55\u8BA2\u9605\u6216\u540E\u53F0\u9875\u9762\u65F6\uFF0C\u5C06\u76F4\u63A5\u88AB\u7CFB\u7EDF\u62E6\u622A\u5E76\u8FD4\u56DE <code>403 Forbidden</code>\uFF08\u652F\u6301\u4E00\u884C\u4E00\u4E2A IP\uFF09\u3002</p>
-          
-          <div class="form-field" style="margin-bottom: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <label style="margin-bottom: 0;">\u5DF2\u5C4F\u853D\u7684 IP \u5217\u8868\uFF08\u4E00\u884C\u4E00\u4E2A IP\uFF09:</label>
-              <div style="display: flex; gap: 6px;">
-                <button type="button" class="btn-action btn-secondary" style="height: 26px; font-size: 11px; padding: 0 8px;" onclick="pasteClipboard('textarea-blocked-ips')">\u{1F4CB} \u7C98\u8D34</button>
-                <button type="button" class="btn-action btn-danger" style="height: 26px; font-size: 11px; padding: 0 8px;" onclick="clearInput('textarea-blocked-ips')">\u6E05\u7A7A</button>
-              </div>
-            </div>
-            <textarea id="textarea-blocked-ips" class="form-textarea" style="min-height: 100px; font-family: monospace; font-size: 12px; line-height: 1.6;" placeholder="1.2.3.4&#10;5.6.7.8">${Y(e.join(`
-`))}</textarea>
-            <div style="font-size: 12px; color: var(--text-muted); padding: 0 2px; margin-top: 4px;">
-              <span>\u{1F4A1} \u5F53\u524D\u5171\u5C4F\u853D <strong>${e.length}</strong> \u4E2A IP</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- \u4E0B\u90E8\uFF1A\u5B9E\u65F6\u8BBF\u95EE\u65E5\u5FD7\u8BB0\u5F55\u8868\u683C\u5361\u7247 -->
       <div class="section-card">
         <div class="section-header">
           <div style="display: flex; align-items: center; gap: 10px;">
             <h2 class="section-title">\u{1F4CA} \u5BA2\u6237\u7AEF\u8BA2\u9605\u8BBF\u95EE\u5B9E\u65F6\u65E5\u5FD7</h2>
-            <span class="node-count-badge">\u6700\u8FD1 ${o.length} \u6761\u8BB0\u5F55</span>
+            <span class="node-count-badge">\u6700\u8FD1 ${t.length} \u6761\u8BB0\u5F55</span>
           </div>
           <div style="display: flex; gap: 8px;">
             <button class="btn-action btn-secondary" onclick="location.reload()">\u{1F504} \u5237\u65B0\u65E5\u5FD7</button>
@@ -3914,7 +4483,7 @@ if (document.readyState === 'loading') {
           </div>
 
           <div class="logs-filter-summary">
-            <span id="logs-filter-stats">\u663E\u793A <strong>${o.length}</strong> / \u5171 <strong>${o.length}</strong> \u6761\u8BB0\u5F55</span>
+            <span id="logs-filter-stats">\u663E\u793A <strong>${t.length}</strong> / \u5171 <strong>${t.length}</strong> \u6761\u8BB0\u5F55</span>
           </div>
         </div>
 
@@ -3946,20 +4515,20 @@ if (document.readyState === 'loading') {
               </tr>
             </thead>
             <tbody id="logs-table-body">
-              ${o.length===0?`
+              ${t.length===0?`
                 <tr>
                   <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 36px;">
                     \u6682\u65E0\u8BBF\u95EE\u65E5\u5FD7\u8BB0\u5F55\uFF0C\u5BA2\u6237\u7AEF\u53D1\u8D77\u8BA2\u9605\u62C9\u53D6\u6216\u8BBF\u95EE\u540E\u5C06\u5728\u6B64\u5B9E\u65F6\u663E\u793A
                   </td>
                 </tr>
-              `:o.map((n,a)=>{let s=t.includes(n.ip),i=e.includes(n.ip),l=n.status===200?'<span class="node-count-badge badge-success">200 OK</span>':n.status===403?'<span class="node-count-badge badge-danger">403 \u62E6\u622A</span>':n.status===401?'<span class="node-count-badge badge-warning">401 \u9274\u6743</span>':`<span class="node-count-badge">${Y(String(n.status||200))}</span>`,d=Y(n.ip||"\u672A\u77E5 IP"),c=Y(n.location||"\u5168\u7403 / \u672C\u5730"),h=Y(n.time||"-"),u=Y(n.path||"/"),m=Y(n.type||"\u8BA2\u9605\u8BF7\u6C42"),y=Y(n.ua||"-");return`
+              `:t.map((n,a)=>{let s=o.includes(n.ip),i=e.includes(n.ip),l=n.status===200?'<span class="node-count-badge badge-success">200 OK</span>':n.status===403?'<span class="node-count-badge badge-danger">403 \u62E6\u622A</span>':n.status===401?'<span class="node-count-badge badge-warning">401 \u9274\u6743</span>':`<span class="node-count-badge">${ot(String(n.status||200))}</span>`,p=ot(n.ip||"\u672A\u77E5 IP"),c=ot(n.location||"\u5168\u7403 / \u672C\u5730"),h=ot(n.time||"-"),u=ot(n.path||"/"),m=ot(n.type||"\u8BA2\u9605\u8BF7\u6C42"),v=ot(n.ua||"-");return`
                   <tr class="logs-table-row" data-index="${a}"
-                      data-ip="${d}"
+                      data-ip="${p}"
                       data-location="${c}"
                       data-status="${n.status||200}"
                       data-path="${u}"
                       data-type="${m}"
-                      data-ua="${y}"
+                      data-ua="${v}"
                       data-whitelisted="${s?"1":"0"}"
                       data-blocked="${i?"1":"0"}">
                     <td class="checkbox-cell">
@@ -3969,7 +4538,7 @@ if (document.readyState === 'loading') {
                     <td>
                       <div style="display: flex; flex-direction: column; gap: 2px;">
                         <div style="display: flex; align-items: center; gap: 6px; white-space: nowrap;">
-                          <span style="font-family: monospace; font-weight: 600; color: var(--text-title);">${d}</span>
+                          <span style="font-family: monospace; font-weight: 600; color: var(--text-title);">${p}</span>
                           ${s?'<span style="font-size: 10px; color: #059669; background: #ecfdf5; padding: 1px 5px; border-radius: 4px; border: 1px solid #a7f3d0; white-space: nowrap; flex-shrink: 0;">\u767D\u540D\u5355</span>':""}
                         </div>
                         <span style="font-size: 11px; color: var(--text-muted); white-space: nowrap;">${c}</span>
@@ -3982,18 +4551,18 @@ if (document.readyState === 'loading') {
                         <span style="font-size: 11px; color: var(--text-muted);">${m}</span>
                       </div>
                     </td>
-                    <td style="font-size: 12px; color: var(--text-muted); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${y}">${y}</td>
+                    <td style="font-size: 12px; color: var(--text-muted); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${v}">${v}</td>
                     <td style="text-align: right; white-space: nowrap;">
                       <div style="display: inline-flex; gap: 6px; justify-content: flex-end;">
                         ${s?`
-                          <button class="btn-action btn-secondary" style="height: 28px; font-size: 11px; padding: 0 8px;" data-ip="${d}" onclick="removeWhitelistIP(this.dataset.ip)">\u79FB\u9664\u767D\u540D\u5355</button>
+                          <button class="btn-action btn-secondary" style="height: 28px; font-size: 11px; padding: 0 8px;" data-ip="${p}" onclick="removeWhitelistIP(this.dataset.ip)">\u79FB\u9664\u767D\u540D\u5355</button>
                         `:`
-                          <button class="btn-action btn-success" style="height: 28px; font-size: 11px; padding: 0 8px;" data-ip="${d}" onclick="addWhitelistIP(this.dataset.ip)">\u2B50 \u767D\u540D\u5355</button>
+                          <button class="btn-action btn-success" style="height: 28px; font-size: 11px; padding: 0 8px;" data-ip="${p}" onclick="addWhitelistIP(this.dataset.ip)">\u2B50 \u767D\u540D\u5355</button>
                         `}
                         ${i?`
-                          <button class="btn-action btn-secondary" style="height: 28px; font-size: 11px; padding: 0 8px;" data-ip="${d}" onclick="unblockIP(this.dataset.ip)">\u{1F7E2} \u89E3\u5C01</button>
+                          <button class="btn-action btn-secondary" style="height: 28px; font-size: 11px; padding: 0 8px;" data-ip="${p}" onclick="unblockIP(this.dataset.ip)">\u{1F7E2} \u89E3\u5C01</button>
                         `:`
-                          <button class="btn-action btn-danger" style="height: 28px; font-size: 11px; padding: 0 8px;" data-ip="${d}" onclick="blockIP(this.dataset.ip)">\u{1F6AB} \u5C4F\u853D</button>
+                          <button class="btn-action btn-danger" style="height: 28px; font-size: 11px; padding: 0 8px;" data-ip="${p}" onclick="blockIP(this.dataset.ip)">\u{1F6AB} \u5C4F\u853D</button>
                         `}
                       </div>
                     </td>
@@ -4010,55 +4579,286 @@ if (document.readyState === 'loading') {
         </div>
       </div>
     </section>
-  `}function gt(o){return o==null?"":String(o).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function ze(o,e,t=[],n=!0){let a=gt(o||"sub"),s=gt(e||""),i=Array.isArray(t)?t.join(", "):"";return`
+  `}function Xe(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Qe(t){return t?t.includes("/")?"CIDR \u7F51\u6BB5":t.includes(":")?"IPv6 \u5355\u673A":"IPv4 \u5355\u673A":"\u672A\u77E5"}function Pe(t=[]){let e=t.length;return`
+    <!-- \u89C6\u56FE: \u72EC\u7ACB IP \u767D\u540D\u5355\u7BA1\u7406 -->
+    <section class="tab-content" id="tab-ip-whitelist">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title-group">
+            <h2 class="section-title">\u2728 IP \u8BBF\u95EE\u767D\u540D\u5355\u7BA1\u7406</h2>
+            <span class="node-count-badge badge-success">\u6C38\u4E45\u8C41\u514D\u62E6\u622A</span>
+            <span class="node-count-badge" id="whitelist-total-badge">\u5171 ${e} \u4E2A\u653E\u884C\u9879</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-action btn-danger" onclick="clearAllWhitelistIPs()">\u{1F5D1}\uFE0F \u6E05\u7A7A\u6240\u6709\u767D\u540D\u5355</button>
+          </div>
+        </div>
+        <p class="section-desc">
+          \u767D\u540D\u5355\u5185\u7684 IP / CIDR \u7F51\u6BB5\u62E5\u6709\u6700\u9AD8\u901A\u884C\u6743\u9650\uFF1A\u5B8C\u5168\u8C41\u514D\u9ED1\u540D\u5355\u62E6\u622A\u3001\u8C41\u514D 404 \u63A2\u6D4B\u62E6\u622A\uFF0C\u4E14\u767B\u5F55\u540E\u53F0\u514D\u9664\u5BC6\u7801\u9632\u7206\u7834\u5C01\u7981\u3002\u652F\u6301 IPv4\uFF08\u5982 <code>1.1.1.1</code>\uFF09\u3001IPv6 \u53CA CIDR \u7F51\u6BB5\uFF08\u5982 <code>192.168.1.0/24</code>\uFF09\u3002
+        </p>
+
+        <!-- \u5FEB\u901F\u5355\u6761\u6DFB\u52A0\u5DE5\u5177\u680F -->
+        <div class="quick-add-bar">
+          <div class="quick-add-wrap">
+            <span class="quick-add-icon">\u2728</span>
+            <input type="text" id="input-quick-add-whitelist" class="form-input" 
+                   placeholder="\u8F93\u5165\u5355\u4E2A\u6216\u591A\u4E2A IP / CIDR \u7F51\u6BB5\uFF08\u5982\uFF1A1.1.1.1\u3001192.168.1.0/24\uFF0C\u652F\u6301\u4EE5\u9017\u53F7\u6216\u7A7A\u683C\u5206\u9694\uFF09\uFF0C\u6309\u56DE\u8F66\u6DFB\u52A0..."
+                   onkeydown="if(event.key === 'Enter') quickAddWhitelistIP()" />
+          </div>
+          <button type="button" class="btn-action btn-success" style="height: 38px; padding: 0 18px;" onclick="quickAddWhitelistIP()">
+            \u2795 \u6DFB\u52A0\u5230\u767D\u540D\u5355
+          </button>
+        </div>
+
+        <!-- \u641C\u7D22\u4E0E\u7B5B\u9009\u5DE5\u5177\u680F -->
+        <div class="logs-filter-toolbar" style="margin-top: 14px;">
+          <div class="logs-filter-group" style="flex: 1;">
+            <div class="filter-input-wrap" style="flex: 1; max-width: 360px;">
+              <span class="filter-icon">\u{1F50D}</span>
+              <input type="text" id="filter-whitelist-keyword" class="filter-input" 
+                     placeholder="\u641C\u7D22\u767D\u540D\u5355 IP \u6216\u7F51\u6BB5..." oninput="applyWhitelistFilter()" />
+              <button type="button" class="filter-clear-btn" id="whitelist-keyword-clear" 
+                      onclick="clearWhitelistKeyword()" style="display:none;" title="\u6E05\u7A7A\u641C\u7D22">\u2715</button>
+            </div>
+            <button type="button" class="btn-action btn-secondary filter-reset-btn" onclick="clearWhitelistKeyword()">
+              \u21BA \u91CD\u7F6E
+            </button>
+          </div>
+          <div class="logs-filter-summary">
+            <span id="whitelist-filter-stats">\u663E\u793A <strong>${e}</strong> / \u5171 <strong>${e}</strong> \u4E2A IP</span>
+          </div>
+        </div>
+
+        <!-- \u6279\u91CF\u64CD\u4F5C\u5DE5\u5177\u680F -->
+        <div class="batch-toolbar" id="whitelist-batch-toolbar">
+          <div class="batch-toolbar-info">
+            <span>\u2611\uFE0F \u5DF2\u9009\u4E2D <strong id="whitelist-selected-count">0</strong> \u4E2A\u767D\u540D\u5355 IP</span>
+          </div>
+          <div class="batch-toolbar-actions">
+            <button type="button" class="btn-action btn-secondary" style="height: 32px; font-size: 12px; padding: 0 10px;" onclick="clearBatchSelection('whitelist')">\u53D6\u6D88\u9009\u62E9</button>
+            <button type="button" class="btn-action btn-danger" style="height: 32px; font-size: 12px; padding: 0 12px;" onclick="batchDeleteWhitelistIPs()">\u{1F5D1}\uFE0F \u6279\u91CF\u79FB\u9664\u9009\u4E2D</button>
+          </div>
+        </div>
+
+        <!-- \u53EF\u89C6\u5316\u767D\u540D\u5355\u6570\u636E\u8868\u683C -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="checkbox-cell">
+                  <input type="checkbox" class="table-checkbox" id="whitelist-check-all" onchange="toggleAllCheckboxes('whitelist', this.checked)" title="\u5168\u9009 / \u53CD\u9009\u5F53\u524D\u9875" />
+                </th>
+                <th style="width: 70px;">\u5E8F\u53F7</th>
+                <th style="min-width: 240px;">IP / CIDR \u7F51\u6BB5\u5730\u5740</th>
+                <th style="width: 140px;">\u7C7B\u522B</th>
+                <th style="width: 150px;">\u6743\u9650\u72B6\u6001</th>
+                <th style="width: 220px; text-align: right;">\u64CD\u4F5C</th>
+              </tr>
+            </thead>
+            <tbody id="whitelist-table-body">
+              ${e===0?`
+                <tr>
+                  <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 48px 16px;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">\u2728</div>
+                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">\u5F53\u524D\u767D\u540D\u5355\u5217\u8868\u4E3A\u7A7A</div>
+                    <div style="font-size: 12px;">\u4F60\u53EF\u4EE5\u4F7F\u7528\u4E0A\u65B9\u7684\u8F93\u5165\u6846\u8F93\u5165 IP \u6216 CIDR \u7F51\u6BB5\u5FEB\u901F\u6DFB\u52A0\u5230\u767D\u540D\u5355</div>
+                  </td>
+                </tr>
+              `:t.map((o,n)=>{let a=Xe(o),s=Qe(o);return`
+                  <tr class="whitelist-table-row" data-index="${n}" data-ip="${a}">
+                    <td class="checkbox-cell">
+                      <input type="checkbox" class="table-checkbox whitelist-row-checkbox" value="${a}" onchange="updateBatchSelection('whitelist')" />
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 12px; font-family: monospace;">#${n+1}</td>
+                    <td>
+                      <span style="font-family: monospace; font-size: 13px; font-weight: 700; color: var(--text-title);">${a}</span>
+                    </td>
+                    <td>
+                      <span class="node-count-badge" style="font-size: 11px;">${s}</span>
+                    </td>
+                    <td>
+                      <span class="node-count-badge badge-success" style="font-size: 11px;">\u2B50 \u6C38\u4E45\u653E\u884C</span>
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                      <div style="display: inline-flex; gap: 6px; justify-content: flex-end;">
+                        <button type="button" class="btn-action btn-secondary" style="height: 28px; font-size: 11px; padding: 0 8px;" onclick="copyStringToClipboard('${a}', '\u5DF2\u590D\u5236 IP: ${a}')">\u{1F4CB} \u590D\u5236</button>
+                        <button type="button" class="btn-action btn-purple" style="height: 28px; font-size: 11px; padding: 0 8px;" onclick="moveWhitelistToBlacklist('${a}')">\u{1F6AB} \u79FB\u5165\u9ED1\u540D\u5355</button>
+                        <button type="button" class="btn-action btn-danger" style="height: 28px; font-size: 11px; padding: 0 8px;" onclick="removeWhitelistIP('${a}')">\u{1F5D1}\uFE0F \u79FB\u9664</button>
+                      </div>
+                    </td>
+                  </tr>
+                `}).join("")}
+              <tr id="whitelist-table-empty-filter-row" style="display: none;">
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 36px;">
+                  \u{1F50D} \u6CA1\u6709\u627E\u5230\u5339\u914D\u7684\u767D\u540D\u5355 IP\uFF0C\u60A8\u53EF\u4EE5\u5C1D\u8BD5\u8C03\u6574\u6216<a href="javascript:void(0)" onclick="clearWhitelistKeyword()" style="color: #0284c7; text-decoration: underline; margin-left: 4px;">\u6E05\u7A7A\u641C\u7D22\u6761\u4EF6</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="table-pagination" id="whitelist-table-pagination" style="display: none;"></div>
+        </div>
+      </div>
+    </section>
+  `}function Ze(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function to(t){return t?t.includes("/")?"CIDR \u7F51\u6BB5":t.includes(":")?"IPv6 \u5355\u673A":"IPv4 \u5355\u673A":"\u672A\u77E5"}function Be(t=[]){let e=t.length;return`
+    <!-- \u89C6\u56FE: \u72EC\u7ACB IP \u9ED1\u540D\u5355\u7BA1\u7406 -->
+    <section class="tab-content" id="tab-ip-blacklist">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title-group">
+            <h2 class="section-title">\u{1F6E1}\uFE0F IP \u8BBF\u95EE\u9ED1\u540D\u5355 / \u5C4F\u853D\u7BA1\u7406</h2>
+            <span class="node-count-badge badge-danger">403 \u5F3A\u5236\u963B\u65AD</span>
+            <span class="node-count-badge" id="blacklist-total-badge">\u5171 ${e} \u4E2A\u5C4F\u853D\u9879</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-action btn-danger" onclick="clearAllBlockedIPs()">\u{1F5D1}\uFE0F \u6E05\u7A7A\u6240\u6709\u9ED1\u540D\u5355</button>
+          </div>
+        </div>
+        <p class="section-desc">
+          \u88AB\u5217\u5165\u9ED1\u540D\u5355\u7684 IP / CIDR \u7F51\u6BB5\u8BBF\u95EE\u4EFB\u4F55\u8BA2\u9605\u94FE\u63A5\u3001\u77ED\u94FE\u63A5\u6216\u7BA1\u7406\u9875\u9762\u65F6\uFF0C\u8FB9\u7F18\u5C42\u5C06\u76F4\u63A5\u963B\u65AD\u5E76\u8FD4\u56DE <code>403 Forbidden</code>\u3002\u652F\u6301 IPv4\u3001IPv6 \u53CA CIDR \u7F51\u6BB5\uFF08\u5982 <code>10.0.0.0/8</code>\uFF09\u3002
+        </p>
+
+        <!-- \u5FEB\u901F\u5355\u6761\u6DFB\u52A0\u5DE5\u5177\u680F -->
+        <div class="quick-add-bar">
+          <div class="quick-add-wrap">
+            <span class="quick-add-icon">\u{1F6AB}</span>
+            <input type="text" id="input-quick-add-blacklist" class="form-input" 
+                   placeholder="\u8F93\u5165\u5355\u4E2A\u6216\u591A\u4E2A IP / CIDR \u7F51\u6BB5\uFF08\u5982\uFF1A1.2.3.4\u300110.0.0.0/8\uFF0C\u652F\u6301\u4EE5\u9017\u53F7\u6216\u7A7A\u683C\u5206\u9694\uFF09\uFF0C\u6309\u56DE\u8F66\u5C4F\u853D..."
+                   onkeydown="if(event.key === 'Enter') quickAddBlockedIP()" />
+          </div>
+          <button type="button" class="btn-action btn-purple" style="height: 38px; padding: 0 18px;" onclick="quickAddBlockedIP()">
+            \u{1F6AB} \u5C4F\u853D\u8BE5 IP
+          </button>
+        </div>
+
+        <!-- \u641C\u7D22\u4E0E\u7B5B\u9009\u5DE5\u5177\u680F -->
+        <div class="logs-filter-toolbar" style="margin-top: 14px;">
+          <div class="logs-filter-group" style="flex: 1;">
+            <div class="filter-input-wrap" style="flex: 1; max-width: 360px;">
+              <span class="filter-icon">\u{1F50D}</span>
+              <input type="text" id="filter-blacklist-keyword" class="filter-input" 
+                     placeholder="\u641C\u7D22\u9ED1\u540D\u5355 IP \u6216\u7F51\u6BB5..." oninput="applyBlacklistFilter()" />
+              <button type="button" class="filter-clear-btn" id="blacklist-keyword-clear" 
+                      onclick="clearBlacklistKeyword()" style="display:none;" title="\u6E05\u7A7A\u641C\u7D22">\u2715</button>
+            </div>
+            <button type="button" class="btn-action btn-secondary filter-reset-btn" onclick="clearBlacklistKeyword()">
+              \u21BA \u91CD\u7F6E
+            </button>
+          </div>
+          <div class="logs-filter-summary">
+            <span id="blacklist-filter-stats">\u663E\u793A <strong>${e}</strong> / \u5171 <strong>${e}</strong> \u4E2A IP</span>
+          </div>
+        </div>
+
+        <!-- \u6279\u91CF\u64CD\u4F5C\u5DE5\u5177\u680F -->
+        <div class="batch-toolbar" id="blacklist-batch-toolbar">
+          <div class="batch-toolbar-info">
+            <span>\u2611\uFE0F \u5DF2\u9009\u4E2D <strong id="blacklist-selected-count">0</strong> \u4E2A\u9ED1\u540D\u5355 IP</span>
+          </div>
+          <div class="batch-toolbar-actions">
+            <button type="button" class="btn-action btn-secondary" style="height: 32px; font-size: 12px; padding: 0 10px;" onclick="clearBatchSelection('blacklist')">\u53D6\u6D88\u9009\u62E9</button>
+            <button type="button" class="btn-action btn-primary" style="height: 32px; font-size: 12px; padding: 0 12px;" onclick="batchDeleteBlockedIPs()">\u{1F7E2} \u6279\u91CF\u89E3\u9664\u5C4F\u853D</button>
+          </div>
+        </div>
+
+        <!-- \u53EF\u89C6\u5316\u9ED1\u540D\u5355\u6570\u636E\u8868\u683C -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="checkbox-cell">
+                  <input type="checkbox" class="table-checkbox" id="blacklist-check-all" onchange="toggleAllCheckboxes('blacklist', this.checked)" title="\u5168\u9009 / \u53CD\u9009\u5F53\u524D\u9875" />
+                </th>
+                <th style="width: 70px;">\u5E8F\u53F7</th>
+                <th style="min-width: 240px;">IP / CIDR \u7F51\u6BB5\u5730\u5740</th>
+                <th style="width: 140px;">\u7C7B\u522B</th>
+                <th style="width: 150px;">\u62E6\u622A\u72B6\u6001</th>
+                <th style="width: 220px; text-align: right;">\u64CD\u4F5C</th>
+              </tr>
+            </thead>
+            <tbody id="blacklist-table-body">
+              ${e===0?`
+                <tr>
+                  <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 48px 16px;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">\u{1F6E1}\uFE0F</div>
+                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">\u5F53\u524D\u9ED1\u540D\u5355\u5217\u8868\u4E3A\u7A7A</div>
+                    <div style="font-size: 12px;">\u4F60\u53EF\u4EE5\u4F7F\u7528\u4E0A\u65B9\u7684\u8F93\u5165\u6846\u8F93\u5165 IP \u6216 CIDR \u7F51\u6BB5\u5FEB\u901F\u5C4F\u853D</div>
+                  </td>
+                </tr>
+              `:t.map((o,n)=>{let a=Ze(o),s=to(o);return`
+                  <tr class="blacklist-table-row" data-index="${n}" data-ip="${a}">
+                    <td class="checkbox-cell">
+                      <input type="checkbox" class="table-checkbox blacklist-row-checkbox" value="${a}" onchange="updateBatchSelection('blacklist')" />
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 12px; font-family: monospace;">#${n+1}</td>
+                    <td>
+                      <span style="font-family: monospace; font-size: 13px; font-weight: 700; color: #dc2626;">${a}</span>
+                    </td>
+                    <td>
+                      <span class="node-count-badge" style="font-size: 11px;">${s}</span>
+                    </td>
+                    <td>
+                      <span class="node-count-badge badge-danger" style="font-size: 11px;">\u{1F6AB} 403 \u963B\u65AD</span>
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                      <div style="display: inline-flex; gap: 6px; justify-content: flex-end;">
+                        <button type="button" class="btn-action btn-secondary" style="height: 28px; font-size: 11px; padding: 0 8px;" onclick="copyStringToClipboard('${a}', '\u5DF2\u590D\u5236 IP: ${a}')">\u{1F4CB} \u590D\u5236</button>
+                        <button type="button" class="btn-action btn-success" style="height: 28px; font-size: 11px; padding: 0 8px;" onclick="moveBlacklistToWhitelist('${a}')">\u2B50 \u79FB\u5165\u767D\u540D\u5355</button>
+                        <button type="button" class="btn-action btn-primary" style="height: 28px; font-size: 11px; padding: 0 8px;" onclick="unblockIP('${a}')">\u{1F7E2} \u89E3\u5C01</button>
+                      </div>
+                    </td>
+                  </tr>
+                `}).join("")}
+              <tr id="blacklist-table-empty-filter-row" style="display: none;">
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 36px;">
+                  \u{1F50D} \u6CA1\u6709\u627E\u5230\u5339\u914D\u7684\u9ED1\u540D\u5355 IP\uFF0C\u60A8\u53EF\u4EE5\u5C1D\u8BD5\u8C03\u6574\u6216<a href="javascript:void(0)" onclick="clearBlacklistKeyword()" style="color: #0284c7; text-decoration: underline; margin-left: 4px;">\u6E05\u7A7A\u641C\u7D22\u6761\u4EF6</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="table-pagination" id="blacklist-table-pagination" style="display: none;"></div>
+        </div>
+      </div>
+    </section>
+  `}function ft(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Ee(t,e=[],o=!0){let n=ft(t||""),a=Array.isArray(e)?e.join(", "):"";return`
     <!-- \u89C6\u56FE: \u8BA2\u9605\u5B89\u5168\u914D\u7F6E (\u5168\u5C40) -->
     <section class="tab-content" id="tab-security-config">
       <div class="section-card">
         <div class="section-header">
           <div class="section-title-group">
-            <h2 class="section-title">\u{1F511} \u8BA2\u9605\u5B89\u5168\u4E0E\u5168\u5C40\u8DEF\u7531\u7B56\u7565</h2>
+            <h2 class="section-title">\u{1F511} \u8BA2\u9605\u5B89\u5168\u4E0E\u5168\u5C40\u8BBF\u95EE\u7B56\u7565</h2>
             <span class="badge-global-tip">\u5168\u7AD9\u751F\u6548</span>
           </div>
           <div class="section-header-actions">
-            <button type="button" class="btn-action btn-purple" style="height: 34px; font-size: 12px; padding: 0 14px;" onclick="randomizeSecurityConfig()">\u{1F3B2} \u968F\u673A\u751F\u6210\u5168\u90E8</button>
+            <button type="button" class="btn-action btn-purple" style="height: 34px; font-size: 12px; padding: 0 14px;" onclick="randomToken()">\u{1F3B2} \u968F\u673A\u751F\u6210 Token</button>
             <button type="button" class="btn-action btn-success" style="height: 34px; font-size: 12px; padding: 0 16px;" onclick="saveSecurityConfig()">\u{1F4BE} \u4FDD\u5B58\u5B89\u5168\u914D\u7F6E</button>
           </div>
         </div>
-        <p class="section-desc">\u672C\u6A21\u5757\u4E3A\u5168\u5C40\u5B89\u5168\u57FA\u7EBF\u914D\u7F6E\uFF0C\u7528\u4E8E\u4FDD\u62A4\u5168\u7AD9\u6240\u6709\u8282\u70B9\u4E0E\u8BA2\u9605\u94FE\u63A5\u3002\u7CFB\u7EDF\u91C7\u7528\u9AD8\u71B5\u968F\u673A\u5B57\u7B26\u4F5C\u4E3A\u5168\u5C40\u4E13\u5C5E\u805A\u5408\u8DEF\u7531\u4E0E\u5B89\u5168\u51ED\u636E\uFF0C\u5E76\u63D0\u4F9B IP \u5F52\u5C5E\u5730\u767D\u540D\u5355\u53CA\u4EE3\u7406\u5BA2\u6237\u7AEF\u8FC7\u6EE4\u673A\u5236\uFF0C\u5F7B\u5E95\u675C\u7EDD\u626B\u63CF\u4E0E\u76D7\u5237\u3002</p>
+        <p class="section-desc">\u672C\u6A21\u5757\u4E3A\u5168\u5C40\u5B89\u5168\u57FA\u7EBF\u914D\u7F6E\uFF0C\u7528\u4E8E\u4FDD\u62A4\u5168\u7AD9\u6240\u6709\u8282\u70B9\u4E0E\u8BA2\u9605\u94FE\u63A5\u3002\u7CFB\u7EDF\u91C7\u7528\u9AD8\u5F3A\u5EA6\u9632\u76D7\u5237\u5B89\u5168\u4EE4\u724C\u4F5C\u4E3A\u9274\u6743\u51ED\u636E\uFF0C\u5E76\u63D0\u4F9B IP \u5F52\u5C5E\u5730\u767D\u540D\u5355\u53CA\u4EE3\u7406\u5BA2\u6237\u7AEF\u8FC7\u6EE4\u673A\u5236\uFF0C\u5F7B\u5E95\u675C\u7EDD\u626B\u63CF\u4E0E\u76D7\u5237\u3002</p>
 
         <!-- \u5168\u5C40\u751F\u6548\u63D0\u793A\u6761 -->
         <div class="global-notice-card" style="margin-bottom: 20px; padding: 12px 16px; border-radius: 8px; background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(2, 132, 199, 0.22); display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 20px; flex-shrink: 0;">\u{1F310}</span>
           <div style="font-size: 13px; line-height: 1.6; color: var(--text-title);">
-            <strong>\u5168\u5C40\u4F5C\u7528\u57DF\u8BF4\u660E\uFF1A</strong>\u6B64\u5904\u8BBE\u7F6E\u7684<strong>\u8BA2\u9605\u805A\u5408\u8DEF\u5F84\u3001\u5B89\u5168 Token\u3001\u56FD\u5BB6/\u5730\u533A IP \u767D\u540D\u5355</strong>\u53CA<strong>\u4EE3\u7406\u5BA2\u6237\u7AEF\u62E6\u622A\u8FC7\u6EE4</strong>\u5747\u4E3A\u5168\u7AD9\u5168\u5C40\u751F\u6548\uFF0C\u666E\u901A\u8BA2\u9605\u3001CF \u4F18\u9009\u8BA2\u9605\u4E0E\u805A\u5408\u8BA2\u9605\u5747\u7EDF\u4E00\u9075\u5FAA\u6B64\u5B89\u5168\u98CE\u63A7\u89C4\u5219\u3002
+            <strong>\u5168\u5C40\u4F5C\u7528\u57DF\u8BF4\u660E\uFF1A</strong>\u6B64\u5904\u8BBE\u7F6E\u7684<strong>\u5B89\u5168 Token\u3001\u56FD\u5BB6/\u5730\u533A IP \u767D\u540D\u5355</strong>\u53CA<strong>\u4EE3\u7406\u5BA2\u6237\u7AEF\u62E6\u622A\u8FC7\u6EE4</strong>\u5747\u4E3A\u5168\u7AD9\u5168\u5C40\u751F\u6548\uFF0C\u666E\u901A\u8BA2\u9605\u4E0E CF \u4F18\u9009\u8BA2\u9605\u5747\u7EDF\u4E00\u9075\u5FAA\u6B64\u5B89\u5168\u98CE\u63A7\u89C4\u5219\u3002
           </div>
         </div>
 
         <!-- \u54CD\u5E94\u5F0F\u6805\u683C (PC\u53CC\u680F\uFF0C\u5E73\u677F/\u624B\u673A\u81EA\u52A8\u5355\u680F\u94FA\u6EE1) -->
         <div class="settings-grid">
-          <!-- \u5DE6\u680F: \u6838\u5FC3\u8DEF\u7531\u8DEF\u5F84\u4E0E\u5B89\u5168\u4EE4\u724C -->
+          <!-- \u5DE6\u680F: \u6838\u5FC3\u5B89\u5168\u4EE4\u724C -->
           <div style="background: var(--hover-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px;">
             <div style="font-size: 14px; font-weight: 600; color: var(--text-title); margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
               <span>\u{1F512}</span>
-              <span>\u8BA2\u9605\u8DEF\u5F84\u4E0E\u9274\u6743\u51ED\u8BC1</span>
-            </div>
-
-            <div class="form-field" style="margin-bottom: 16px;">
-              <label>\u5168\u5C40\u805A\u5408\u8BA2\u9605\u8DEF\u5F84 (SUB_PATH):</label>
-              <div class="copy-box">
-                <input type="text" class="copy-input" id="cfg-sub-path" value="${a}" placeholder="12\u4F4D\u9AD8\u5F3A\u5EA6\u968F\u673A\u5B57\u7B26\u4E32" />
-                <button type="button" class="btn-action btn-secondary" style="height: 38px;" onclick="randomSubPath()">\u{1F3B2} \u968F\u673A</button>
-              </div>
-              <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">\u7528\u4E8E\u5168\u5C40\u805A\u5408\u8BA2\u9605\u76F4\u8FDE\u8DEF\u7531\uFF0C\u4F8B\u5982: /${a}?token=...</p>
+              <span>\u5168\u5C40\u8BA2\u9605\u9274\u6743\u51ED\u8BC1</span>
             </div>
 
             <div class="form-field">
               <label>\u5168\u5C40\u8BA2\u9605\u9274\u6743\u4EE4\u724C (TOKEN):</label>
               <div class="copy-box">
-                <input type="text" class="copy-input" id="cfg-token" value="${s}" placeholder="24\u4F4D\u9AD8\u5F3A\u5EA6\u968F\u673A\u5B89\u5168\u4EE4\u724C" />
+                <input type="text" class="copy-input" id="cfg-token" value="${n}" placeholder="12-33\u4F4D\u9AD8\u5F3A\u5EA6\u968F\u673A\u5B89\u5168\u4EE4\u724C (a-zA-Z0-9)" />
                 <button type="button" class="btn-action btn-secondary" style="height: 38px;" onclick="randomToken()">\u{1F3B2} \u968F\u673A</button>
               </div>
-              <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">\u5168\u7AD9\u8BA2\u9605 URL \u7EDF\u4E00\u9274\u6743\u51ED\u8BC1\uFF08\u672A\u643A\u5E26\u6B63\u786E Token \u7684\u8BBF\u95EE\u8BF7\u6C42\u5C06\u88AB\u76F4\u63A5\u963B\u65AD\u62E6\u622A\uFF09\u3002</p>
+              <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">\u5168\u7AD9\u8BA2\u9605 URL \u7EDF\u4E00\u9274\u6743\u51ED\u8BC1\uFF08\u4F8B\u5982: /:groupId?token=...\uFF0C\u672A\u643A\u5E26\u6B63\u786E Token \u7684\u8BBF\u95EE\u8BF7\u6C42\u5C06\u88AB\u76F4\u63A5\u963B\u65AD\u62E6\u622A\uFF09\u3002</p>
             </div>
           </div>
 
@@ -4083,7 +4883,7 @@ if (document.readyState === 'loading') {
                   <button type="button" class="btn-action btn-danger" style="height: 26px; font-size: 11px; padding: 0 8px;" onclick="clearInput('cfg-allowed-countries')">\u6E05\u7A7A</button>
                 </div>
               </div>
-              <input type="text" id="cfg-allowed-countries" value="${gt(i)}" placeholder="\u4F8B\u5982: CN, HK, TW, JP, SG (\u7559\u7A7A\u5219\u5BF9\u6240\u6709\u56FD\u5BB6/\u5730\u533A\u5F00\u653E)" />
+              <input type="text" id="cfg-allowed-countries" class="form-input" value="${ft(a)}" placeholder="\u4F8B\u5982: CN, HK, TW, JP, SG (\u7559\u7A7A\u5219\u5BF9\u6240\u6709\u56FD\u5BB6/\u5730\u533A\u5F00\u653E)" />
               <p style="font-size: 11px; color: var(--text-muted); margin-top: 5px; line-height: 1.5;">
                 \u57FA\u4E8E Cloudflare \u771F\u5B9E IP \u5730\u7406\u4F4D\u7F6E\u8BC6\u522B\u3002\u586B\u5199 ISO \u4E24\u5B57\u6BCD\u5927\u5199\u4EE3\u7801\uFF08\u591A\u4E2A\u4EE5\u9017\u53F7\u5206\u9694\uFF09\u3002\u7559\u7A7A\u8868\u793A\u5BF9\u6240\u6709\u56FD\u5BB6/\u5730\u533A IP \u5F00\u653E\u3002\u82E5\u67D0\u5206\u7EC4\u914D\u7F6E\u4E86\u4E13\u5C5E\u56FD\u5BB6\u767D\u540D\u5355\uFF0C\u5C06\u4F18\u5148\u91C7\u7528\u5206\u7EC4\u914D\u7F6E\u3002
               </p>
@@ -4091,7 +4891,7 @@ if (document.readyState === 'loading') {
 
             <div class="form-field" style="margin-top: 14px;">
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-label);">
-                <input type="checkbox" id="cfg-proxy-client-only" ${n?"checked":""} style="width: 16px; height: 16px; cursor: pointer;" />
+                <input type="checkbox" id="cfg-proxy-client-only" ${o?"checked":""} style="width: 16px; height: 16px; cursor: pointer;" />
                 <span>\u{1F6E1}\uFE0F \u4EC5\u5141\u8BB8\u4EE3\u7406\u5BA2\u6237\u7AEF\u8BBF\u95EE\u8BA2\u9605 (\u62E6\u622A\u6D4F\u89C8\u5668/\u722C\u866B)</span>
               </label>
               <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px; margin-left: 24px; line-height: 1.5;">
@@ -4102,7 +4902,7 @@ if (document.readyState === 'loading') {
         </div>
       </div>
     </section>
-  `}function Le(o={}){let e=o&&(o.enabled===!0||o.enabled==="true"),t=gt(o?.token||""),n=gt(o?.chatId||""),a=gt(o?.apiHost||"https://api.telegram.org");return`
+  `}function Ae(t={}){let e=t&&(t.enabled===!0||t.enabled==="true"),o=ft(t?.token||""),n=ft(t?.chatId||""),a=ft(t?.apiHost||"https://api.telegram.org");return`
     <!-- \u89C6\u56FE: TG \u8BA2\u9605\u901A\u77E5 (\u5168\u5C40) -->
     <section class="tab-content" id="tab-tg-config">
       <div class="section-card">
@@ -4143,13 +4943,13 @@ if (document.readyState === 'loading') {
 
             <div class="form-field" style="margin-bottom: 16px;">
               <label>Bot Token:</label>
-              <input type="password" id="cfg-tg-token" value="${t}" placeholder="\u4F8B\u5982: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ" autocomplete="off" />
+              <input type="password" id="cfg-tg-token" class="form-input" value="${o}" placeholder="\u4F8B\u5982: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ" autocomplete="off" />
               <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">\u7531 Telegram @BotFather \u521B\u5EFA\u673A\u5668\u4EBA\u540E\u83B7\u5F97\u7684 API Token \u51ED\u8BC1\u3002</p>
             </div>
 
             <div class="form-field">
               <label>Chat ID (\u76EE\u6807\u4F1A\u8BDD ID):</label>
-              <input type="text" id="cfg-tg-chat-id" value="${n}" placeholder="\u7FA4\u7EC4\u52A1\u5FC5\u4EE5 -100 \u5F00\u5934\uFF0C\u4F8B\u5982: -1002147483648" />
+              <input type="text" id="cfg-tg-chat-id" class="form-input" value="${n}" placeholder="\u7FA4\u7EC4\u52A1\u5FC5\u4EE5 -100 \u5F00\u5934\uFF0C\u4F8B\u5982: -1002147483648" />
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.6;">
                 <div>\u{1F4A1} <strong>\u7FA4\u7EC4\u63A8\u9001\u6CE8\u610F\uFF1A</strong></div>
                 <div>1. \u673A\u5668\u4EBA\u5FC5\u987B\u5148<strong>\u52A0\u5165\u8BE5 Telegram \u7FA4\u7EC4</strong>\u5E76\u8D4B\u4E88\u53D1\u8A00\u6743\u9650\uFF1B</div>
@@ -4168,7 +4968,7 @@ if (document.readyState === 'loading') {
 
             <div class="form-field" style="margin-bottom: 16px;">
               <label>Telegram API \u5730\u5740 (\u53CD\u4EE3 / \u81EA\u5EFA\u7AEF\u70B9):</label>
-              <input type="text" id="cfg-tg-api-host" value="${a}" placeholder="\u9ED8\u8BA4: https://api.telegram.org" />
+              <input type="text" id="cfg-tg-api-host" class="form-input" value="${a}" placeholder="\u9ED8\u8BA4: https://api.telegram.org" />
               <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">\u5982\u56E0\u7F51\u7EDC\u73AF\u5883\u65E0\u6CD5\u76F4\u8FDE\u5B98\u65B9 API\uFF0C\u53EF\u586B\u5199 Cloudflare Worker \u53CD\u5411\u4EE3\u7406\u7AEF\u70B9\u6216\u81EA\u5B9A\u4E49\u4E2D\u8F6C\u5730\u5740\u3002</p>
             </div>
 
@@ -4182,7 +4982,7 @@ if (document.readyState === 'loading') {
         </div>
       </div>
     </section>
-  `}function $e(o,e,t,n,a,s=[],i=[],l=[],d=[],c=[],h=!0,u={}){let m=e||"sub";return`<!DOCTYPE html>
+  `}function ze(t,e,o,n=[],a=[],s=[],i=[],l=[],p=[],c=!0,h={}){return`<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -4253,7 +5053,7 @@ if (document.readyState === 'loading') {
     })();
   <\/script>
   <style>
-    ${Se}
+    ${ke}
   </style>
 </head>
 <body>
@@ -4283,6 +5083,20 @@ if (document.readyState === 'loading') {
 
       <div class="nav-section-divider"></div>
 
+      <div class="nav-section-title">\u5B89\u5168\u7BA1\u63A7</div>
+      <a class="nav-item" id="nav-item-ip-whitelist" onclick="switchTab('ip-whitelist')">
+        <span class="nav-icon">\u2728</span>
+        <span style="flex: 1;">IP \u767D\u540D\u5355</span>
+        <span class="nav-badge-pill badge-success-pill" id="badge-whitelist-count">${l.length}</span>
+      </a>
+      <a class="nav-item" id="nav-item-ip-blacklist" onclick="switchTab('ip-blacklist')">
+        <span class="nav-icon">\u{1F6E1}\uFE0F</span>
+        <span style="flex: 1;">IP \u9ED1\u540D\u5355</span>
+        <span class="nav-badge-pill badge-danger-pill" id="badge-blacklist-count">${i.length}</span>
+      </a>
+
+      <div class="nav-section-divider"></div>
+
       <div class="nav-section-title">
         <span>\u{1F310} \u5168\u5C40\u914D\u7F6E</span>
         <span class="nav-badge-pill" title="\u6B64\u5904\u7684\u914D\u7F6E\u5BF9\u5168\u7AD9\u6240\u6709\u8BA2\u9605\u7EDF\u4E00\u751F\u6548">\u5168\u7AD9\u751F\u6548</span>
@@ -4299,7 +5113,7 @@ if (document.readyState === 'loading') {
       </a>
     </nav>
     <div class="sidebar-footer">
-      <a href="/logout" class="logout-btn">
+      <a href="javascript:void(0)" onclick="handleLogout()" class="logout-btn">
         <span>\u{1F6AA}</span>
         <span>\u9000\u51FA\u767B\u5F55</span>
       </a>
@@ -4330,11 +5144,13 @@ if (document.readyState === 'loading') {
     </div>
 
     <div class="content-area">
-      ${Ee(o,t,a)}
-      ${Be(o,t,s,n)}
-      ${Ae(i,l,d)}
-      ${ze(m,t,c,h)}
-      ${Le(u)}
+      ${Ie(t,e,n)}
+      ${Ce(t,e,a,o)}
+      ${Se(s,i,l)}
+      ${Pe(l)}
+      ${Be(i)}
+      ${Ee(e,p,c)}
+      ${Ae(h)}
     </div>
   </main>
 
@@ -4373,34 +5189,34 @@ if (document.readyState === 'loading') {
   </div>
 
   <!-- \u9875\u9762 JSON \u6570\u636E\u8F7D\u8377 -->
-  <script type="application/json" id="data-plain-groups">${JSON.stringify(a).replace(/</g,"\\u003c")}<\/script>
-  <script type="application/json" id="data-cf-groups">${JSON.stringify(s).replace(/</g,"\\u003c")}<\/script>
-  <script type="application/json" id="data-sources">${JSON.stringify(n).replace(/</g,"\\u003c")}<\/script>
-  <script type="application/json" id="data-blocked-ips">${JSON.stringify(l).replace(/</g,"\\u003c")}<\/script>
-  <script type="application/json" id="data-whitelist-ips">${JSON.stringify(d).replace(/</g,"\\u003c")}<\/script>
+  <script type="application/json" id="data-plain-groups">${JSON.stringify(n).replace(/</g,"\\u003c")}<\/script>
+  <script type="application/json" id="data-cf-groups">${JSON.stringify(a).replace(/</g,"\\u003c")}<\/script>
+  <script type="application/json" id="data-sources">${JSON.stringify(o).replace(/</g,"\\u003c")}<\/script>
+  <script type="application/json" id="data-blocked-ips">${JSON.stringify(i).replace(/</g,"\\u003c")}<\/script>
+  <script type="application/json" id="data-whitelist-ips">${JSON.stringify(l).replace(/</g,"\\u003c")}<\/script>
 
   <script>
-    ${Pe}
+    ${Te}
   <\/script>
 </body>
-</html>`}var vt=new Map;function Qe(o){let e=Date.now(),t=vt.get(o);if(!t||e>t.resetAt){if(t={count:1,resetAt:e+6e4},vt.set(o,t),vt.size>2e3)for(let[n,a]of vt.entries())e>a.resetAt&&vt.delete(n);return{allowed:!0,count:1}}return t.count+=1,t.count>100?{allowed:!1,banned:!0,count:t.count}:t.count>30?{allowed:!1,banned:!1,count:t.count}:{allowed:!0,count:t.count}}function Ze(o){let e="";try{e=decodeURIComponent(o.pathname+o.search).toLowerCase()}catch{e=(o.pathname+o.search).toLowerCase()}let t=[{name:"\u654F\u611F\u6269\u5C55\u540D\u626B\u63CF",regex:/\.(php\d?|asp|aspx|jsp|jspx|cgi|sh|bash|sql|bak|swp|zip|tar|gz|rar|7z)(\?|$)/i},{name:"\u5178\u578B\u63A2\u6D4B\u8DEF\u5F84",regex:/(^|\/)(wp-admin|wp-login|wp-content|wordpress|phpmyadmin|pma|adminer|actuator|swagger|api-docs|solr|struts)(\/|$)/i},{name:"\u654F\u611F\u914D\u7F6E\u6587\u4EF6\u626B\u63CF",regex:/(^|\/)(\.env|\.git|\.svn|\.docker|\.aws|\.ssh|\.htaccess|\.config)(\/|$)/i},{name:"\u6CE8\u5165\u7279\u5F81",regex:/(union\s+select|select\s+.*from|exec\s*\(|eval\s*\(|base64_decode|system\s*\(|cmd\.exe|\/bin\/(ba)?sh)/i},{name:"XSS \u8DE8\u7AD9\u7279\u5F81",regex:/(<script|javascript:|alert\(|document\.cookie)/i},{name:"\u8DEF\u5F84\u7A7F\u8D8A\u7279\u5F81",regex:/(\.\.\/|\.\.\\)/}];for(let n of t)if(n.regex.test(e))return n.name;return null}var kt=new Map;function to(o){let e=Date.now(),t=kt.get(o);if(!t||e-t.lastLoggedAt>3e5){let n=t?t.blockedCount:1;if(kt.set(o,{lastLoggedAt:e,blockedCount:1}),kt.size>2e3)for(let[a,s]of kt.entries())e-s.lastLoggedAt>6e5&&kt.delete(a);return{shouldLog:!0,count:n}}return t.blockedCount+=1,{shouldLog:!1,count:t.blockedCount}}var eo=["clash","mihomo","meta","stash","shadowrocket","quantumult","surge","loon","sing-box","singbox","v2ray","v2rayn","v2rayng","v2rayu","v2rayx","xray","nekoray","nekobox","matsuri","hiddify","egern","passwall","openwrt","surfboard","flclash","karing","potatso","pharos","subconverter","leaf","trojan"];function Vt({request:o,userAgent:e,isAuthed:t,isWhitelisted:n,groupAllowedCountries:a,globalAllowedCountries:s,proxyClientOnly:i}){if(t||n)return{allowed:!0};if(i){let d=(e||"").toLowerCase();if(!(d?eo.some(h=>d.includes(h)):!1))return{allowed:!1,status:403,reason:"\u975E\u4EE3\u7406\u5BA2\u6237\u7AEF\u62E6\u622A",message:"403 Forbidden"}}let l=Array.isArray(a)&&a.length>0?a:s;if(Array.isArray(l)&&l.length>0){let d=o.cf?(o.cf.country||"").toUpperCase():"";if(!d||!l.includes(d))return{allowed:!1,status:403,reason:`\u56FD\u5BB6\u5730\u533A\u53D7\u9650 [${d||"\u672A\u77E5\u5730\u533A"}]`,message:"403 Forbidden"}}return{allowed:!0}}function W(o){return o?String(o).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"):""}function Ft(o,e,t,n){if(!e||!e.enabled||!e.token||!e.chatId)return;let{subType:a,subName:s,ip:i,location:l,ua:d,time:c,viewsInfo:h}=t,u=`\u{1F4E2} <b>\u8BA2\u9605\u62C9\u53D6\u901A\u77E5</b>
+</html>`}var gt=new Map;function eo(t){let e=Date.now(),o=gt.get(t);if(!o||e>o.resetAt){if(o={count:1,resetAt:e+6e4},gt.set(t,o),gt.size>2e3)for(let[n,a]of gt.entries())e>a.resetAt&&gt.delete(n);return{allowed:!0,count:1}}return o.count+=1,o.count>100?{allowed:!1,banned:!0,count:o.count}:o.count>30?{allowed:!1,banned:!1,count:o.count}:{allowed:!0,count:o.count}}function oo(t){let e="";try{e=decodeURIComponent(t.pathname+t.search).toLowerCase()}catch{e=(t.pathname+t.search).toLowerCase()}let o=[{name:"\u654F\u611F\u6269\u5C55\u540D\u626B\u63CF",regex:/\.(php\d?|asp|aspx|jsp|jspx|cgi|sh|bash|sql|bak|swp|zip|tar|gz|rar|7z)(\?|$)/i},{name:"\u5178\u578B\u63A2\u6D4B\u8DEF\u5F84",regex:/(^|\/)(wp-admin|wp-login|wp-content|wordpress|phpmyadmin|pma|adminer|actuator|swagger|api-docs|solr|struts)(\/|$)/i},{name:"\u654F\u611F\u914D\u7F6E\u6587\u4EF6\u626B\u63CF",regex:/(^|\/)(\.env|\.git|\.svn|\.docker|\.aws|\.ssh|\.htaccess|\.config)(\/|$)/i},{name:"\u6CE8\u5165\u7279\u5F81",regex:/(union\s+select|select\s+.*from|exec\s*\(|eval\s*\(|base64_decode|system\s*\(|cmd\.exe|\/bin\/(ba)?sh)/i},{name:"XSS \u8DE8\u7AD9\u7279\u5F81",regex:/(<script|javascript:|alert\(|document\.cookie)/i},{name:"\u8DEF\u5F84\u7A7F\u8D8A\u7279\u5F81",regex:/(\.\.\/|\.\.\\)/}];for(let n of o)if(n.regex.test(e))return n.name;return null}var mt=new Map;function no(t){let e=Date.now(),o=mt.get(t);if(!o||e-o.lastLoggedAt>3e5){let n=o?o.blockedCount:1;if(mt.set(t,{lastLoggedAt:e,blockedCount:1}),mt.size>2e3)for(let[a,s]of mt.entries())e-s.lastLoggedAt>6e5&&mt.delete(a);return{shouldLog:!0,count:n}}return o.blockedCount+=1,{shouldLog:!1,count:o.blockedCount}}var ao=["clash","mihomo","meta","stash","shadowrocket","quantumult","surge","loon","sing-box","singbox","v2ray","v2rayn","v2rayng","v2rayu","v2rayx","xray","nekoray","nekobox","matsuri","hiddify","egern","passwall","openwrt","surfboard","flclash","karing","potatso","pharos","subconverter","leaf","trojan"];function Le({request:t,userAgent:e,isAuthed:o,isWhitelisted:n,groupAllowedCountries:a,globalAllowedCountries:s,proxyClientOnly:i,isLocal:l}){if(o||n||l)return{allowed:!0};if(i){let c=(e||"").toLowerCase();if(!(c?ao.some(u=>c.includes(u)):!1))return{allowed:!1,status:403,reason:"\u975E\u4EE3\u7406\u5BA2\u6237\u7AEF\u62E6\u622A",message:"403 Forbidden"}}let p=Array.isArray(a)&&a.length>0?a:s;if(Array.isArray(p)&&p.length>0){let c=t.cf?(t.cf.country||"").toUpperCase():"";if(!c||!p.includes(c))return{allowed:!1,status:403,reason:`\u56FD\u5BB6\u5730\u533A\u53D7\u9650 [${c||"\u672A\u77E5\u5730\u533A"}]`,message:"403 Forbidden"}}return{allowed:!0}}function J(t){return t?String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"):""}function $e(t,e,o,n){if(!e||!e.enabled||!e.token||!e.chatId)return;let{subType:a,subName:s,ip:i,location:l,ua:p,time:c,viewsInfo:h}=o,u=`\u{1F4E2} <b>\u8BA2\u9605\u62C9\u53D6\u901A\u77E5</b>
 
-\u{1F4CC} <b>\u8BA2\u9605\u7C7B\u578B:</b> ${W(a)}
-`+(s?`\u{1F3F7}\uFE0F <b>\u8BA2\u9605\u540D\u79F0:</b> ${W(s)}
-`:"")+`\u{1F310} <b>\u5BA2\u6237\u7AEF IP:</b> <code>${W(i)}</code>
-\u{1F4CD} <b>\u5730\u7406\u4F4D\u7F6E:</b> ${W(l||"\u672A\u77E5")}
-`+(h?`\u{1F4CA} <b>\u8BBF\u95EE\u7EDF\u8BA1:</b> ${W(h)}
-`:"")+`\u23F0 <b>\u62C9\u53D6\u65F6\u95F4:</b> ${W(c)}
-\u{1F4F1} <b>User-Agent:</b> <code>${W(d||"\u672A\u77E5")}</code>`,m=Dt(o,u,e);n&&n.waitUntil?n.waitUntil(m):m.catch(y=>console.error("[TG Notify Error]:",y))}var Bo={async fetch(o,e,t){try{let Ht=function(r){try{let p=new URL(r);if(p.protocol!=="http:"&&p.protocol!=="https:")return!1;let f=p.hostname.toLowerCase();return!(f==="localhost"||f==="0.0.0.0"||f==="::1"||f==="[::1]"||f.startsWith("127.")||f.startsWith("10.")||f.startsWith("192.168.")||f.startsWith("169.254.")||/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(f)||f.startsWith("fc")||f.startsWith("fd")||f.startsWith("fe80:"))}catch{return!1}},n=new URL(o.url),a=(e.ADMIN||"").trim(),s=a?await Xt(a):"",i=!!(e.KV&&typeof e.KV.get=="function"),l=!!a;if(n.pathname==="/favicon.ico"||n.pathname.startsWith("/favicon")||n.pathname.startsWith("/apple-touch-icon")||n.pathname==="/site.webmanifest"||n.pathname==="/browserconfig.xml")return new Response(null,{status:204});if(n.pathname==="/robots.txt")return new Response(`User-agent: *
+\u{1F4CC} <b>\u8BA2\u9605\u7C7B\u578B:</b> ${J(a)}
+`+(s?`\u{1F3F7}\uFE0F <b>\u8BA2\u9605\u540D\u79F0:</b> ${J(s)}
+`:"")+`\u{1F310} <b>\u5BA2\u6237\u7AEF IP:</b> <code>${J(i)}</code>
+\u{1F4CD} <b>\u5730\u7406\u4F4D\u7F6E:</b> ${J(l||"\u672A\u77E5")}
+`+(h?`\u{1F4CA} <b>\u8BBF\u95EE\u7EDF\u8BA1:</b> ${J(h)}
+`:"")+`\u23F0 <b>\u62C9\u53D6\u65F6\u95F4:</b> ${J(c)}
+\u{1F4F1} <b>User-Agent:</b> <code>${J(p||"\u672A\u77E5")}</code>`,m=Dt(t,u,e);n&&n.waitUntil?n.waitUntil(m):m.catch(v=>console.error("[TG Notify Error]:",v))}var Ro={async fetch(t,e,o){try{let _t=function(r){try{let d=new URL(r);if(d.protocol!=="http:"&&d.protocol!=="https:")return!1;let g=d.hostname.toLowerCase();return!(g==="localhost"||g==="0.0.0.0"||g==="::1"||g==="[::1]"||g.startsWith("127.")||g.startsWith("10.")||g.startsWith("192.168.")||g.startsWith("169.254.")||/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(g)||g.startsWith("fc")||g.startsWith("fd")||g.startsWith("fe80:"))}catch{return!1}},n=new URL(t.url),a=(e.ADMIN||"").trim(),s=a?await Jt(a):"",i=!!(e.KV&&typeof e.KV.get=="function"),l=!!a;if(n.pathname==="/favicon.ico"||n.pathname.startsWith("/favicon")||n.pathname.startsWith("/apple-touch-icon")||n.pathname==="/site.webmanifest"||n.pathname==="/browserconfig.xml")return new Response(null,{status:204});if(n.pathname==="/robots.txt")return new Response(`User-agent: *
 Disallow: /
-`,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8"}});let d=o.headers.get("x-forwarded-for")||"",c=o.headers.get("CF-Connecting-IP")||(d?d.split(",")[0].trim():"")||"127.0.0.1",h=o.cf?`${o.cf.country||"Global"} ${o.cf.city||""}`.trim():"Local",u=o.headers.get("User-Agent")||"",m=new Date().toLocaleString("zh-CN",{timeZone:"Asia/Shanghai",hour12:!1}),w=n.protocol==="https:"?"; Secure":"",T=qt(o,"auth_session"),g=await ue(e,T,s,a),I=()=>ye(e,k,z),R=(r,p)=>xe(r,p,e,k,L),X=()=>pe(e,s);async function et(r){if(!g||!a)return r;try{let p=await X(),f=new Headers(r.headers);return f.set("Set-Cookie",`auth_session=${p}; Path=/; HttpOnly${w}; SameSite=Lax; Max-Age=600`),new Response(r.body,{status:r.status,statusText:r.statusText,headers:f})}catch{return r}}let[q,N]=await Promise.all([Ut(e),ft(e)]),_=st(c,q),Tt=st(c,N);if(!_&&Tt){let r=to(c);if(r.shouldLog){let p=r.count>1?`\u{1F6AB} IP\u62E6\u622A\u62D2\u7EDD (\u8FD15\u5206\u949F\u7D2F\u8BA1\u62E6\u622A ${r.count} \u6B21)`:"\u{1F6AB} IP\u62E6\u622A\u62D2\u7EDD",f=$(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:p,ua:u});t&&t.waitUntil?t.waitUntil(f):await f}return new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}if(!_){let r=Ze(n);if(r){st(c,N)||(N.push(c),await tt(e,N));let f=$(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:`\u{1F6AB} \u89E6\u53D1 WAF \u5A01\u80C1\u6307\u7EB9\u963B\u65AD [${r}] (${n.pathname})\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return t&&t.waitUntil?t.waitUntil(f):await f,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let p=Qe(c);if(!p.allowed)if(p.banned){st(c,N)||(N.push(c),await tt(e,N));let f=$(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:`\u{1F6AB} \u89E6\u53D1 CC \u5237\u9891\u6076\u610F\u653B\u51FB (${p.count} \u6B21/\u5206)\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return t&&t.waitUntil?t.waitUntil(f):await f,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}else{let f=$(e,{time:m,ip:c,location:h,status:429,path:n.pathname,type:`\u26A0\uFE0F \u89E6\u53D1\u9AD8\u9891\u9650\u6D41\u4FDD\u62A4 (${p.count} \u6B21/\u5206)`,ua:u});return t&&t.waitUntil?t.waitUntil(f):await f,new Response("429 Too Many Requests",{status:429,headers:{"Content-Type":"text/plain; charset=utf-8","Retry-After":"60"}})}}async function mt(r){let p=await fe(e,c);if(p>=3&&!_){st(c,N)||(N.push(c),await tt(e,N));let x=$(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:`\u{1F6AB} \u8BA2\u9605\u4EE4\u724C\u66B4\u529B\u7834\u89E3\u5C1D\u8BD5\u8FDE\u7EED\u8FBE 3 \u6B21 (${r})\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return t&&t.waitUntil?t.waitUntil(x):await x,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let f=Math.max(0,3-p),b=$(e,{time:m,ip:c,location:h,status:401,path:n.pathname,type:`\u{1F512} ${r}\u9274\u6743\u672A\u901A\u8FC7 (\u7B2C ${p} \u6B21\u5931\u8D25${_?"\uFF0C\u767D\u540D\u5355\u8C41\u514D":`\uFF0C\u5269\u4F59 ${f} \u6B21\u5C06\u88AB\u6C38\u4E45\u5C01\u7981`})`,ua:u});return t&&t.waitUntil?t.waitUntil(b):await b,new Response("401 Unauthorized",{status:401,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let[G,Q,D,H,ot,V,nt,rt,it]=await Promise.all([Zt(e),Qt(e),te(e),ee(e),oe(e),ne(e),ae(e),re(e),Ot(e)]),J=n.pathname.replace(/^\/+|\/+$/g,""),B=D.find(r=>r.id.toLowerCase()===J.toLowerCase());if(B){let r=Vt({request:o,userAgent:u,isAuthed:g,isWhitelisted:_,groupAllowedCountries:B.allowedCountries,globalAllowedCountries:nt,proxyClientOnly:rt});if(!r.allowed){let U=$(e,{time:m,ip:c,location:h,status:r.status,path:n.pathname,type:`\u{1F6AB} \u666E\u901A\u8BA2\u9605\u62E6\u622A [${r.reason}]`,ua:u});return t&&t.waitUntil?t.waitUntil(U):await U,new Response(r.message,{status:r.status,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let p=n.searchParams.get("token")||n.searchParams.get("pwd")||"",f=V||a;if(f&&!g&&p!==f)return mt("\u666E\u901A\u8BA2\u9605");let b=Pt(e,c);t&&t.waitUntil?t.waitUntil(b):await b;let x=B.maxViews!==void 0&&B.maxViews!==null&&B.maxViews>0?B.maxViews:0,E=(B.views||0)+1;if(x>0&&E>=x){let U=D.filter(ht=>ht.id.toLowerCase()!==B.id.toLowerCase()),ct=pt(e,U);t&&t.waitUntil?t.waitUntil(ct):await ct}else{B.views=E;let U=pt(e,D);t&&t.waitUntil?t.waitUntil(U):await U}let M=$(e,{time:m,ip:c,location:h,status:200,path:n.pathname,type:`\u666E\u901A\u8BA2\u9605 [${B.name||B.id}]`,ua:u});t&&t.waitUntil?t.waitUntil(M):await M,Ft(e,it,{subType:"\u72EC\u7ACB\u666E\u901A\u8BA2\u9605",subName:B.name||B.id,ip:c,location:h,ua:u,time:m,viewsInfo:x>0?`${E} / ${x} \u6B21 (\u9605\u540E\u5373\u711A)`:`${E} \u6B21`},t);let F=n.searchParams.get("format")||"base64",O=yt(B.nodes);if(O.length===0)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let j=O.join(`
-`),S=F==="raw"?j:dt(j);return new Response(S,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate, max-age=0",Pragma:"no-cache","Access-Control-Allow-Origin":"*","Subscription-Userinfo":"upload=0; download=0; total=1073741824000; expire=0","Profile-Update-Interval":"24"}})}let P=H.find(r=>r.id.toLowerCase()===J.toLowerCase());if(P){let r=Vt({request:o,userAgent:u,isAuthed:g,isWhitelisted:_,groupAllowedCountries:P.allowedCountries,globalAllowedCountries:nt,proxyClientOnly:rt});if(!r.allowed){let S=$(e,{time:m,ip:c,location:h,status:r.status,path:n.pathname,type:`\u{1F6AB} CF\u4F18\u9009\u8BA2\u9605\u62E6\u622A [${r.reason}]`,ua:u});return t&&t.waitUntil?t.waitUntil(S):await S,new Response(r.message,{status:r.status,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let p=n.searchParams.get("token")||n.searchParams.get("pwd")||"",f=V||a;if(f&&!g&&p!==f)return mt("CF\u4F18\u9009\u8BA2\u9605");let b=Pt(e,c);t&&t.waitUntil?t.waitUntil(b):await b;let x=P.maxViews!==void 0&&P.maxViews!==null&&P.maxViews>0?P.maxViews:0,E=(P.views||0)+1;if(x>0&&E>=x){let S=H.filter(ct=>ct.id.toLowerCase()!==P.id.toLowerCase()),U=ut(e,S);t&&t.waitUntil?t.waitUntil(U):await U}else{P.views=E;let S=ut(e,H);t&&t.waitUntil?t.waitUntil(S):await S}let M=$(e,{time:m,ip:c,location:h,status:200,path:n.pathname,type:`CF\u4F18\u9009\u8BA2\u9605 [${P.name||P.id}]`,ua:u});t&&t.waitUntil?t.waitUntil(M):await M,Ft(e,it,{subType:"\u72EC\u7ACB CF \u4F18\u9009\u8BA2\u9605",subName:P.name||P.id,ip:c,location:h,ua:u,time:m,viewsInfo:x>0?`${E} / ${x} \u6B21 (\u9605\u540E\u5373\u711A)`:`${E} \u6B21`},t);let F=n.searchParams.get("format")||"base64",O=P.baseVless&&P.baseVless.trim()?P.baseVless.trim():Q,j=G;if(Array.isArray(P.sources)&&P.sources.length>0){let S=P.sources.map(U=>U.toLowerCase());j=G.filter(U=>S.includes(U.id.toLowerCase())),j.length===0&&(j=G)}return await Bt(O,j,F)}if(J===ot){let r=Vt({request:o,userAgent:u,isAuthed:g,isWhitelisted:_,groupAllowedCountries:null,globalAllowedCountries:nt,proxyClientOnly:rt});if(!r.allowed){let E=$(e,{time:m,ip:c,location:h,status:r.status,path:n.pathname,type:`\u{1F6AB} \u5168\u5C40\u805A\u5408\u8BA2\u9605\u62E6\u622A [${r.reason}]`,ua:u});return t&&t.waitUntil?t.waitUntil(E):await E,new Response(r.message,{status:r.status,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let p=n.searchParams.get("token")||n.searchParams.get("pwd")||"",f=V||a;if(f&&!g&&p!==f)return mt("\u5168\u5C40\u805A\u5408\u8BA2\u9605");let b=Pt(e,c);t&&t.waitUntil?t.waitUntil(b):await b;let x=$(e,{time:m,ip:c,location:h,status:200,path:n.pathname,type:"\u5168\u5C40\u805A\u5408\u8BA2\u9605\u62C9\u53D6",ua:u});return t&&t.waitUntil?t.waitUntil(x):await x,Ft(e,it,{subType:"\u5168\u5C40\u805A\u5408\u8BA2\u9605",subName:"\u5168\u90E8\u8282\u70B9\u805A\u5408",ip:c,location:h,ua:u,time:m,viewsInfo:null},t),Ce(o,e,G,Q,D)}if(n.pathname.startsWith("/api/")&&n.pathname!=="/api/captcha"){if(!g){if(!_){let p=await ft(e);p.includes(c)||(p.push(c),await tt(e,p))}let r=$(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:"\u{1F6AB} \u672A\u7ECF\u767B\u5F55\u8D8A\u6743\u63A2\u6D4BAPI\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981",ua:u});return t&&t.waitUntil?t.waitUntil(r):await r,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}if(!i||!l)return new Response(JSON.stringify({success:!1,error:"\u7CFB\u7EDF\u5C1A\u672A\u5B8C\u6210\u521D\u59CB\u5316\u914D\u7F6E"}),{status:500,headers:{"Content-Type":"application/json; charset=utf-8"}})}async function v(r,p=200){let f=typeof r=="string"?r:JSON.stringify(r);return et(new Response(f,{status:p,headers:{"Content-Type":"application/json; charset=utf-8"}}))}if(n.pathname==="/api/session-ping"&&o.method==="POST")return g?v({success:!0}):new Response("Unauthorized",{status:401});if(n.pathname==="/api/security-config"&&o.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await o.json();return await $t(e,r.subPath||"sub"),await Nt(e,r.token||""),r.allowedCountries!==void 0&&await se(e,r.allowedCountries),r.proxyClientOnly!==void 0&&await ie(e,r.proxyClientOnly),v({success:!0})}catch{return v({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/tg-config"&&o.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await o.json();return await he(e,{enabled:!!r.enabled,token:(r.token||"").trim(),chatId:(r.chatId||"").trim(),apiHost:(r.apiHost||"").trim()||"https://api.telegram.org"}),v({success:!0})}catch(r){return v({error:r.message||"Invalid JSON payload"},400)}}if(n.pathname==="/api/test-tg-notify"&&o.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await o.json(),p={enabled:!0,force:!0,token:(r.token||"").trim(),chatId:(r.chatId||"").trim(),apiHost:(r.apiHost||"").trim()||"https://api.telegram.org"};if(!p.token||!p.chatId)return v({error:"Bot Token \u548C Chat ID \u4E0D\u80FD\u4E3A\u7A7A"},400);let f=`\u{1F389} <b>Telegram \u8BA2\u9605\u901A\u77E5\u8FDE\u901A\u6027\u6D4B\u8BD5\u6210\u529F\uFF01</b>
+`,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8"}});let p=t.headers.get("x-forwarded-for")||"",c=t.headers.get("CF-Connecting-IP")||(p?p.split(",")[0].trim():"")||"127.0.0.1",h=t.cf?`${t.cf.country||"Global"} ${t.cf.city||""}`.trim():"Local",u=t.headers.get("User-Agent")||"",m=new Date().toLocaleString("zh-CN",{timeZone:"Asia/Shanghai",hour12:!1}),w=n.protocol==="https:"?"; Secure":"",I=Kt(t,"auth_session"),f=await le(e,I,s,a),B=()=>me(e,k,$),M=(r,d)=>he(r,d,e,k,N),K=()=>ce(e,s);async function X(r){if(!f||!a)return r;try{let d=await K(),g=new Headers(r.headers);return g.set("Set-Cookie",`auth_session=${d}; Path=/; HttpOnly${w}; SameSite=Lax; Max-Age=600`),new Response(r.body,{status:r.status,statusText:r.statusText,headers:g})}catch{return r}}let[G,L]=await Promise.all([ne(e),ct(e)]),j=Lt(c),D=lt(c,G),St=!j&&lt(c,L);if(!D&&St){let r=no(c);if(r.shouldLog){let d=r.count>1?`\u{1F6AB} IP\u62E6\u622A\u62D2\u7EDD (\u8FD15\u5206\u949F\u7D2F\u8BA1\u62E6\u622A ${r.count} \u6B21)`:"\u{1F6AB} IP\u62E6\u622A\u62D2\u7EDD",g=O(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:d,ua:u});o&&o.waitUntil?o.waitUntil(g):await g}return new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}if(!D){let r=oo(n);if(r){!lt(c,L)&&!j&&(L.push(c),await Y(e,L));let d=O(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:`\u{1F6AB} \u89E6\u53D1 WAF \u5A01\u80C1\u6307\u7EB9\u963B\u65AD [${r}] (${n.pathname})\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(d):await d,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}if(!j&&!f){let d=eo(c);if(!d.allowed)if(d.banned){!lt(c,L)&&!j&&(L.push(c),await Y(e,L));let g=O(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:`\u{1F6AB} \u89E6\u53D1 CC \u5237\u9891\u6076\u610F\u653B\u51FB (${d.count} \u6B21/\u5206)\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(g):await g,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}else{let g=O(e,{time:m,ip:c,location:h,status:429,path:n.pathname,type:`\u26A0\uFE0F \u89E6\u53D1\u9AD8\u9891\u9650\u6D41\u4FDD\u62A4 (${d.count} \u6B21/\u5206)`,ua:u});return o&&o.waitUntil?o.waitUntil(g):await g,new Response("429 Too Many Requests",{status:429,headers:{"Content-Type":"text/plain; charset=utf-8","Retry-After":"60"}})}}}async function ht(r){let d=await de(e,c);if(d>=3&&!D){!lt(c,L)&&!j&&(L.push(c),await Y(e,L));let y=O(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:`\u{1F6AB} \u8BA2\u9605\u4EE4\u724C\u66B4\u529B\u7834\u89E3\u5C1D\u8BD5\u8FDE\u7EED\u8FBE 3 \u6B21 (${r})\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(y):await y,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let g=Math.max(0,3-d),b=O(e,{time:m,ip:c,location:h,status:401,path:n.pathname,type:`\u{1F512} ${r}\u9274\u6743\u672A\u901A\u8FC7 (\u7B2C ${d} \u6B21\u5931\u8D25${D?"\uFF0C\u767D\u540D\u5355\u8C41\u514D":`\uFF0C\u5269\u4F59 ${g} \u6B21\u5C06\u88AB\u6C38\u4E45\u5C01\u7981`})`,ua:u});return o&&o.waitUntil?o.waitUntil(b):await b,new Response("401 Unauthorized",{status:401,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let[F,Q,W,H,_,nt,dt,at]=await Promise.all([qt(e),Gt(e),Yt(e),Xt(e),Qt(e),Zt(e),ee(e),Nt(e)]),bt=n.pathname.replace(/^\/+|\/+$/g,""),E=W.find(r=>r.id.toLowerCase()===bt.toLowerCase());if(E){let r=Le({request:t,userAgent:u,isAuthed:f,isWhitelisted:D,groupAllowedCountries:E.allowedCountries,globalAllowedCountries:nt,proxyClientOnly:dt,isLocal:j});if(!r.allowed){let C=O(e,{time:m,ip:c,location:h,status:r.status,path:n.pathname,type:`\u{1F6AB} \u666E\u901A\u8BA2\u9605\u62E6\u622A [${r.reason}]`,ua:u});return o&&o.waitUntil?o.waitUntil(C):await C,new Response(r.message,{status:r.status,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let d=n.searchParams.get("token")||n.searchParams.get("pwd")||"";if(_&&!f&&d!==_)return ht("\u666E\u901A\u8BA2\u9605");let g=$t(e,c);o&&o.waitUntil?o.waitUntil(g):await g;let b=E.maxViews!==void 0&&E.maxViews!==null&&E.maxViews>0?E.maxViews:0,y=(E.views||0)+1;if(b>0&&y>=b){let C=W.filter(Pt=>Pt.id.toLowerCase()!==E.id.toLowerCase()),Z=st(e,C);o&&o.waitUntil?o.waitUntil(Z):await Z}else{E.views=y;let C=st(e,W);o&&o.waitUntil?o.waitUntil(C):await C}let P=O(e,{time:m,ip:c,location:h,status:200,path:n.pathname,type:`\u666E\u901A\u8BA2\u9605 [${E.name||E.id}]`,ua:u});o&&o.waitUntil?o.waitUntil(P):await P,$e(e,at,{subType:"\u72EC\u7ACB\u666E\u901A\u8BA2\u9605",subName:E.name||E.id,ip:c,location:h,ua:u,time:m,viewsInfo:b>0?`${y} / ${b} \u6B21 (\u9605\u540E\u5373\u711A)`:`${y} \u6B21`},o);let U=n.searchParams.get("format")||"base64",V=Ot(E.nodes);if(V.length===0)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let A=V.join(`
+`),R=U==="raw"?A:xt(A);return new Response(R,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate, max-age=0",Pragma:"no-cache","Access-Control-Allow-Origin":"*","Subscription-Userinfo":"upload=0; download=0; total=1073741824000; expire=0","Profile-Update-Interval":"24"}})}let S=H.find(r=>r.id.toLowerCase()===bt.toLowerCase());if(S){let r=Le({request:t,userAgent:u,isAuthed:f,isWhitelisted:D,groupAllowedCountries:S.allowedCountries,globalAllowedCountries:nt,proxyClientOnly:dt,isLocal:j});if(!r.allowed){let R=O(e,{time:m,ip:c,location:h,status:r.status,path:n.pathname,type:`\u{1F6AB} CF\u4F18\u9009\u8BA2\u9605\u62E6\u622A [${r.reason}]`,ua:u});return o&&o.waitUntil?o.waitUntil(R):await R,new Response(r.message,{status:r.status,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let d=n.searchParams.get("token")||n.searchParams.get("pwd")||"";if(_&&!f&&d!==_)return ht("CF\u4F18\u9009\u8BA2\u9605");let g=$t(e,c);o&&o.waitUntil?o.waitUntil(g):await g;let b=S.maxViews!==void 0&&S.maxViews!==null&&S.maxViews>0?S.maxViews:0,y=(S.views||0)+1;if(b>0&&y>=b){let R=H.filter(Z=>Z.id.toLowerCase()!==S.id.toLowerCase()),C=it(e,R);o&&o.waitUntil?o.waitUntil(C):await C}else{S.views=y;let R=it(e,H);o&&o.waitUntil?o.waitUntil(R):await R}let P=O(e,{time:m,ip:c,location:h,status:200,path:n.pathname,type:`CF\u4F18\u9009\u8BA2\u9605 [${S.name||S.id}]`,ua:u});o&&o.waitUntil?o.waitUntil(P):await P,$e(e,at,{subType:"\u72EC\u7ACB CF \u4F18\u9009\u8BA2\u9605",subName:S.name||S.id,ip:c,location:h,ua:u,time:m,viewsInfo:b>0?`${y} / ${b} \u6B21 (\u9605\u540E\u5373\u711A)`:`${y} \u6B21`},o);let U=n.searchParams.get("format")||"base64",V=S.baseVless&&S.baseVless.trim()?S.baseVless.trim():Q,A=F;if(Array.isArray(S.sources)&&S.sources.length>0)if(typeof S.sources[0]=="object")A=S.sources;else{let R=S.sources.map(C=>String(C).toLowerCase());A=F.filter(C=>C&&C.id&&R.includes(String(C.id).toLowerCase())),A.length===0&&(A=F)}return await Ut(V,A,U)}if(n.pathname.startsWith("/api/")&&n.pathname!=="/api/captcha"){if(!f){if(!D){let d=await ct(e);!d.includes(c)&&!j&&(d.push(c),await Y(e,d))}let r=O(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:"\u{1F6AB} \u672A\u7ECF\u767B\u5F55\u8D8A\u6743\u63A2\u6D4BAPI\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981",ua:u});return o&&o.waitUntil?o.waitUntil(r):await r,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}if(!i||!l)return new Response(JSON.stringify({success:!1,error:"\u7CFB\u7EDF\u5C1A\u672A\u5B8C\u6210\u521D\u59CB\u5316\u914D\u7F6E"}),{status:500,headers:{"Content-Type":"application/json; charset=utf-8"}})}async function x(r,d=200){let g=typeof r=="string"?r:JSON.stringify(r);return X(new Response(g,{status:d,headers:{"Content-Type":"application/json; charset=utf-8"}}))}if(n.pathname==="/api/session-ping"&&t.method==="POST")return f?x({success:!0}):new Response("Unauthorized",{status:401});if(n.pathname==="/api/security-config"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json();return await At(e,r.token||""),r.allowedCountries!==void 0&&await te(e,r.allowedCountries),r.proxyClientOnly!==void 0&&await oe(e,r.proxyClientOnly),x({success:!0})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/tg-config"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json();return await fe(e,{enabled:!!r.enabled,token:(r.token||"").trim(),chatId:(r.chatId||"").trim(),apiHost:(r.apiHost||"").trim()||"https://api.telegram.org"}),x({success:!0})}catch(r){return x({error:r.message||"Invalid JSON payload"},400)}}if(n.pathname==="/api/test-tg-notify"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d={enabled:!0,force:!0,token:(r.token||"").trim(),chatId:(r.chatId||"").trim(),apiHost:(r.apiHost||"").trim()||"https://api.telegram.org"};if(!d.token||!d.chatId)return x({error:"Bot Token \u548C Chat ID \u4E0D\u80FD\u4E3A\u7A7A"},400);let g=`\u{1F389} <b>Telegram \u8BA2\u9605\u901A\u77E5\u8FDE\u901A\u6027\u6D4B\u8BD5\u6210\u529F\uFF01</b>
 
 \u{1F4E1} <b>\u63A8\u9001\u670D\u52A1:</b> CF Workers \u8BA2\u9605\u901A\u77E5\u5F15\u64CE
-\u{1F310} <b>\u53D1\u8D77 IP:</b> <code>${W(c)}</code>
-\u{1F4CD} <b>\u53D1\u8D77\u4F4D\u7F6E:</b> ${W(h)}
-\u23F0 <b>\u6D4B\u8BD5\u65F6\u95F4:</b> ${W(m)}
-\u{1F4AC} <b>Chat ID:</b> <code>${W(p.chatId)}</code>
+\u{1F310} <b>\u53D1\u8D77 IP:</b> <code>${J(c)}</code>
+\u{1F4CD} <b>\u53D1\u8D77\u4F4D\u7F6E:</b> ${J(h)}
+\u23F0 <b>\u6D4B\u8BD5\u65F6\u95F4:</b> ${J(m)}
+\u{1F4AC} <b>Chat ID:</b> <code>${J(d.chatId)}</code>
 
-\u2705 \u673A\u5668\u4EBA\u914D\u7F6E\u6B63\u786E\uFF0C\u5F53\u6709\u5BA2\u6237\u7AEF\u62C9\u53D6\u8282\u70B9\u8BA2\u9605\u65F6\uFF0C\u5C06\u4F1A\u5728\u6B64\u5904\u5B9E\u65F6\u6536\u5230\u63A8\u9001\uFF01`,b=await Dt(e,f,p);return v(b,b.success?200:400)}catch(r){return v({error:r.message},500)}}let jt=["api","login","logout","favicon.ico","robots.txt","sub","assets","static","dashboard"];if(n.pathname==="/api/custom-groups"&&o.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await o.json(),p=(r.id||"").toLowerCase().trim()||crypto.randomUUID().replace(/-/g,""),f=(r.name||"").trim();if(!f)return v({error:"\u8BA2\u9605\u540D\u79F0\u4E0D\u80FD\u4E3A\u7A7A"},400);if(jt.includes(p)||p===ot.toLowerCase())return v({error:"\u6B64\u8BA2\u9605 ID \u4E3A\u7CFB\u7EDF\u4FDD\u7559\u5173\u952E\u5B57\uFF0C\u8BF7\u4F7F\u7528\u5176\u4ED6\u540D\u79F0"},400);let b=D.find(S=>S.id.toLowerCase()===p),x=D.filter(S=>S.id.toLowerCase()!==p),E=typeof r.maxViews=="number"?r.maxViews:parseInt(r.maxViews,10),M=!isNaN(E)&&E>0?Math.min(999,Math.max(0,E)):0,F=0;b&&b.maxViews===M?F=b.views||0:F=0;let O=yt(r.nodes||"").join(`
-`),j=Array.isArray(r.allowedCountries)?r.allowedCountries.map(S=>String(S).trim().toUpperCase()).filter(Boolean):typeof r.allowedCountries=="string"?r.allowedCountries.split(",").map(S=>S.trim().toUpperCase()).filter(Boolean):[];return x.push({id:p,name:f,maxViews:M,views:F,nodes:O,allowedCountries:j}),await pt(e,x),v({success:!0})}catch{return v({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/custom-groups/batch-delete"&&o.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await o.json(),p=(Array.isArray(r.ids)?r.ids:[]).map(b=>String(b).toLowerCase().trim()),f=D.filter(b=>!p.includes(b.id.toLowerCase()));return await pt(e,f),v({success:!0,count:p.length})}catch{return v({error:"Invalid JSON payload"},400)}}if(n.pathname.startsWith("/api/custom-groups/")&&o.method==="DELETE"){if(!g)return new Response("Unauthorized",{status:401});let r=decodeURIComponent(n.pathname.replace("/api/custom-groups/","")).toLowerCase(),p=D.filter(f=>f.id!==r);return await pt(e,p),v({success:!0})}if(n.pathname==="/api/cf-groups"&&o.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await o.json();if(!r.id||!r.name)return v({error:"\u7F3A\u5C11\u5FC5\u586B\u5B57\u6BB5"},400);let p=r.id.toLowerCase().trim();if(jt.includes(p)||p===ot.toLowerCase())return v({error:"\u6B64\u8BA2\u9605 ID \u4E3A\u7CFB\u7EDF\u4FDD\u7559\u5173\u952E\u5B57\uFF0C\u8BF7\u4F7F\u7528\u5176\u4ED6\u540D\u79F0"},400);let f=H.find(O=>O.id===p),b=H.filter(O=>O.id!==p),x=typeof r.maxViews=="number"?r.maxViews:parseInt(r.maxViews,10),E=!isNaN(x)&&x>0?Math.min(999,Math.max(0,x)):0,M=0;f&&f.maxViews===E?M=f.views||0:M=0;let F=Array.isArray(r.allowedCountries)?r.allowedCountries.map(O=>String(O).trim().toUpperCase()).filter(Boolean):typeof r.allowedCountries=="string"?r.allowedCountries.split(",").map(O=>O.trim().toUpperCase()).filter(Boolean):[];return b.push({id:p,name:r.name,maxViews:E,views:M,baseVless:r.baseVless||"",sources:Array.isArray(r.sources)?r.sources:[],allowedCountries:F}),await ut(e,b),v({success:!0})}catch{return v({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/cf-groups/batch-delete"&&o.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await o.json(),p=(Array.isArray(r.ids)?r.ids:[]).map(b=>String(b).toLowerCase().trim()),f=H.filter(b=>!p.includes(b.id.toLowerCase()));return await ut(e,f),v({success:!0,count:p.length})}catch{return v({error:"Invalid JSON payload"},400)}}if(n.pathname.startsWith("/api/cf-groups/")&&o.method==="DELETE"){if(!g)return new Response("Unauthorized",{status:401});let r=decodeURIComponent(n.pathname.replace("/api/cf-groups/","")).toLowerCase(),p=H.filter(f=>f.id!==r);return await ut(e,p),v({success:!0})}if(n.pathname==="/api/sources"&&o.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await o.json();if(r.sources&&Array.isArray(r.sources)){let f=r.sources.filter(b=>b&&b.url&&Ht(b.url.trim())).map((b,x)=>({id:(b.id||"src_"+(x+1)).toLowerCase().trim(),name:b.name||"\u4F18\u9009\u6E90 "+(x+1),url:b.url.trim(),enabled:b.enabled!==!1}));return await Ct(e,f),v({success:!0,count:f.length})}if(!r.id||!r.name||!r.url)return v({error:"\u7F3A\u5C11\u5FC5\u586B\u5B57\u6BB5"},400);if(!Ht(r.url.trim()))return v({error:"\u4F18\u9009\u6E90\u5730\u5740\u5FC5\u987B\u4E3A\u5408\u6CD5\u7684\u516C\u5171 HTTP/HTTPS \u5730\u5740\uFF0C\u7981\u6B62\u79C1\u6709\u7F51\u7EDC\u5730\u5740"},400);let p=G.filter(f=>f.id!==r.id.toLowerCase().trim());return p.push({id:r.id.toLowerCase().trim(),name:r.name,url:r.url.trim(),enabled:!0}),await Ct(e,p),v({success:!0})}catch{return v({error:"Invalid JSON payload"},400)}}if(n.pathname.startsWith("/api/sources/")&&o.method==="DELETE"){if(!g)return new Response("Unauthorized",{status:401});let r=decodeURIComponent(n.pathname.replace("/api/sources/","")).toLowerCase(),p=G.filter(f=>f.id!==r);return await Ct(e,p),v({success:!0})}if(n.pathname==="/api/test-cf-nodes"&&o.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await o.json(),p=r.baseVless||Q||e.BASE_VLESS||"",f=G;Array.isArray(r.sources)&&r.sources.length>0&&(f=r.sources);let b=await Bt(p,f,"raw"),x=await b.text();return v({success:b.ok,status:b.status,content:x},b.status)}catch(r){return v({success:!1,content:"\u751F\u6210\u6D4B\u8BD5\u8282\u70B9\u5931\u8D25: "+(r.message||String(r))},500)}}if(n.pathname==="/api/blocked-ips"&&o.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await o.json(),p=Array.isArray(r.ips)?r.ips.map(x=>String(x).trim()).filter(Boolean):[],b=(await ft(e)).filter(x=>!p.includes(x));for(let x of b)await _t(e,x);return await tt(e,p),v({success:!0,count:p.length})}catch{return v({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/whitelist-ips"&&o.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await o.json(),p=Array.isArray(r.ips)?r.ips.map(f=>String(f).trim()).filter(Boolean):[];return await Rt(e,p),v({success:!0,count:p.length})}catch{return v({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/logs/batch-delete"&&o.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await o.json(),p=(Array.isArray(r.indices)?r.indices:[]).map(Number),b=(await It(e)).filter((x,E)=>x&&!p.includes(E));return await ce(e,b),v({success:!0,count:p.length})}catch{return v({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/clear-logs"&&o.method==="POST")return g?(await le(e),v({success:!0})):new Response("Unauthorized",{status:401});if(n.pathname==="/api/captcha"){let{svgDataUri:r,captchaToken:p}=await I();return new Response(JSON.stringify({svg:r,token:p}),{headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}})}if(n.pathname==="/login"&&o.method==="POST"){if(!i||!l)return new Response(zt({hasKV:i,hasAdmin:l}),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}});try{let r=await St(e,c);if(!_&&r.lockSeconds>0){let{svgDataUri:K,captchaToken:lt}=await I();return new Response(At("\u64CD\u4F5C\u8FC7\u4E8E\u9891\u7E41\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002",K,lt,r.lockSeconds),{status:429,headers:{"Content-Type":"text/html; charset=utf-8"}})}let p=await o.formData(),f=p.get("password")||"",b=p.get("captcha")||"",x=p.get("captcha_token")||"",M=n.protocol==="https:"?"; Secure":"",F=await R(b,x);if(F&&(a&&f===a)){await _t(e,c);let K=await Ut(e);st(c,K)||(K.push(c),await Rt(e,K));let lt=await X();return new Response(null,{status:302,headers:{Location:"/","Set-Cookie":`auth_session=${lt}; Path=/; HttpOnly${M}; SameSite=Lax; Max-Age=600`}})}let j=await de(e,c),S=j.count,U=j.lockSeconds,ct=Math.ceil(U/60),ht="",Lt="";if(F?(ht="\u7BA1\u7406\u5458\u5BC6\u7801\u9519\u8BEF",Lt="\u26A0\uFE0F \u7BA1\u7406\u5458\u5BC6\u7801\u9519\u8BEF"):(ht="\u9A8C\u8BC1\u7801\u9519\u8BEF\u6216\u5DF2\u5931\u6548",Lt="\u26A0\uFE0F \u9A8C\u8BC1\u7801\u9519\u8BEF"),S>=3&&!_){let K=await ft(e);K.includes(c)||(K.push(c),await tt(e,K));let lt=$(e,{time:m,ip:c,location:h,status:403,path:"/login",type:`\u{1F6AB} \u8FDE\u7EED\u767B\u5F55\u5931\u8D25\u8FBE3\u6B21 (${ht})\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return t&&t.waitUntil?t.waitUntil(lt):await lt,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let Ne=Math.max(0,3-S),Gt=$(e,{time:m,ip:c,location:h,status:401,path:"/login",type:`${Lt} (\u7B2C ${S} \u6B21\u5931\u8D25\uFF0C\u51B7\u5374\u9501\u5B9A ${ct} \u5206\u949F${_?"\uFF0C\u767D\u540D\u5355\u8C41\u514D\u5C01\u7981":`\uFF0C\u5269\u4F59 ${Ne} \u6B21\u5C06\u88AB\u6C38\u4E45\u5C01\u7981`})`,ua:u});t&&t.waitUntil?t.waitUntil(Gt):await Gt;let{svgDataUri:Ue,captchaToken:Re}=await I(),_e="\u9A8C\u8BC1\u7801\u6216\u5BC6\u7801\u9519\u8BEF\uFF0C\u8BF7\u91CD\u8BD5\u3002";return new Response(At(_e,Ue,Re,_?0:U),{status:401,headers:{"Content-Type":"text/html; charset=utf-8"}})}catch{return new Response("Bad Request",{status:400})}}if(n.pathname==="/logout"){let p=n.protocol==="https:"?"; Secure":"";return new Response(null,{status:302,headers:{Location:"/login","Set-Cookie":`auth_session=; Path=/; HttpOnly${p}; SameSite=Lax; Max-Age=0`}})}if(n.pathname==="/login"){if(!i||!l)return new Response(zt({hasKV:i,hasAdmin:l}),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}});if(g)return new Response(null,{status:302,headers:{Location:"/"}});let{svgDataUri:r,captchaToken:p}=await I(),f=await St(e,c),b=_?0:f.lockSeconds,x=b>0?`\u26A0\uFE0F \u5F53\u524D IP \u5904\u4E8E\u51B7\u5374\u9501\u5B9A\u72B6\u6001\uFF08\u5269\u4F59 ${b} \u79D2\uFF09\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002`:"";return new Response(At(x,r,p,b),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}})}if(n.pathname==="/"){if(!i||!l)return new Response(zt({hasKV:i,hasAdmin:l}),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}});if(!g)return new Response(null,{status:302,headers:{Location:"/login"}});let r=await It(e),p=$e(n.origin,ot,V,G,D,H,r,N,q,nt,rt,it);return et(new Response(p,{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}}))}if(!_){let r=await ft(e);r.includes(c)||(r.push(c),await tt(e,r));let p=$(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:`\u{1F6AB} \u6076\u610F\u63A2\u6D4B\u4E0D\u5B58\u5728\u8DEF\u5F84 [${n.pathname}]\uFF0CIP \u5DF2\u88AB\u81EA\u52A8\u5C01\u7981`,ua:u});return t&&t.waitUntil?t.waitUntil(p):await p,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let Wt=$(e,{time:m,ip:c,location:h,status:404,path:n.pathname,type:`\u26A0\uFE0F \u8BBF\u95EE\u4E0D\u5B58\u5728\u9875\u9762 [${n.pathname}] (\u767D\u540D\u5355\u8C41\u514D)`,ua:u});return t&&t.waitUntil?t.waitUntil(Wt):await Wt,new Response("404 Not Found",{status:404})}catch(n){return console.error("Unhandled Worker Exception:",n),new Response(`500 Internal Server Error: ${n.message||String(n)}`,{status:500,headers:{"Content-Type":"text/plain; charset=utf-8"}})}}};export{Bo as default};
+\u2705 \u673A\u5668\u4EBA\u914D\u7F6E\u6B63\u786E\uFF0C\u5F53\u6709\u5BA2\u6237\u7AEF\u62C9\u53D6\u8282\u70B9\u8BA2\u9605\u65F6\uFF0C\u5C06\u4F1A\u5728\u6B64\u5904\u5B9E\u65F6\u6536\u5230\u63A8\u9001\uFF01`,b=await Dt(e,g,d);return x(b,b.success?200:400)}catch(r){return x({error:r.message},500)}}let Mt=["api","login","logout","favicon.ico","robots.txt","sub","assets","static","dashboard"];if(n.pathname==="/api/custom-groups"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=(r.id||"").trim()||rt(12,33),g=(r.name||"").trim();if(!g)return x({error:"\u8BA2\u9605\u540D\u79F0\u4E0D\u80FD\u4E3A\u7A7A"},400);if(Mt.includes(d.toLowerCase()))return x({error:"\u6B64\u8BA2\u9605 ID \u4E3A\u7CFB\u7EDF\u4FDD\u7559\u5173\u952E\u5B57\uFF0C\u8BF7\u4F7F\u7528\u5176\u4ED6\u540D\u79F0"},400);let b=W.find(C=>C.id.toLowerCase()===d),y=W.filter(C=>C.id.toLowerCase()!==d),P=typeof r.maxViews=="number"?r.maxViews:parseInt(r.maxViews,10),U=!isNaN(P)&&P>0?Math.min(999,Math.max(0,P)):0,V=0;b&&b.maxViews===U?V=b.views||0:V=0;let A=Ot(r.nodes||"").join(`
+`),R=Array.isArray(r.allowedCountries)?r.allowedCountries.map(C=>String(C).trim().toUpperCase()).filter(Boolean):typeof r.allowedCountries=="string"?r.allowedCountries.split(",").map(C=>C.trim().toUpperCase()).filter(Boolean):[];return y.push({id:d,name:g,maxViews:U,views:V,nodes:A,allowedCountries:R}),await st(e,y),x({success:!0,id:d,group:{id:d,name:g}})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/custom-groups/batch-delete"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=(Array.isArray(r.ids)?r.ids:[]).map(b=>String(b).toLowerCase().trim()),g=W.filter(b=>!d.includes(b.id.toLowerCase()));return await st(e,g),x({success:!0,count:d.length})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname.startsWith("/api/custom-groups/")&&t.method==="DELETE"){if(!f)return new Response("Unauthorized",{status:401});let r=decodeURIComponent(n.pathname.replace("/api/custom-groups/","")).toLowerCase(),d=W.filter(g=>g.id!==r);return await st(e,d),x({success:!0})}if(n.pathname==="/api/cf-groups"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json();if(!r.name)return x({error:"\u7F3A\u5C11\u5FC5\u586B\u5B57\u6BB5"},400);let d=(r.id||"").trim()||rt(12,33);if(Mt.includes(d.toLowerCase()))return x({error:"\u6B64\u8BA2\u9605 ID \u4E3A\u7CFB\u7EDF\u4FDD\u7559\u5173\u952E\u5B57\uFF0C\u8BF7\u4F7F\u7528\u5176\u4ED6\u540D\u79F0"},400);let g=H.find(A=>A.id===d),b=H.filter(A=>A.id!==d),y=typeof r.maxViews=="number"?r.maxViews:parseInt(r.maxViews,10),P=!isNaN(y)&&y>0?Math.min(999,Math.max(0,y)):0,U=0;g&&g.maxViews===P?U=g.views||0:U=0;let V=Array.isArray(r.allowedCountries)?r.allowedCountries.map(A=>String(A).trim().toUpperCase()).filter(Boolean):typeof r.allowedCountries=="string"?r.allowedCountries.split(",").map(A=>A.trim().toUpperCase()).filter(Boolean):[];return b.push({id:d,name:r.name,maxViews:P,views:U,baseVless:r.baseVless||"",sources:Array.isArray(r.sources)?r.sources:[],allowedCountries:V}),await it(e,b),x({success:!0,id:d,group:{id:d,name:r.name}})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/cf-groups/batch-delete"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=(Array.isArray(r.ids)?r.ids:[]).map(b=>String(b).toLowerCase().trim()),g=H.filter(b=>!d.includes(b.id.toLowerCase()));return await it(e,g),x({success:!0,count:d.length})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname.startsWith("/api/cf-groups/")&&t.method==="DELETE"){if(!f)return new Response("Unauthorized",{status:401});let r=decodeURIComponent(n.pathname.replace("/api/cf-groups/","")).toLowerCase(),d=H.filter(g=>g.id!==r);return await it(e,d),x({success:!0})}if(n.pathname==="/api/sources"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json();if(r.sources&&Array.isArray(r.sources)){let y=r.sources.filter(P=>P&&P.url&&_t(P.url.trim())).map((P,U)=>({id:(P.id||"src_"+(U+1)).toLowerCase().trim(),name:P.name||"\u4F18\u9009\u6E90 "+(U+1),url:P.url.trim(),enabled:P.enabled!==!1}));return await wt(e,y),x({success:!0,count:y.length})}if(!r.name||!r.url)return x({error:"\u7F3A\u5C11\u5FC5\u586B\u5B57\u6BB5\uFF08\u540D\u79F0\u548C\u5730\u5740\u4E3A\u5FC5\u586B\uFF09"},400);if(!_t(r.url.trim()))return x({error:"\u4F18\u9009\u6E90\u5730\u5740\u5FC5\u987B\u4E3A\u5408\u6CD5\u7684\u516C\u5171 HTTP/HTTPS \u5730\u5740\uFF0C\u7981\u6B62\u79C1\u6709\u7F51\u7EDC\u5730\u5740"},400);let d=(r.id||"src_"+rt(8,25)).toLowerCase().trim(),g=F.filter(y=>y.id!==d),b={id:d,name:r.name.trim(),url:r.url.trim(),enabled:!0};return g.push(b),await wt(e,g),x({success:!0,source:b})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname.startsWith("/api/sources/")&&t.method==="DELETE"){if(!f)return new Response("Unauthorized",{status:401});let r=decodeURIComponent(n.pathname.replace("/api/sources/","")).toLowerCase(),d=F.filter(g=>g.id!==r);return await wt(e,d),x({success:!0})}if(n.pathname==="/api/test-cf-nodes"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=r.baseVless||Q||e.BASE_VLESS||"",g=F;Array.isArray(r.sources)&&r.sources.length>0&&(g=r.sources);let b=await Ut(d,g,"raw"),y=await b.text();return x({success:b.ok,status:b.status,content:y},b.status)}catch(r){return x({success:!1,content:"\u751F\u6210\u6D4B\u8BD5\u8282\u70B9\u5931\u8D25: "+(r.message||String(r))},500)}}if(n.pathname==="/api/blocked-ips"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=Array.isArray(r.ips)?r.ips.map(y=>String(y).trim()).filter(y=>y&&!Lt(y)):[],b=(await ct(e)).filter(y=>!d.includes(y));for(let y of b)await zt(e,y);return await Y(e,d),x({success:!0,count:d.length})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/whitelist-ips"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=Array.isArray(r.ips)?r.ips.map(g=>String(g).trim()).filter(Boolean):[];return await ae(e,d),x({success:!0,count:d.length})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/logs/batch-delete"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=(Array.isArray(r.indices)?r.indices:[]).map(Number),b=(await vt(e)).filter((y,P)=>y&&!d.includes(P));return await se(e,b),x({success:!0,count:d.length})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/clear-logs"&&t.method==="POST")return f?(await ie(e),x({success:!0})):new Response("Unauthorized",{status:401});if(n.pathname==="/api/captcha"){let{svgDataUri:r,captchaToken:d}=await B();return new Response(JSON.stringify({svg:r,token:d}),{headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}})}if(n.pathname==="/login"&&t.method==="POST"){if(!i||!l)return new Response(Ct({hasKV:i,hasAdmin:l}),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}});try{let r=await kt(e,c);if(!j&&!D&&r.count>=3&&r.lockSeconds>0){let{svgDataUri:tt,captchaToken:yt}=await B();return new Response(It("\u64CD\u4F5C\u8FC7\u4E8E\u9891\u7E41\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002",tt,yt,r.lockSeconds),{status:429,headers:{"Content-Type":"text/html; charset=utf-8"}})}let d=await t.formData(),g=d.get("password")||"",b=d.get("captcha")||"",y=d.get("captcha_token")||"",U=n.protocol==="https:"?"; Secure":"",V=await M(b,y);if(V&&(a&&g===a)){await zt(e,c);let tt=await K();return new Response(null,{status:302,headers:{Location:"/","Set-Cookie":`auth_session=${tt}; Path=/; HttpOnly${U}; SameSite=Lax; Max-Age=600`}})}let R=await re(e,c),C=R.count,Z=R.lockSeconds,Pt=Math.ceil(Z/60),Bt="",Et="";if(V?(Bt="\u7BA1\u7406\u5458\u5BC6\u7801\u9519\u8BEF",Et="\u26A0\uFE0F \u7BA1\u7406\u5458\u5BC6\u7801\u9519\u8BEF"):(Bt="\u9A8C\u8BC1\u7801\u9519\u8BEF\u6216\u5DF2\u5931\u6548",Et="\u26A0\uFE0F \u9A8C\u8BC1\u7801\u9519\u8BEF"),C>=3&&!D&&!j){let tt=await ct(e);tt.includes(c)||(tt.push(c),await Y(e,tt));let yt=O(e,{time:m,ip:c,location:h,status:403,path:"/login",type:`\u{1F6AB} \u8FDE\u7EED\u767B\u5F55\u5931\u8D25\u8FBE3\u6B21 (${Bt})\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(yt):await yt,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let Ne=Math.max(0,3-C),jt=O(e,{time:m,ip:c,location:h,status:401,path:"/login",type:`${Et} (\u7B2C ${C} \u6B21\u5931\u8D25\uFF0C\u51B7\u5374\u9501\u5B9A ${Pt} \u5206\u949F${D?"\uFF0C\u767D\u540D\u5355\u8C41\u514D\u5C01\u7981":`\uFF0C\u5269\u4F59 ${Ne} \u6B21\u5C06\u88AB\u6C38\u4E45\u5C01\u7981`})`,ua:u});o&&o.waitUntil?o.waitUntil(jt):await jt;let{svgDataUri:De,captchaToken:Re}=await B(),Oe="\u9A8C\u8BC1\u7801\u6216\u5BC6\u7801\u9519\u8BEF\uFF0C\u8BF7\u91CD\u8BD5\u3002";return new Response(It(Oe,De,Re,D?0:Z),{status:401,headers:{"Content-Type":"text/html; charset=utf-8"}})}catch{return new Response("Bad Request",{status:400})}}if(n.pathname==="/logout"){let d=n.protocol==="https:"?"; Secure":"";return new Response(null,{status:302,headers:{Location:"/login","Set-Cookie":`auth_session=; Path=/; HttpOnly${d}; SameSite=Lax; Max-Age=0`}})}if(n.pathname==="/login"){if(!i||!l)return new Response(Ct({hasKV:i,hasAdmin:l}),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}});if(f)return new Response(null,{status:302,headers:{Location:"/"}});let{svgDataUri:r,captchaToken:d}=await B(),g=await kt(e,c),b=D?0:g.lockSeconds,y=b>0?`\u26A0\uFE0F \u5F53\u524D IP \u5904\u4E8E\u51B7\u5374\u9501\u5B9A\u72B6\u6001\uFF08\u5269\u4F59 ${b} \u79D2\uFF09\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002`:"";return new Response(It(y,r,d,b),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}})}if(n.pathname==="/"){if(!i||!l)return new Response(Ct({hasKV:i,hasAdmin:l}),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}});if(!f)return new Response(null,{status:302,headers:{Location:"/login"}});let r=await vt(e),d=ze(n.origin,_,F,W,H,r,L,G,nt,dt,at);return X(new Response(d,{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}}))}if(!D){let r=await ct(e);!r.includes(c)&&!j&&(r.push(c),await Y(e,r));let d=O(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:`\u{1F6AB} \u6076\u610F\u63A2\u6D4B\u4E0D\u5B58\u5728\u8DEF\u5F84 [${n.pathname}]\uFF0CIP \u5DF2\u88AB\u81EA\u52A8\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(d):await d,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let Vt=O(e,{time:m,ip:c,location:h,status:404,path:n.pathname,type:`\u26A0\uFE0F \u8BBF\u95EE\u4E0D\u5B58\u5728\u9875\u9762 [${n.pathname}] (\u767D\u540D\u5355\u8C41\u514D)`,ua:u});return o&&o.waitUntil?o.waitUntil(Vt):await Vt,new Response("404 Not Found",{status:404})}catch(n){return console.error("Unhandled Worker Exception:",n),new Response(`500 Internal Server Error: ${n.message||String(n)}`,{status:500,headers:{"Content-Type":"text/plain; charset=utf-8"}})}}};export{Ro as default};

@@ -13,60 +13,6 @@ export function renderLogsTab(logs = [], blockedIPs = [], whitelistIPs = []) {
   return `
     <!-- 视图 3: 访问日志与 IP 拦截管理 -->
     <section class="tab-content" id="tab-access-logs">
-      <!-- 左右双栏：IP 白名单与黑名单管理 -->
-      <div class="ip-management-grid">
-        <!-- 左侧: IP 白名单放行配置卡片 -->
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title-group">
-              <h2 class="section-title">✨ IP 访问白名单</h2>
-              <span class="node-count-badge badge-success">永久豁免拦截</span>
-            </div>
-            <button class="btn-action btn-success" onclick="saveWhitelistIPsBatch()">💾 保存白名单</button>
-          </div>
-          <p class="section-desc">加入白名单的 IP 拥有最高放行权限：豁免黑名单拦截、豁免登录失败连续封禁，且可一键直接加入（支持一行一个 IP）。</p>
-          
-          <div class="form-field" style="margin-bottom: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <label style="margin-bottom: 0;">已放行的 IP 列表（一行一个 IP）:</label>
-              <div style="display: flex; gap: 6px;">
-                <button type="button" class="btn-action btn-secondary" style="height: 26px; font-size: 11px; padding: 0 8px;" onclick="pasteClipboard('textarea-whitelist-ips')">📋 粘贴</button>
-                <button type="button" class="btn-action btn-danger" style="height: 26px; font-size: 11px; padding: 0 8px;" onclick="clearInput('textarea-whitelist-ips')">清空</button>
-              </div>
-            </div>
-            <textarea id="textarea-whitelist-ips" class="form-textarea" style="min-height: 100px; font-family: monospace; font-size: 12px; line-height: 1.6;" placeholder="1.1.1.1&#10;8.8.8.8">${escapeHtml(whitelistIPs.join('\n'))}</textarea>
-            <div style="font-size: 12px; color: var(--text-muted); padding: 0 2px; margin-top: 4px;">
-              <span>💡 当前共放行 <strong>${whitelistIPs.length}</strong> 个白名单 IP</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 右侧: IP 黑名单屏蔽配置卡片 -->
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title-group">
-              <h2 class="section-title">🛡️ IP 访问黑名单 / 屏蔽</h2>
-              <span class="node-count-badge badge-danger">403 强制阻断</span>
-            </div>
-            <button class="btn-action btn-purple" onclick="saveBlockedIPsBatch()">💾 保存黑名单</button>
-          </div>
-          <p class="section-desc">被列入黑名单的 IP 访问任何订阅或后台页面时，将直接被系统拦截并返回 <code>403 Forbidden</code>（支持一行一个 IP）。</p>
-          
-          <div class="form-field" style="margin-bottom: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <label style="margin-bottom: 0;">已屏蔽的 IP 列表（一行一个 IP）:</label>
-              <div style="display: flex; gap: 6px;">
-                <button type="button" class="btn-action btn-secondary" style="height: 26px; font-size: 11px; padding: 0 8px;" onclick="pasteClipboard('textarea-blocked-ips')">📋 粘贴</button>
-                <button type="button" class="btn-action btn-danger" style="height: 26px; font-size: 11px; padding: 0 8px;" onclick="clearInput('textarea-blocked-ips')">清空</button>
-              </div>
-            </div>
-            <textarea id="textarea-blocked-ips" class="form-textarea" style="min-height: 100px; font-family: monospace; font-size: 12px; line-height: 1.6;" placeholder="1.2.3.4&#10;5.6.7.8">${escapeHtml(blockedIPs.join('\n'))}</textarea>
-            <div style="font-size: 12px; color: var(--text-muted); padding: 0 2px; margin-top: 4px;">
-              <span>💡 当前共屏蔽 <strong>${blockedIPs.length}</strong> 个 IP</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- 下部：实时访问日志记录表格卡片 -->
       <div class="section-card">

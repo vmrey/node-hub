@@ -128,11 +128,11 @@ export function renderPlainSubTab(origin, subToken, plainGroups) {
           <div class="drawer-body">
             <div class="form-field">
               <label>订阅名称 / 备注 (最多30字):</label>
-              <input type="text" id="form-group-name" placeholder="例如: 香港自建专线 / 日本备用节点" maxlength="30" required />
+              <input type="text" id="form-group-name" class="form-input" placeholder="例如: 香港自建专线 / 日本备用节点" maxlength="30" required />
             </div>
             <div class="form-field">
               <label>最大访问次数限制 (1~999 次，达到次数后自动物理销毁该订阅，0 或留空表示不限制):</label>
-              <input type="number" id="form-group-max-views" min="0" max="999" placeholder="0 (不限制) 或输入 1 ~ 999" />
+              <input type="number" id="form-group-max-views" class="form-input" min="0" max="999" placeholder="0 (不限制) 或输入 1 ~ 999" />
             </div>
             <div class="form-field">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
@@ -148,7 +148,7 @@ export function renderPlainSubTab(origin, subToken, plainGroups) {
                   <button type="button" class="btn-action btn-danger" style="height: 22px; font-size: 10px; padding: 0 6px;" onclick="clearInput('form-group-allowed-countries')">清空</button>
                 </div>
               </div>
-              <input type="text" id="form-group-allowed-countries" placeholder="例如: CN, HK, JP (留空继承全局安全配置)" />
+              <input type="text" id="form-group-allowed-countries" class="form-input" placeholder="例如: CN, HK, JP (留空继承全局安全配置)" />
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
                 <span>💡 允许访问此订阅的 IP 地区代码，多个以逗号分隔；留空则使用全局订阅安全配置</span>
               </div>

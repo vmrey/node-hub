@@ -3,11 +3,12 @@ import { dashboardScripts } from './scripts.js';
 import { renderPlainSubTab } from './plainSubView.js';
 import { renderCfSubTab } from './cfSubView.js';
 import { renderLogsTab } from './logsView.js';
+import { renderWhitelistTab } from './whitelistView.js';
+import { renderBlacklistTab } from './blacklistView.js';
 import { renderSecurityConfigTab, renderTgConfigTab } from './globalConfigView.js';
 
 // 渲染管理后台主页面 HTML
-export function renderDashboardPage(origin, subPath, subToken, sources, plainGroups, cfGroups = [], logs = [], blockedIPs = [], whitelistIPs = [], allowedCountries = [], proxyClientOnly = true, tgConfig = {}) {
-  const currentSubPath = subPath || 'sub';
+export function renderDashboardPage(origin, subToken, sources, plainGroups = [], cfGroups = [], logs = [], blockedIPs = [], whitelistIPs = [], allowedCountries = [], proxyClientOnly = true, tgConfig = {}) {
 
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -110,6 +111,20 @@ export function renderDashboardPage(origin, subPath, subToken, sources, plainGro
 
       <div class="nav-section-divider"></div>
 
+      <div class="nav-section-title">安全管控</div>
+      <a class="nav-item" id="nav-item-ip-whitelist" onclick="switchTab('ip-whitelist')">
+        <span class="nav-icon">✨</span>
+        <span style="flex: 1;">IP 白名单</span>
+        <span class="nav-badge-pill badge-success-pill" id="badge-whitelist-count">${whitelistIPs.length}</span>
+      </a>
+      <a class="nav-item" id="nav-item-ip-blacklist" onclick="switchTab('ip-blacklist')">
+        <span class="nav-icon">🛡️</span>
+        <span style="flex: 1;">IP 黑名单</span>
+        <span class="nav-badge-pill badge-danger-pill" id="badge-blacklist-count">${blockedIPs.length}</span>
+      </a>
+
+      <div class="nav-section-divider"></div>
+
       <div class="nav-section-title">
         <span>🌐 全局配置</span>
         <span class="nav-badge-pill" title="此处的配置对全站所有订阅统一生效">全站生效</span>
@@ -126,7 +141,7 @@ export function renderDashboardPage(origin, subPath, subToken, sources, plainGro
       </a>
     </nav>
     <div class="sidebar-footer">
-      <a href="/logout" class="logout-btn">
+      <a href="javascript:void(0)" onclick="handleLogout()" class="logout-btn">
         <span>🚪</span>
         <span>退出登录</span>
       </a>
@@ -160,7 +175,9 @@ export function renderDashboardPage(origin, subPath, subToken, sources, plainGro
       ${renderPlainSubTab(origin, subToken, plainGroups)}
       ${renderCfSubTab(origin, subToken, cfGroups, sources)}
       ${renderLogsTab(logs, blockedIPs, whitelistIPs)}
-      ${renderSecurityConfigTab(currentSubPath, subToken, allowedCountries, proxyClientOnly)}
+      ${renderWhitelistTab(whitelistIPs)}
+      ${renderBlacklistTab(blockedIPs)}
+      ${renderSecurityConfigTab(subToken, allowedCountries, proxyClientOnly)}
       ${renderTgConfigTab(tgConfig)}
     </div>
   </main>

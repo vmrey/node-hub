@@ -158,6 +158,52 @@ body {
   border-radius: 10px;
   font-weight: 600;
 }
+.badge-success-pill {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #059669 !important;
+}
+.badge-danger-pill {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #dc2626 !important;
+}
+.nav-item.active .badge-success-pill,
+.nav-item.active .badge-danger-pill {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+.quick-add-bar {
+  display: flex;
+  align-items: center;
+  margin: 14px 0 16px 0;
+  gap: 10px;
+}
+.quick-add-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.quick-add-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+  pointer-events: none;
+  z-index: 2;
+  user-select: none;
+}
+.quick-add-wrap .form-input {
+  padding-left: 36px !important;
+  height: 38px;
+}
+.batch-editor-panel {
+  background: var(--bg-main, #f8fafc);
+  border: 1px dashed var(--border-color, #cbd5e1);
+  border-radius: 8px;
+  padding: 14px;
+  margin: 12px 0 16px 0;
+  animation: fadeIn 0.2s ease;
+}
 .nav-badge-tag {
   font-size: 10px;
   background: var(--card-bg, #f1f5f9);
@@ -404,6 +450,41 @@ code {
   margin-bottom: 8px;
   display: block;
   font-weight: 500;
+}
+.form-input,
+input[type="text"]:not(.copy-input):not(.filter-input):not(.table-checkbox),
+input[type="password"],
+input[type="number"] {
+  width: 100%;
+  height: 38px;
+  padding: 0 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.25s ease;
+  box-sizing: border-box;
+}
+.form-input:focus,
+input[type="text"]:not(.copy-input):not(.filter-input):not(.table-checkbox):focus,
+input[type="password"]:focus,
+input[type="number"]:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  background: var(--bg-card);
+}
+.form-input::placeholder,
+input::placeholder {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.form-input:disabled,
+input:disabled {
+  background: var(--hover-bg);
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 .form-textarea {
   width: 100%;
@@ -777,9 +858,9 @@ code {
   box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
 }
 .pagination-select {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  color: #1e293b;
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  color: var(--text-main);
   padding: 4px 10px;
   border-radius: 6px;
   font-size: 12px;
@@ -788,10 +869,11 @@ code {
   outline: none;
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 .pagination-select:focus {
   border-color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
 }
 
 /* 抽屉式侧拉弹窗样式 (从右边推拉滑出) */

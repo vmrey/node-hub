@@ -9,8 +9,7 @@ import {
   saveCustomNodeGroups,
   getCfNodeGroups,
   saveCfNodeGroups,
-  getSubPath,
-  saveSubPath,
+  generateSecureRandomString,
   getToken,
   saveToken,
   getAllowedCountries,
@@ -32,6 +31,7 @@ import {
   createSessionToken,
   verifySessionToken,
   isIPInList,
+  isLoopbackIP,
   recordSubTokenFailure,
   resetSubTokenFailure,
   getTgConfig,
@@ -40,7 +40,7 @@ import {
 } from './storage.js';
 import { encrypt, decrypt } from './cipherTool.js';
 import { createCaptchaPayload, verifyCaptcha } from './captcha.js';
-import { fetchIPsAndGenerateNodes, handleSubscription, standardizeNodesText } from './nodes.js';
+import { fetchIPsAndGenerateNodes, standardizeNodesText } from './nodes.js';
 import { renderLoginPage, renderSetupNoticePage } from './views/loginView.js';
 import { renderDashboardPage } from './views/dashboardView.js';
 
@@ -133,9 +133,9 @@ const PROXY_CLIENT_KEYWORDS = [
   'potatso', 'pharos', 'subconverter', 'leaf', 'trojan'
 ];
 
-function checkSubscriptionAccess({ request, userAgent, isAuthed, isWhitelisted, groupAllowedCountries, globalAllowedCountries, proxyClientOnly }) {
-  // 管理员已登录会话或 IP 白名单客户端永久豁免，方便后台调试及测试
-  if (isAuthed || isWhitelisted) {
+function checkSubscriptionAccess({ request, userAgent, isAuthed, isWhitelisted, groupAllowedCountries, globalAllowedCountries, proxyClientOnly, isLocal }) {
+  // 管理员已登录会话、本地回环开发调试或 IP 白名单客户端永久豁免
+  if (isAuthed || isWhitelisted || isLocal) {
     return { allowed: true };
   }
 
@@ -283,8 +283,9 @@ export default {
       getWhitelistIPs(env),
       getBlockedIPs(env)
     ]);
+    const isLocal = isLoopbackIP(clientIP);
     const isWhitelisted = isIPInList(clientIP, whitelistIPs);
-    const isBlocked = isIPInList(clientIP, blockedIPs);
+    const isBlocked = !isLocal && isIPInList(clientIP, blockedIPs);
 
     // 3. 检查 IP 黑名单拦截（支持 CIDR，白名单 IP 永远豁免；智能频控聚合防刷爆 KV 写配额）
     if (!isWhitelisted && isBlocked) {
@@ -316,7 +317,7 @@ export default {
     if (!isWhitelisted) {
       const wafThreat = checkWafThreat(url);
       if (wafThreat) {
-        if (!isIPInList(clientIP, blockedIPs)) {
+        if (!isIPInList(clientIP, blockedIPs) && !isLocal) {
           blockedIPs.push(clientIP);
           await saveBlockedIPs(env, blockedIPs);
         }
@@ -338,11 +339,12 @@ export default {
         });
       }
 
-      // 3. 检查高频访问限流与防 CC (60秒滑动窗口)
-      const rateCheck = checkRateLimit(clientIP);
-      if (!rateCheck.allowed) {
+      // 3. 检查高频访问限流与防 CC (60秒滑动窗口，管理员会话与本地开发豁免)
+      if (!isLocal && !isAuthed) {
+        const rateCheck = checkRateLimit(clientIP);
+        if (!rateCheck.allowed) {
         if (rateCheck.banned) {
-          if (!isIPInList(clientIP, blockedIPs)) {
+          if (!isIPInList(clientIP, blockedIPs) && !isLocal) {
             blockedIPs.push(clientIP);
             await saveBlockedIPs(env, blockedIPs);
           }
@@ -384,6 +386,7 @@ export default {
           });
         }
       }
+    }
 
     }
 
@@ -391,7 +394,7 @@ export default {
     async function handleSubTokenFail(subTypeName) {
       const failCount = await recordSubTokenFailure(env, clientIP);
       if (failCount >= 3 && !isWhitelisted) {
-        if (!isIPInList(clientIP, blockedIPs)) {
+        if (!isIPInList(clientIP, blockedIPs) && !isLocal) {
           blockedIPs.push(clientIP);
           await saveBlockedIPs(env, blockedIPs);
         }
@@ -432,13 +435,12 @@ export default {
       });
     }
 
-    // 获取当前配置（并发拉取全部加密 KV 项，将 9 次串行网络等待降低至 1 次并发周期）
+    // 获取当前配置（并发拉取全部加密 KV 项，将串行网络等待降低至 1 次并发周期）
     const [
       sources,
       currentBaseVless,
       currentCustomGroups,
       currentCfGroups,
-      currentSubPath,
       currentToken,
       globalAllowedCountries,
       proxyClientOnly,
@@ -448,7 +450,6 @@ export default {
       getBaseVless(env),
       getCustomNodeGroups(env),
       getCfNodeGroups(env),
-      getSubPath(env),
       getToken(env),
       getAllowedCountries(env),
       getProxyClientOnly(env),
@@ -471,7 +472,8 @@ export default {
         isWhitelisted,
         groupAllowedCountries: matchedDirectGroup.allowedCountries,
         globalAllowedCountries,
-        proxyClientOnly
+        proxyClientOnly,
+        isLocal
       });
 
       if (!subAccess.allowed) {
@@ -494,9 +496,7 @@ export default {
       }
 
       const reqToken = url.searchParams.get('token') || url.searchParams.get('pwd') || '';
-      const requiredSecret = currentToken || adminPassword;
-
-      if (requiredSecret && !isAuthed && reqToken !== requiredSecret) {
+      if (currentToken && !isAuthed && reqToken !== currentToken) {
         return handleSubTokenFail('普通订阅');
       }
 
@@ -587,7 +587,8 @@ export default {
         isWhitelisted,
         groupAllowedCountries: matchedCfGroup.allowedCountries,
         globalAllowedCountries,
-        proxyClientOnly
+        proxyClientOnly,
+        isLocal
       });
 
       if (!subAccess.allowed) {
@@ -610,9 +611,7 @@ export default {
       }
 
       const reqToken = url.searchParams.get('token') || url.searchParams.get('pwd') || '';
-      const requiredSecret = currentToken || adminPassword;
-
-      if (requiredSecret && !isAuthed && reqToken !== requiredSecret) {
+      if (currentToken && !isAuthed && reqToken !== currentToken) {
         return handleSubTokenFail('CF优选订阅');
       }
 
@@ -667,85 +666,16 @@ export default {
       // 确定优选源（若指定了 sources 则使用指定的，否则使用全部优选源）
       let groupSources = sources;
       if (Array.isArray(matchedCfGroup.sources) && matchedCfGroup.sources.length > 0) {
-        const targetIds = matchedCfGroup.sources.map(id => id.toLowerCase());
-        groupSources = sources.filter(s => targetIds.includes(s.id.toLowerCase()));
-        if (groupSources.length === 0) groupSources = sources;
+        if (typeof matchedCfGroup.sources[0] === 'object') {
+          groupSources = matchedCfGroup.sources;
+        } else {
+          const targetIds = matchedCfGroup.sources.map(id => String(id).toLowerCase());
+          groupSources = sources.filter(s => s && s.id && targetIds.includes(String(s.id).toLowerCase()));
+          if (groupSources.length === 0) groupSources = sources;
+        }
       }
 
       return await fetchIPsAndGenerateNodes(groupBaseVless, groupSources, format);
-    }
-
-    // ==========================================================
-    // 路由 1: 客户端全局优选订阅动态路由 (严格精确匹配当前配置的 SUB_PATH)
-    // 鉴权逻辑：优先匹配 TOKEN；若未设置 TOKEN 则匹配 ADMIN 密码；已登录会话免鉴权
-    // ==========================================================
-    if (cleanPath === currentSubPath) {
-      const subAccess = checkSubscriptionAccess({
-        request,
-        userAgent,
-        isAuthed,
-        isWhitelisted,
-        groupAllowedCountries: null,
-        globalAllowedCountries,
-        proxyClientOnly
-      });
-
-      if (!subAccess.allowed) {
-        const subLogPromise = recordAccessLog(env, {
-          time: nowTime,
-          ip: clientIP,
-          location: clientLocation,
-          status: subAccess.status,
-          path: url.pathname,
-          type: `🚫 全局聚合订阅拦截 [${subAccess.reason}]`,
-          ua: userAgent
-        });
-        if (ctx && ctx.waitUntil) ctx.waitUntil(subLogPromise);
-        else await subLogPromise;
-
-        return new Response(subAccess.message, {
-          status: subAccess.status,
-          headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-        });
-      }
-
-      const reqToken = url.searchParams.get('token') || url.searchParams.get('pwd') || '';
-      const requiredSecret = currentToken || adminPassword;
-
-      if (requiredSecret && !isAuthed && reqToken !== requiredSecret) {
-        return handleSubTokenFail('全局聚合订阅');
-      }
-
-      // 验证成功重置失败计数
-      const resetSubPromise = resetSubTokenFailure(env, clientIP);
-      if (ctx && ctx.waitUntil) ctx.waitUntil(resetSubPromise);
-      else await resetSubPromise;
-
-      // 记录全局订阅成功日志
-      const logPromise = recordAccessLog(env, {
-        time: nowTime,
-        ip: clientIP,
-        location: clientLocation,
-        status: 200,
-        path: url.pathname,
-        type: '全局聚合订阅拉取',
-        ua: userAgent
-      });
-      if (ctx && ctx.waitUntil) ctx.waitUntil(logPromise);
-      else await logPromise;
-
-      // 发送 Telegram 通知
-      sendSubTelegramNotification(env, tgConfig, {
-        subType: '全局聚合订阅',
-        subName: '全部节点聚合',
-        ip: clientIP,
-        location: clientLocation,
-        ua: userAgent,
-        time: nowTime,
-        viewsInfo: null
-      }, ctx);
-
-      return handleSubscription(request, env, sources, currentBaseVless, currentCustomGroups);
     }
 
     // ==========================================================
@@ -755,7 +685,7 @@ export default {
       if (!isAuthed) {
         if (!isWhitelisted) {
           const currentBlocked = await getBlockedIPs(env);
-          if (!currentBlocked.includes(clientIP)) {
+          if (!currentBlocked.includes(clientIP) && !isLocal) {
             currentBlocked.push(clientIP);
             await saveBlockedIPs(env, currentBlocked);
           }
@@ -805,13 +735,12 @@ export default {
     }
 
     // ==========================================================
-    // 路由 2: 管理接口 - 保存订阅安全配置 SUB_PATH & TOKEN (/api/security-config)
+    // 路由 2: 管理接口 - 保存订阅安全配置 TOKEN (/api/security-config)
     // ==========================================================
     if (url.pathname === '/api/security-config' && request.method === 'POST') {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
       try {
         const body = await request.json();
-        await saveSubPath(env, body.subPath || 'sub');
         await saveToken(env, body.token || '');
         if (body.allowedCountries !== undefined) {
           await saveAllowedCountries(env, body.allowedCountries);
@@ -905,12 +834,12 @@ export default {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
       try {
         const body = await request.json();
-        const targetId = (body.id || '').toLowerCase().trim() || crypto.randomUUID().replace(/-/g, '');
+        const targetId = (body.id || '').trim() || generateSecureRandomString(12, 33);
         const targetName = (body.name || '').trim();
         if (!targetName) {
           return authedJsonResponse({ error: '订阅名称不能为空' }, 400);
         }
-        if (RESERVED_GROUP_IDS.includes(targetId) || targetId === currentSubPath.toLowerCase()) {
+        if (RESERVED_GROUP_IDS.includes(targetId.toLowerCase())) {
           return authedJsonResponse({ error: '此订阅 ID 为系统保留关键字，请使用其他名称' }, 400);
         }
         const existing = currentCustomGroups.find(g => g.id.toLowerCase() === targetId);
@@ -941,7 +870,7 @@ export default {
           allowedCountries: groupAllowed
         });
         await saveCustomNodeGroups(env, updated);
-        return authedJsonResponse({ success: true });
+        return authedJsonResponse({ success: true, id: targetId, group: { id: targetId, name: targetName } });
       } catch {
         return authedJsonResponse({ error: 'Invalid JSON payload' }, 400);
       }
@@ -978,11 +907,11 @@ export default {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
       try {
         const body = await request.json();
-        if (!body.id || !body.name) {
+        if (!body.name) {
           return authedJsonResponse({ error: '缺少必填字段' }, 400);
         }
-        const targetId = body.id.toLowerCase().trim();
-        if (RESERVED_GROUP_IDS.includes(targetId) || targetId === currentSubPath.toLowerCase()) {
+        const targetId = (body.id || '').trim() || generateSecureRandomString(12, 33);
+        if (RESERVED_GROUP_IDS.includes(targetId.toLowerCase())) {
           return authedJsonResponse({ error: '此订阅 ID 为系统保留关键字，请使用其他名称' }, 400);
         }
         const existing = currentCfGroups.find(g => g.id === targetId);
@@ -1013,7 +942,7 @@ export default {
           allowedCountries: groupAllowed
         });
         await saveCfNodeGroups(env, updated);
-        return authedJsonResponse({ success: true });
+        return authedJsonResponse({ success: true, id: targetId, group: { id: targetId, name: body.name } });
       } catch {
         return authedJsonResponse({ error: 'Invalid JSON payload' }, 400);
       }
@@ -1063,21 +992,23 @@ export default {
         }
 
         // 兼容单条传递 { id, name, url }
-        if (!body.id || !body.name || !body.url) {
-          return authedJsonResponse({ error: '缺少必填字段' }, 400);
+        if (!body.name || !body.url) {
+          return authedJsonResponse({ error: '缺少必填字段（名称和地址为必填）' }, 400);
         }
         if (!isValidPublicUrl(body.url.trim())) {
           return authedJsonResponse({ error: '优选源地址必须为合法的公共 HTTP/HTTPS 地址，禁止私有网络地址' }, 400);
         }
-        const updated = sources.filter(s => s.id !== body.id.toLowerCase().trim());
-        updated.push({
-          id: body.id.toLowerCase().trim(),
-          name: body.name,
+        const targetId = (body.id || ('src_' + generateSecureRandomString(8, 25))).toLowerCase().trim();
+        const updated = sources.filter(s => s.id !== targetId);
+        const newSource = {
+          id: targetId,
+          name: body.name.trim(),
           url: body.url.trim(),
           enabled: true
-        });
+        };
+        updated.push(newSource);
         await saveSources(env, updated);
-        return authedJsonResponse({ success: true });
+        return authedJsonResponse({ success: true, source: newSource });
       } catch {
         return authedJsonResponse({ error: 'Invalid JSON payload' }, 400);
       }
@@ -1130,7 +1061,7 @@ export default {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
       try {
         const body = await request.json();
-        const ips = Array.isArray(body.ips) ? body.ips.map(ip => String(ip).trim()).filter(Boolean) : [];
+        const ips = Array.isArray(body.ips) ? body.ips.map(ip => String(ip).trim()).filter(ip => ip && !isLoopbackIP(ip)) : [];
         const oldBlocked = await getBlockedIPs(env);
         const removedIPs = oldBlocked.filter(ip => !ips.includes(ip));
         for (const rip of removedIPs) {
@@ -1206,9 +1137,9 @@ export default {
         });
       }
       try {
-        // 先检查当前 IP 是否处于指数退避锁定冷却期内（白名单豁免）
+        // 先检查当前 IP 是否处于指数退避锁定冷却期内（本地回环与白名单豁免）
         const failStatus = await getLoginFailedAttempts(env, clientIP);
-        if (!isWhitelisted && failStatus.lockSeconds > 0) {
+        if (!isLocal && !isWhitelisted && failStatus.count >= 3 && failStatus.lockSeconds > 0) {
           const { svgDataUri, captchaToken } = await getCaptcha();
           return new Response(
             renderLoginPage(
@@ -1240,12 +1171,6 @@ export default {
           // 登录成功：重置该 IP 的登录失败计数与锁定状态
           await resetLoginFailedAttempts(env, clientIP);
 
-          // 自动将管理员当前 IP 加入白名单，防止后续误输误触 404 被封禁
-          const curWhite = await getWhitelistIPs(env);
-          if (!isIPInList(clientIP, curWhite)) {
-            curWhite.push(clientIP);
-            await saveWhitelistIPs(env, curWhite);
-          }
 
           const sessionToken = await getSessionToken();
           return new Response(null, {
@@ -1274,8 +1199,8 @@ export default {
           logErrorType = '⚠️ 管理员密码错误';
         }
 
-        // 若累计失败达到 3 次（白名单 IP 豁免封禁），立即永久加入 IP 黑名单
-        if (failCount >= 3 && !isWhitelisted) {
+        // 若累计失败达到 3 次（白名单 IP 与本地开发环境豁免封禁），立即永久加入 IP 黑名单
+        if (failCount >= 3 && !isWhitelisted && !isLocal) {
           const currentBlocked = await getBlockedIPs(env);
           if (!currentBlocked.includes(clientIP)) {
             currentBlocked.push(clientIP);
@@ -1389,7 +1314,6 @@ export default {
       const logs = await getAccessLogs(env);
       const dashboardHtml = renderDashboardPage(
         url.origin,
-        currentSubPath,
         currentToken,
         sources,
         currentCustomGroups,
@@ -1412,7 +1336,7 @@ export default {
     // ==========================================================
     if (!isWhitelisted) {
       const currentBlocked = await getBlockedIPs(env);
-      if (!currentBlocked.includes(clientIP)) {
+      if (!currentBlocked.includes(clientIP) && !isLocal) {
         currentBlocked.push(clientIP);
         await saveBlockedIPs(env, currentBlocked);
       }
