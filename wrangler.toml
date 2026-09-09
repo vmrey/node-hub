@@ -2,8 +2,7 @@ name = "node-hub"
 main = "src/index.js"
 compatibility_date = "2026-09-06"
 
-# KV 存储绑定：请在 Cloudflare 网页控制台（Worker -> 设置 -> 变量与机密 -> KV 命名空间绑定）中直接绑定名为 KV 的命名空间。
-# 如需在配置文件中硬编码，取消下方注释并填入真实 KV 命名空间 ID：
-# [[kv_namespaces]]
-# binding = "KV"
-# id = ""
+# KV 存储绑定：deploy.js 会自动查找/创建 KV 命名空间并注入 ID，无需手动修改。
+[[kv_namespaces]]
+binding = "KV"
+id = ""
