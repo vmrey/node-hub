@@ -325,6 +325,19 @@ function switchTab(tabId, pushHash = true) {
 
   localStorage.setItem('active_dashboard_tab', tabId);
 
+  // 切换 Tab 时自动刷新对应表格分页器
+  const tabPaginatorMap = {
+    'custom-sub': 'plain-table-row',
+    'cf-sub': 'cf-table-row',
+    'access-logs': 'logs-table-row',
+    'ip-whitelist': 'whitelist-table-row',
+    'ip-blacklist': 'blacklist-table-row'
+  };
+  const activeRowClass = tabPaginatorMap[tabId];
+  if (activeRowClass && window._paginators && window._paginators[activeRowClass]) {
+    window._paginators[activeRowClass].render();
+  }
+
   if (pushHash && window.location.hash !== '#' + tabId) {
     history.replaceState(null, '', '#' + tabId);
   }
@@ -1312,24 +1325,41 @@ function applyWhitelistFilter() {
   const query = (input?.value || '').toLowerCase().trim();
   if (clearBtn) clearBtn.style.display = query ? 'inline-block' : 'none';
 
-  const rows = document.querySelectorAll('.whitelist-table-row');
-  let matchCount = 0;
-  rows.forEach(row => {
-    const ip = (row.dataset.ip || '').toLowerCase();
-    const isMatch = !query || ip.includes(query);
-    row.style.display = isMatch ? '' : 'none';
-    if (isMatch) matchCount++;
-  });
-
+  const paginator = window._paginators ? window._paginators['whitelist-table-row'] : null;
   const statsEl = document.getElementById('whitelist-filter-stats');
-  if (statsEl) {
-    statsEl.innerHTML = '显示 <strong>' + matchCount + '</strong> / 共 <strong>' + rows.length + '</strong> 个 IP';
+
+  if (paginator) {
+    paginator.setFilter(row => {
+      const ip = (row.dataset.ip || '').toLowerCase();
+      return !query || ip.includes(query);
+    });
+    const allCount = paginator.getAllRows().length;
+    const matchedCount = paginator.getRows().length;
+    if (statsEl) {
+      if (query) {
+        statsEl.innerHTML = '已筛选出 <strong>' + matchedCount + '</strong> / 共 <strong>' + allCount + '</strong> 个 IP';
+      } else {
+        statsEl.innerHTML = '显示 <strong>' + matchedCount + '</strong> / 共 <strong>' + allCount + '</strong> 个 IP';
+      }
+    }
+  } else {
+    const rows = document.querySelectorAll('.whitelist-table-row');
+    let matchCount = 0;
+    rows.forEach(row => {
+      const ip = (row.dataset.ip || '').toLowerCase();
+      const isMatch = !query || ip.includes(query);
+      row.style.display = isMatch ? '' : 'none';
+      if (isMatch) matchCount++;
+    });
+    if (statsEl) {
+      statsEl.innerHTML = '显示 <strong>' + matchCount + '</strong> / 共 <strong>' + rows.length + '</strong> 个 IP';
+    }
+    const emptyRow = document.getElementById('whitelist-table-empty-filter-row');
+    if (emptyRow) {
+      emptyRow.style.display = (matchCount === 0 && rows.length > 0) ? '' : 'none';
+    }
+    updateBatchSelection('whitelist');
   }
-  const emptyRow = document.getElementById('whitelist-table-empty-filter-row');
-  if (emptyRow) {
-    emptyRow.style.display = (matchCount === 0 && rows.length > 0) ? '' : 'none';
-  }
-  updateBatchSelection('whitelist');
 }
 
 function clearWhitelistKeyword() {
@@ -1345,24 +1375,41 @@ function applyBlacklistFilter() {
   const query = (input?.value || '').toLowerCase().trim();
   if (clearBtn) clearBtn.style.display = query ? 'inline-block' : 'none';
 
-  const rows = document.querySelectorAll('.blacklist-table-row');
-  let matchCount = 0;
-  rows.forEach(row => {
-    const ip = (row.dataset.ip || '').toLowerCase();
-    const isMatch = !query || ip.includes(query);
-    row.style.display = isMatch ? '' : 'none';
-    if (isMatch) matchCount++;
-  });
-
+  const paginator = window._paginators ? window._paginators['blacklist-table-row'] : null;
   const statsEl = document.getElementById('blacklist-filter-stats');
-  if (statsEl) {
-    statsEl.innerHTML = '显示 <strong>' + matchCount + '</strong> / 共 <strong>' + rows.length + '</strong> 个 IP';
+
+  if (paginator) {
+    paginator.setFilter(row => {
+      const ip = (row.dataset.ip || '').toLowerCase();
+      return !query || ip.includes(query);
+    });
+    const allCount = paginator.getAllRows().length;
+    const matchedCount = paginator.getRows().length;
+    if (statsEl) {
+      if (query) {
+        statsEl.innerHTML = '已筛选出 <strong>' + matchedCount + '</strong> / 共 <strong>' + allCount + '</strong> 个 IP';
+      } else {
+        statsEl.innerHTML = '显示 <strong>' + matchedCount + '</strong> / 共 <strong>' + allCount + '</strong> 个 IP';
+      }
+    }
+  } else {
+    const rows = document.querySelectorAll('.blacklist-table-row');
+    let matchCount = 0;
+    rows.forEach(row => {
+      const ip = (row.dataset.ip || '').toLowerCase();
+      const isMatch = !query || ip.includes(query);
+      row.style.display = isMatch ? '' : 'none';
+      if (isMatch) matchCount++;
+    });
+    if (statsEl) {
+      statsEl.innerHTML = '显示 <strong>' + matchCount + '</strong> / 共 <strong>' + rows.length + '</strong> 个 IP';
+    }
+    const emptyRow = document.getElementById('blacklist-table-empty-filter-row');
+    if (emptyRow) {
+      emptyRow.style.display = (matchCount === 0 && rows.length > 0) ? '' : 'none';
+    }
+    updateBatchSelection('blacklist');
   }
-  const emptyRow = document.getElementById('blacklist-table-empty-filter-row');
-  if (emptyRow) {
-    emptyRow.style.display = (matchCount === 0 && rows.length > 0) ? '' : 'none';
-  }
-  updateBatchSelection('blacklist');
 }
 
 function clearBlacklistKeyword() {
@@ -1709,6 +1756,12 @@ class TablePaginator {
     if (page > totalPages) page = totalPages;
     this.currentPage = page;
     this.render();
+    if (this.tableBody) {
+      const container = this.tableBody.closest('.table-container') || this.tableBody.closest('.section-card');
+      if (container && typeof container.scrollIntoView === 'function') {
+        container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
   }
 
   setPageSize(size) {
@@ -1989,9 +2042,9 @@ function initSessionActivityTracker() {
 function initAllTablePaginators() {
   window._paginators['plain-table-row'] = new TablePaginator('plain-table-body', 'plain-table-row', 'plain-table-pagination', 10, 'plain');
   window._paginators['cf-table-row'] = new TablePaginator('cf-table-body', 'cf-table-row', 'cf-table-pagination', 10, 'cf');
-  window._paginators['logs-table-row'] = new TablePaginator('logs-table-body', 'logs-table-row', 'logs-table-pagination', 15, 'logs');
-  window._paginators['whitelist-table-row'] = new TablePaginator('whitelist-table-body', 'whitelist-table-row', 'whitelist-table-pagination', 15, 'whitelist');
-  window._paginators['blacklist-table-row'] = new TablePaginator('blacklist-table-body', 'blacklist-table-row', 'blacklist-table-pagination', 15, 'blacklist');
+  window._paginators['logs-table-row'] = new TablePaginator('logs-table-body', 'logs-table-row', 'logs-table-pagination', 10, 'logs');
+  window._paginators['whitelist-table-row'] = new TablePaginator('whitelist-table-body', 'whitelist-table-row', 'whitelist-table-pagination', 10, 'whitelist');
+  window._paginators['blacklist-table-row'] = new TablePaginator('blacklist-table-body', 'blacklist-table-row', 'blacklist-table-pagination', 10, 'blacklist');
 }
 
 // 页面加载完成后立即初始化所有表格分页器与会话保活机制
