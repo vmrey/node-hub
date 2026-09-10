@@ -16,8 +16,9 @@ const tempToml = path.join(__dirname, '.temp-deploy-query.toml');
 try {
   fs.writeFileSync(tempToml, 'name = "node-hub"\ncompatibility_date = "2026-09-06"\n', 'utf8');
   const listRaw = execSync(`npx wrangler kv namespace list -c "${tempToml}"`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
-  const list = JSON.parse(listRaw);
-  if (Array.isArray(list)) {
+  const jsonMatch = listRaw.match(/\[\s*\{[\s\S]*\}\s*\]/);
+  const list = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+  if (Array.isArray(list) && list.length > 0) {
     const match = list.find(item => item.title && (item.title === 'KV' || item.title.endsWith('-KV') || item.title.includes('KV')));
     if (match && match.id) {
       kvId = match.id.trim();
