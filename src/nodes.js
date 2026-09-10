@@ -1,23 +1,5 @@
-import { safeBase64Encode, safeBase64Decode } from './storage.js';
-
-// 基础安全解码与编码工具（杜绝 URI malformed 等异常抛出）
-function safeDecodeURIComponent(str) {
-  if (!str || typeof str !== 'string') return '';
-  try {
-    return decodeURIComponent(str);
-  } catch {
-    return str;
-  }
-}
-
-function safeEncodeURIComponent(str) {
-  if (!str || typeof str !== 'string') return '';
-  try {
-    return encodeURIComponent(str);
-  } catch {
-    return str;
-  }
-}
+import { safeBase64Encode, safeBase64Decode, safeEncodeURIComponent, safeDecodeURIComponent } from './utils/encoding.js';
+import { isIpAddress, formatHostAddress } from './utils/network.js';
 
 // 解析单条 VLESS 字符串（内部基础解析方法，支持小火箭私有Base64、标准Xray明文、多协议等）
 function parseSingleVless(rawInput) {
@@ -212,29 +194,6 @@ const VLESS_PARAM_MAPPINGS = {
   tlsDefaultPorts: ['443', '8443', '2053', '2083', '2087', '2096']
 };
 
-// 严格判断字符串是否为 IP 地址（支持 IPv4 以及带/不带方括号的 IPv6）
-function isIpAddress(h) {
-  if (!h || typeof h !== 'string') return false;
-  const clean = h.trim().replace(/^\[|\]$/g, '');
-  // IPv4 格式 (如 1.1.1.1, 104.16.1.1)
-  if (/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})$/.test(clean)) return true;
-  // IPv6 格式 (包含至少 2 个冒号，如 2606:4700:4700::1111)
-  if ((clean.match(/:/g) || []).length >= 2) return true;
-  return false;
-}
-
-// 规范化 Host 地址（自动补齐 IPv6 方括号，提升 URI 标准化程度）
-function formatHostAddress(h) {
-  if (!h || typeof h !== 'string') return '';
-  const clean = h.trim();
-  if (clean.startsWith('[') && clean.endsWith(']')) {
-    return clean;
-  }
-  if ((clean.match(/:/g) || []).length >= 2) {
-    return `[${clean}]`;
-  }
-  return clean;
-}
 
 // 辅助方法：从 searchParams 中按候选字段列表提取首个有效值
 function getParamByAliases(searchParams, aliases = []) {

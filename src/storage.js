@@ -1,4 +1,29 @@
 import { encrypt, decrypt } from './cipherTool.js';
+import {
+  safeBase64Encode,
+  safeBase64Decode,
+  safeEncodeURIComponent,
+  safeDecodeURIComponent
+} from './utils/encoding.js';
+import {
+  isIpAddress,
+  formatHostAddress,
+  extractCleanHost,
+  isLoopbackIP,
+  isIPInList
+} from './utils/network.js';
+
+export {
+  safeBase64Encode,
+  safeBase64Decode,
+  safeEncodeURIComponent,
+  safeDecodeURIComponent,
+  isIpAddress,
+  formatHostAddress,
+  extractCleanHost,
+  isLoopbackIP,
+  isIPInList
+};
 
 // 默认内置优选源配置
 const DEFAULT_SOURCES = [
@@ -68,36 +93,6 @@ export function getCookie(request, name) {
   return null;
 }
 
-// UTF-8 安全 Base64 编码
-export function safeBase64Encode(str) {
-  const bytes = new TextEncoder().encode(str);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-// UTF-8 安全 Base64 解码
-export function safeBase64Decode(str) {
-  if (!str || typeof str !== 'string') return '';
-  try {
-    // 清理首尾空格及内部换行符，兼容 URL-Safe Base64
-    let clean = str.trim().replace(/\s+/g, '');
-    let base64 = clean.replace(/-/g, '+').replace(/_/g, '/');
-    while (base64.length % 4) {
-      base64 += '=';
-    }
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return new TextDecoder().decode(bytes);
-  } catch {
-    return '';
-  }
-}
 
 // 获取 KV 命名空间绑定对象
 function getKV(env) {
@@ -671,62 +666,6 @@ export async function verifySessionToken(env, token, adminHash, adminPassword) {
   }
 }
 
-// ==========================================
-// 🛡️ CIDR 网段与 IP 智能匹配引擎 (IPv4 & IPv6)
-// ==========================================
-function ipv4ToLong(ip) {
-  const parts = ip.split('.').map(n => parseInt(n, 10));
-  if (parts.length !== 4 || parts.some(n => isNaN(n) || n < 0 || n > 255)) return null;
-  return ((parts[0] << 24) >>> 0) + ((parts[1] << 16) >>> 0) + ((parts[2] << 8) >>> 0) + (parts[3] >>> 0);
-}
-
-function matchCIDR(ip, cidr) {
-  if (!cidr.includes('/')) return ip.toLowerCase() === cidr.toLowerCase();
-  const [range, bitsStr] = cidr.split('/');
-  const prefixLen = parseInt(bitsStr, 10);
-  if (isNaN(prefixLen)) return false;
-
-  const ipLong = ipv4ToLong(ip);
-  const rangeLong = ipv4ToLong(range);
-  if (ipLong !== null && rangeLong !== null) {
-    if (prefixLen <= 0) return true;
-    if (prefixLen > 32) return false;
-    const mask = prefixLen === 32 ? 0xFFFFFFFF : (~((1 << (32 - prefixLen)) - 1)) >>> 0;
-    return (ipLong & mask) === (rangeLong & mask);
-  }
-
-  // IPv6 前缀匹配
-  if (ip.includes(':') && range.includes(':')) {
-    const normIp = ip.toLowerCase();
-    const normRange = range.toLowerCase();
-    if (prefixLen <= 64 && normIp.startsWith(normRange.replace(/::?$/, ''))) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-export function isLoopbackIP(ip) {
-  if (!ip) return false;
-  const clean = ip.trim().toLowerCase();
-  return clean === '127.0.0.1' || clean === '::1' || clean === 'localhost' || clean.startsWith('127.');
-}
-
-export function isIPInList(ip, list) {
-  if (!ip || !Array.isArray(list) || list.length === 0) return false;
-  const cleanIp = ip.trim();
-  for (const item of list) {
-    const pattern = String(item).trim();
-    if (!pattern) continue;
-    try {
-      if (matchCIDR(cleanIp, pattern)) return true;
-    } catch {
-      if (cleanIp.toLowerCase() === pattern.toLowerCase()) return true;
-    }
-  }
-  return false;
-}
 
 // ==========================================
 // 🛡️ 订阅 Token 爆破防御：连续错误计数与记录
