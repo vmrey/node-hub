@@ -5,9 +5,9 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "node dev.js",
     "deploy": "node deploy.js",
-    "build": "esbuild src/index.js --bundle --minify --format=esm --target=es2022 --outfile=_worker.js"
+    "build": "node build.js"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

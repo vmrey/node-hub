@@ -1,8 +1,8 @@
 /* src/utils/encoding.js */
-// Common encoding/decoding helpers used across the project
+// 项目全局通用编解码辅助函数工具库
 
 /**
- * Encode a UTF-8 string to a URL‑safe Base64 string.
+ * 将 UTF-8 字符串编码为 URL 安全的标准 Base64 字符串
  */
 export function safeBase64Encode(str) {
   const bytes = new TextEncoder().encode(str);
@@ -14,15 +14,15 @@ export function safeBase64Encode(str) {
 }
 
 /**
- * Decode a Base64 (or URL‑safe Base64) string back to UTF‑8.
+ * 将 Base64（或 URL 安全型 Base64）字符串安全解码还原为 UTF-8 字符串
  */
 export function safeBase64Decode(str) {
   if (!str || typeof str !== 'string') return '';
   try {
-    // Remove whitespace and convert URL‑safe characters
+    // 清除空白字符并替换 URL 安全字符
     let clean = str.trim().replace(/\s+/g, '');
     clean = clean.replace(/-/g, '+').replace(/_/g, '/');
-    // Pad to multiple of 4
+    // 补齐 4 字节倍数 Base64 填充符
     while (clean.length % 4) clean += '=';
     const binary = atob(clean);
     const bytes = new Uint8Array(binary.length);
@@ -36,7 +36,7 @@ export function safeBase64Decode(str) {
 }
 
 /**
- * Safe encodeURIComponent wrapper that never throws.
+ * 安全的 encodeURIComponent 封装函数（永不抛出异常）
  */
 export function safeEncodeURIComponent(str) {
   if (!str || typeof str !== 'string') return '';
@@ -48,7 +48,7 @@ export function safeEncodeURIComponent(str) {
 }
 
 /**
- * Safe decodeURIComponent wrapper that never throws.
+ * 安全的 decodeURIComponent 封装函数（永不抛出异常）
  */
 export function safeDecodeURIComponent(str) {
   if (!str || typeof str !== 'string') return '';
