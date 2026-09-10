@@ -55,20 +55,23 @@ if (fs.existsSync(tomlPath)) {
     console.log(`[build] 💾 已自动将真实 KV ID (${kvId}) 注入到 wrangler.toml`);
   } else {
     // 仅在 CI 自动化构建部署环境中，若未能获取到 ID 且声明了空 id，自动临时转为注释，避免 wrangler deploy 报错中断
-    const isCI = Boolean(process.env.CI || process.env.CF_PAGES || process.env.GITHUB_ACTIONS || process.env.CF_BUILD || process.env.BUILD_ENVIRONMENT);
+    const isPagesCI = Boolean(process.env.CF_PAGES === '1' || process.env.CF_PAGES_COMMIT_SHA || process.env.CF_PAGES_URL);
+    const isCI = Boolean(process.env.CI || isPagesCI || process.env.GITHUB_ACTIONS || process.env.CF_BUILD || process.env.BUILD_ENVIRONMENT);
     if (isCI && /^\s*\[\[kv_namespaces\]\][\s\S]*?id\s*=\s*["']\s*["']/m.test(tomlContent)) {
       tomlContent = tomlContent.replace(
         /\[\[kv_namespaces\]\]\s*\n\s*binding\s*=\s*["']KV["']\s*\n\s*id\s*=\s*["']\s*["']/,
         '# [[kv_namespaces]]\n# binding = "KV"\n# id = ""'
       );
       fs.writeFileSync(tomlPath, tomlContent, 'utf8');
-      console.log('--------------------------------------------------------------------------------');
-      console.log('[build] ℹ️  [Workers CI 构建提示] 未检测到环境变量 KV_ID：');
-      console.log('[build]    1. 若使用 Cloudflare Pages 部署：无需处理，Pages 天生永不解绑。');
-      console.log('[build]    2. 若使用 Cloudflare Workers 部署：为防止发布后云端 KV 绑定被清除，');
-      console.log('[build]       建议前往该 Worker 设置 -> 变量与机密，添加环境变量：');
-      console.log('[build]       【KV_ID = 您的 32 位 KV 命名空间真实 ID】');
-      console.log('--------------------------------------------------------------------------------');
+
+      // 若当前为 Pages 部署：天生不掉绑定，用不到 KV_ID，完全不进行提示；仅在 Workers 构建环境下才精准提示！
+      if (!isPagesCI) {
+        console.log('--------------------------------------------------------------------------------');
+        console.log('[build] ℹ️  [Workers CI 构建提示] 检测到当前为 Cloudflare Workers 自动发包流水线：');
+        console.log('[build]    若发包后发现控制台已绑定的 KV 被清除，请在该 Worker 设置 -> 变量与机密 中添加：');
+        console.log('[build]    变量名：KV_ID，值为您的 32 位 KV 命名空间真实 ID，即可永久锁定绑定！');
+        console.log('--------------------------------------------------------------------------------');
+      }
     }
   }
 }

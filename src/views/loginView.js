@@ -369,46 +369,59 @@ export function renderLoginPage(errorMessage = '', captchaSvgDataUri = '', captc
 }
 
 // 渲染未完成初始化配置（未绑定 KV / 未配置管理员密码）引导页面
-export function renderSetupNoticePage({ hasKV = false, hasAdmin = false } = {}) {
+export function renderSetupNoticePage({ hasKV = false, hasAdmin = false, hasKvId = false, isPages = false } = {}) {
   let title = '系统初始化配置未完成';
-  let subtitle = '出于安全防护与数据持久化要求，当前服务已阻止直接进入控制台';
+  const platformName = isPages ? 'Cloudflare Pages' : 'Cloudflare Workers';
+  let subtitle = `当前检测到运行环境为 <strong>${platformName}</strong>，请按下方指引完成基础配置`;
   let icon = '⚡';
   let warningText = '';
 
   if (!hasKV && !hasAdmin) {
     title = '未绑定 KV 且未配置密码';
     icon = '⚠️';
-    warningText = '系统检测到既未绑定 <code>KV</code> 存储数据库，也未设置 <code>ADMIN</code> 管理员密码。系统无法持久化节点配置，且未授权直接访问存在安全隐患。';
+    warningText = `系统检测到当前尚未绑定 <code>KV</code> 数据库，也未配置 <code>ADMIN</code> 密码。请前往 ${platformName} 控制台完成必要设置。`;
   } else if (!hasKV) {
     title = '未绑定 KV 命名空间';
     icon = '🗄️';
-    warningText = '系统检测到尚未绑定 <code>KV</code> 命名空间。所有节点数据、优选源及加密密钥均依赖 Cloudflare KV 进行持久化加密存储，未绑定 KV 系统无法正常运行。';
+    warningText = isPages
+      ? '系统检测到尚未绑定 <code>KV</code> 命名空间。Pages 部署仅需在函数设置中绑定一次即可终身生效。'
+      : '系统检测到尚未绑定 <code>KV</code> 命名空间。若您使用 GitHub 自动发包，请务必同时配置 <code>KV_ID</code> 环境变量以防止每次发布被解绑。';
   } else {
     title = '未配置管理员密码';
     icon = '🔐';
-    warningText = '系统未检测到 <code>ADMIN</code> 环境变量。为避免未授权访问及节点配置泄露，必须先在 Cloudflare 后台设置管理员密码。';
+    warningText = '系统未检测到 <code>ADMIN</code> 环境变量。为保障节点与订阅安全，必须先在控制台设置管理员密码。';
   }
 
   const steps = [];
-  if (!hasKV && !hasAdmin) {
-    steps.push('<strong>创建 KV 空间</strong>：在 Cloudflare 左侧菜单点击 <strong>“存储与数据库”</strong> -> <strong>“KV”</strong>，创建名为 <code>KV</code> 的命名空间，并复制其 32 位真实 ID。');
-    steps.push('<strong>绑定存储与密码（Workers 用户）</strong>：进入 Worker 页面 -> <strong>设置 (Settings)</strong> -> <strong>变量与机密</strong>：<br/>' +
-      '① 在 <strong>KV 命名空间绑定</strong> 添加变量名 <code>KV</code> 并绑定。<br/>' +
-      '② 在 <strong>环境变量</strong> 添加：<code>ADMIN</code>（管理密码）；同时建议添加 <code>KV_ID</code>（填入复制的 32 位真实 ID，彻底防止 GitHub 自动发包时解绑）。');
-    steps.push('💡 <strong>更省心的方案（Pages 用户）</strong>：在 Cloudflare Pages 设置 -> 函数 (Functions) 中直接绑定 <code>KV</code>，终身无需配置 KV_ID 且永不解绑！');
-    steps.push('点击 <strong>保存并部署</strong>，完成后点击下方按钮刷新页面。');
-  } else if (!hasKV) {
-    steps.push('<strong>获取 KV 真实 ID</strong>：在 Cloudflare 左侧菜单点击 <strong>“存储与数据库”</strong> -> <strong>“KV”</strong>，找到你的 <code>KV</code> 命名空间，复制其 <strong>32 位真实 ID</strong>（如 <code>04c612db...</code>）。');
-    steps.push('<strong>完成绑定并防止解绑（Workers 用户）</strong>：进入当前 Worker -> <strong>设置 (Settings)</strong> -> <strong>变量与机密 (Variables and Secrets)</strong>：<br/>' +
-      '① 在 <strong>KV 命名空间绑定</strong> 区域点击添加绑定：变量名填写 <code>KV</code>，选择该空间。<br/>' +
-      '② <strong>【重要防解绑设置】</strong> 在下方 <strong>环境变量</strong> 点击添加：变量名称填 <code>KV_ID</code>，值填刚才复制的 32 位 ID。<br/>' +
-      '<em>（注：配置 KV_ID 可彻底避免每次从 GitHub 自动推送发包时 Cloudflare 强制清除线上绑定！）</em>');
-    steps.push('💡 <strong>零配置替代方案（Pages 用户）</strong>：直接使用 <strong>Cloudflare Pages</strong> 部署，在 Pages 设置 -> 函数中绑定一次 KV，永远不会被清除！');
-    steps.push('配置完成后点击 <strong>保存并部署</strong>，随后点击下方按钮刷新页面。');
+  if (isPages) {
+    // ==========================================
+    // 🌸 场景 A：Cloudflare Pages 部署指引（用不到 KV_ID，完全不提示）
+    // ==========================================
+    if (!hasKV) {
+      steps.push('进入 Cloudflare 控制台 -> <strong>Workers 和 Pages</strong> -> 点击进入当前 Pages 项目。');
+      steps.push('进入 <strong>设置 (Settings)</strong> -> 点击 <strong>函数 (Functions)</strong> -> 下滑至 <strong>KV 命名空间绑定</strong>。');
+      steps.push('点击 <strong>添加绑定 (Add binding)</strong>：变量名称严格填写为 <code>KV</code>，选择你创建好的 KV 空间并保存。<em>（Pages 天生永久锁定绑定，无需配置 KV_ID！）</em>');
+    }
+    if (!hasAdmin) {
+      steps.push('在 Pages 项目设置 -> 进入 <strong>环境变量 (Environment variables)</strong> -> 点击 <strong>添加变量</strong>：变量名填 <code>ADMIN</code>，值填你的登录密码。');
+    }
+    steps.push('配置完成后点击 <strong>保存并部署</strong>，完成后点击下方按钮刷新页面即可进入系统。');
   } else {
-    steps.push('登录 <strong>Cloudflare 控制台</strong> 并进入 <strong>Workers 和 Pages</strong>，点击进入当前 Worker。');
-    steps.push('切换至 <strong>设置 (Settings)</strong> 选项卡 -> 选择 <strong>变量与机密 (Variables and Secrets)</strong>。');
-    steps.push('在 <strong>环境变量</strong> 区域点击 <strong>添加</strong>：变量名称填写 <code>ADMIN</code>，变量值填写您的管理密码。');
+    // ==========================================
+    // ⚡ 场景 B：Cloudflare Workers 部署指引（需用到 KV、ADMIN，若缺少 KV_ID 则精准提示）
+    // ==========================================
+    steps.push('登录 Cloudflare 控制台 -> <strong>Workers 和 Pages</strong> -> 点击进入当前 Worker。');
+    steps.push('切换到 <strong>设置 (Settings)</strong> 选项卡 -> 点击 <strong>变量与机密 (Variables and Secrets)</strong>。');
+    if (!hasKV) {
+      steps.push('在 <strong>KV 命名空间绑定</strong> 区域点击添加绑定：变量名称必须填写 <code>KV</code>，选择对应的 KV 空间。');
+    }
+    if (!hasAdmin) {
+      steps.push('在 <strong>环境变量与机密</strong> 区域点击添加：变量名称填写 <code>ADMIN</code>，值填写您的管理密码。');
+    }
+    if (!hasKvId) {
+      steps.push('<strong>【重要防解绑变量 KV_ID】</strong>：前往控制台 <strong>存储与数据库 -> KV</strong> 复制 <code>KV</code> 的 32 位真实 ID。在同一页面环境变量中添加：变量名 <code>KV_ID</code>，值为该 32 位 ID。<em>（配置后可彻底阻止 GitHub 自动发包时 Cloudflare 强制清除 KV 绑定！）</em>');
+    }
+    steps.push('💡 <em>提示：您也可以转为 <strong>Cloudflare Pages</strong> 部署，Pages 天生无需配置 KV_ID 且永不解绑！</em>');
     steps.push('点击 <strong>保存并部署</strong>，完成后点击下方按钮刷新页面。');
   }
 
@@ -438,7 +451,7 @@ export function renderSetupNoticePage({ hasKV = false, hasAdmin = false } = {}) 
       border-radius: 16px;
       padding: 36px 32px;
       width: 100%;
-      max-width: 520px;
+      max-width: 540px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 20px 48px rgba(0, 0, 0, 0.05);
     }
     .card-icon {
@@ -455,7 +468,7 @@ export function renderSetupNoticePage({ hasKV = false, hasAdmin = false } = {}) 
       color: #0f172a;
     }
     .card p.subtitle {
-      font-size: 14px;
+      font-size: 13px;
       color: #64748b;
       text-align: center;
       margin-bottom: 20px;
@@ -463,7 +476,7 @@ export function renderSetupNoticePage({ hasKV = false, hasAdmin = false } = {}) 
     }
     .status-box {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       margin-bottom: 20px;
     }
     .status-item {
@@ -472,7 +485,7 @@ export function renderSetupNoticePage({ hasKV = false, hasAdmin = false } = {}) 
       flex-direction: column;
       align-items: center;
       gap: 6px;
-      padding: 12px 10px;
+      padding: 12px 8px;
       border-radius: 10px;
       text-align: center;
     }
@@ -483,6 +496,10 @@ export function renderSetupNoticePage({ hasKV = false, hasAdmin = false } = {}) 
     .status-item.status-err {
       background: #fef2f2;
       border: 1px solid #fecaca;
+    }
+    .status-item.status-warn {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
     }
     .status-badge {
       font-size: 11px;
@@ -497,6 +514,10 @@ export function renderSetupNoticePage({ hasKV = false, hasAdmin = false } = {}) 
     .status-err .status-badge {
       background: #fee2e2;
       color: #dc2626;
+    }
+    .status-warn .status-badge {
+      background: #fef3c7;
+      color: #b45309;
     }
     .status-name {
       color: #334155;
@@ -548,7 +569,7 @@ export function renderSetupNoticePage({ hasKV = false, hasAdmin = false } = {}) 
       font-size: 13px;
       color: #475569;
       line-height: 1.6;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       position: relative;
       padding-left: 26px;
     }
@@ -616,15 +637,22 @@ export function renderSetupNoticePage({ hasKV = false, hasAdmin = false } = {}) 
     <h2>${title}</h2>
     <p class="subtitle">${subtitle}</p>
 
+    <!-- 动态变量状态卡片：根据是否为 Pages 智能调整 -->
     <div class="status-box">
       <div class="status-item ${hasKV ? 'status-ok' : 'status-err'}">
         <span class="status-badge">${hasKV ? '✓ 已绑定' : '✕ 未绑定'}</span>
-        <span class="status-name">KV 命名空间 (KV)</span>
+        <span class="status-name">存储空间 (KV)</span>
       </div>
       <div class="status-item ${hasAdmin ? 'status-ok' : 'status-err'}">
         <span class="status-badge">${hasAdmin ? '✓ 已配置' : '✕ 未配置'}</span>
-        <span class="status-name">管理员密码 (ADMIN)</span>
+        <span class="status-name">后台密码 (ADMIN)</span>
       </div>
+      ${!isPages ? `
+        <div class="status-item ${hasKvId ? 'status-ok' : 'status-warn'}">
+          <span class="status-badge">${hasKvId ? '✓ 已配置' : '⚠️ 建议配置'}</span>
+          <span class="status-name">防解绑密钥 (KV_ID)</span>
+        </div>
+      ` : ''}
     </div>
 
     <div class="warning-box">
@@ -633,7 +661,7 @@ export function renderSetupNoticePage({ hasKV = false, hasAdmin = false } = {}) 
     </div>
 
     <div class="steps-container">
-      <div class="steps-title">📋 配置步骤指引：</div>
+      <div class="steps-title">📋 ${platformName} 专属配置步骤：</div>
       <ol class="steps-list">
         ${steps.map(s => `<li>${s}</li>`).join('')}
       </ol>
@@ -648,7 +676,7 @@ export function renderSetupNoticePage({ hasKV = false, hasAdmin = false } = {}) 
     </button>
 
     <div class="footer-note">
-      配置完成并保存后，点击上方按钮刷新即可进入登录页面
+      配置完成并点击保存部署后，点击上方按钮刷新即可进入登录页面
     </div>
   </div>
 </body>

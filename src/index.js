@@ -223,6 +223,14 @@ export default {
       const adminHash = adminPassword ? await sha256(adminPassword) : '';
       const hasKV = Boolean(env.KV && typeof env.KV.get === 'function');
       const hasAdmin = Boolean(adminPassword);
+      const hasKvId = Boolean((env.KV_ID || env.CLOUDFLARE_KV_ID || '').trim());
+      const isPages = Boolean(
+        env.CF_PAGES === '1' ||
+        env.CF_PAGES_COMMIT_SHA ||
+        env.CF_PAGES_BRANCH ||
+        env.CF_PAGES_URL ||
+        url.hostname.endsWith('.pages.dev')
+      );
 
       // 1. 浏览器与移动设备后台静默请求直接豁免（防止 iPhone/Android 打开网页因查图标触发 404 误封）
       if (
@@ -1191,7 +1199,7 @@ export default {
     // ==========================================================
     if (url.pathname === '/login' && request.method === 'POST') {
       if (!hasKV || !hasAdmin) {
-        return new Response(renderSetupNoticePage({ hasKV, hasAdmin }), {
+        return new Response(renderSetupNoticePage({ hasKV, hasAdmin, hasKvId, isPages }), {
           status: 200,
           headers: { 'Content-Type': 'text/html; charset=utf-8' }
         });
@@ -1334,7 +1342,7 @@ export default {
     // ==========================================================
     if (url.pathname === '/login') {
       if (!hasKV || !hasAdmin) {
-        return new Response(renderSetupNoticePage({ hasKV, hasAdmin }), {
+        return new Response(renderSetupNoticePage({ hasKV, hasAdmin, hasKvId, isPages }), {
           status: 200,
           headers: { 'Content-Type': 'text/html; charset=utf-8' }
         });
@@ -1359,7 +1367,7 @@ export default {
 
     if (url.pathname === '/') {
       if (!hasKV || !hasAdmin) {
-        return new Response(renderSetupNoticePage({ hasKV, hasAdmin }), {
+        return new Response(renderSetupNoticePage({ hasKV, hasAdmin, hasKvId, isPages }), {
           status: 200,
           headers: { 'Content-Type': 'text/html; charset=utf-8' }
         });
