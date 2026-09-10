@@ -2,8 +2,5 @@ name = "node-hub"
 main = "src/index.js"
 compatibility_date = "2026-09-06"
 
-# KV 存储绑定：构建与部署时由脚本自动获取并注入，无需手动填写
-[[kv_namespaces]]
-binding = "KV"
-id = ""
+
 
