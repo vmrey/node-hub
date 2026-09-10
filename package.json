@@ -1,6 +1,6 @@
 {
   "name": "node-hub",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Cloudflare Workers & Pages 双平台原生兼容 VLESS 订阅生成与节点管理中枢",
   "main": "src/index.js",
   "type": "module",
