@@ -2,9 +2,8 @@ name = "node-hub"
 main = "src/index.js"
 compatibility_date = "2026-09-06"
 
-# KV 存储绑定：
-# - 本地开发无需修改，运行 npm run dev 会自动使用本地独立存储
-# - 线上部署可运行 npm run deploy 自动创建/匹配并注入，或在 Cloudflare 环境变量中配置 KV_ID
+# KV 存储绑定：线上生产环境使用的 KV 命名空间 ID
 [[kv_namespaces]]
 binding = "KV"
-id = ""
+id = "04c612dbf2624db6a4fa153295943f82"
+
