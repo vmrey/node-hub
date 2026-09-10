@@ -909,10 +909,19 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith('/api/custom-groups/') && request.method === 'DELETE') {
+    if ((url.pathname.startsWith('/api/custom-groups/') && request.method === 'DELETE') ||
+        (url.pathname === '/api/custom-groups/delete' && request.method === 'POST')) {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
-      const idToDelete = decodeURIComponent(url.pathname.replace('/api/custom-groups/', '')).toLowerCase().trim();
-      const updated = currentCustomGroups.filter(g => g.id.toLowerCase() !== idToDelete);
+      let idToDelete = '';
+      if (request.method === 'DELETE') {
+        idToDelete = decodeURIComponent(url.pathname.replace('/api/custom-groups/', '')).toLowerCase().trim();
+      } else {
+        try {
+          const body = await request.json();
+          idToDelete = String(body.id || '').toLowerCase().trim();
+        } catch {}
+      }
+      const updated = currentCustomGroups.filter(g => g && g.id && g.id.toLowerCase() !== idToDelete);
       await saveCustomNodeGroups(env, updated);
       return authedJsonResponse({ success: true });
     }
@@ -1009,10 +1018,19 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith('/api/cf-groups/') && request.method === 'DELETE') {
+    if ((url.pathname.startsWith('/api/cf-groups/') && request.method === 'DELETE') ||
+        (url.pathname === '/api/cf-groups/delete' && request.method === 'POST')) {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
-      const idToDelete = decodeURIComponent(url.pathname.replace('/api/cf-groups/', '')).toLowerCase().trim();
-      const updated = currentCfGroups.filter(g => g.id.toLowerCase() !== idToDelete);
+      let idToDelete = '';
+      if (request.method === 'DELETE') {
+        idToDelete = decodeURIComponent(url.pathname.replace('/api/cf-groups/', '')).toLowerCase().trim();
+      } else {
+        try {
+          const body = await request.json();
+          idToDelete = String(body.id || '').toLowerCase().trim();
+        } catch {}
+      }
+      const updated = currentCfGroups.filter(g => g && g.id && g.id.toLowerCase() !== idToDelete);
       await saveCfNodeGroups(env, updated);
       return authedJsonResponse({ success: true });
     }

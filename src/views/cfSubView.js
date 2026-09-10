@@ -90,9 +90,9 @@ export function renderCfSubTab(origin, subToken, cfGroups, sources) {
                     </td>
                     <td style="text-align: right; white-space: nowrap;">
                       <div class="table-actions">
-                        <button class="btn-action btn-purple" style="height: 32px; padding: 0 10px; font-size: 12px;" data-id="${safeId}" onclick="testCfGroup(this.dataset.id)">🧪 测试</button>
-                        <button class="btn-action btn-secondary" style="height: 32px; padding: 0 12px; font-size: 12px;" data-id="${safeId}" onclick="openEditCfGroupModal(this.dataset.id)">✏️ 编辑</button>
-                        <button class="btn-action btn-danger" style="height: 32px; padding: 0 12px; font-size: 12px;" data-id="${safeId}" onclick="deleteCfGroup(this.dataset.id)">🗑️ 删除</button>
+                        <button class="btn-action btn-purple" style="height: 32px; padding: 0 10px; font-size: 12px;" onclick="testCfGroup('${safeId}')">🧪 测试</button>
+                        <button class="btn-action btn-secondary" style="height: 32px; padding: 0 12px; font-size: 12px;" onclick="openEditCfGroupModal('${safeId}')">✏️ 编辑</button>
+                        <button class="btn-action btn-danger" style="height: 32px; padding: 0 12px; font-size: 12px;" onclick="deleteCfGroup('${safeId}')">🗑️ 删除</button>
                       </div>
                     </td>
                   </tr>

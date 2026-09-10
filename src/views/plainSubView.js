@@ -102,8 +102,8 @@ export function renderPlainSubTab(origin, subToken, plainGroups) {
                     </td>
                     <td style="text-align: right; white-space: nowrap;">
                       <div class="table-actions">
-                        <button class="btn-action btn-secondary" style="height: 32px; padding: 0 12px; font-size: 12px;" data-id="${safeId}" onclick="openEditGroupModal(this.dataset.id)">✏️ 编辑</button>
-                        <button class="btn-action btn-danger" style="height: 32px; padding: 0 12px; font-size: 12px;" data-id="${safeId}" onclick="deleteGroup(this.dataset.id)">🗑️ 删除</button>
+                        <button class="btn-action btn-secondary" style="height: 32px; padding: 0 12px; font-size: 12px;" onclick="openEditGroupModal('${safeId}')">✏️ 编辑</button>
+                        <button class="btn-action btn-danger" style="height: 32px; padding: 0 12px; font-size: 12px;" onclick="deleteGroup('${safeId}')">🗑️ 删除</button>
                       </div>
                     </td>
                   </tr>

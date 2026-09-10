@@ -2,7 +2,7 @@ name = "node-hub"
 main = "src/index.js"
 compatibility_date = "2026-09-06"
 
-# KV 存储绑定：deploy.js 会自动查找/创建 KV 命名空间并注入 ID，无需手动修改。
+# KV 存储绑定：本地开发请保留占位 ID（如 local-kv-id），npm run deploy 会自动将其替换为 Cloudflare 真实 KV ID。
 [[kv_namespaces]]
 binding = "KV"
-id = ""
+id = "local-kv-id"

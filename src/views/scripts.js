@@ -67,6 +67,14 @@ function showConfirmDialog({
 
     dialog.classList.add('active');
 
+    function cleanup() {
+      dialog.classList.remove('active');
+      confirmBtn.onclick = null;
+      cancelBtn.onclick = null;
+      dialog.onclick = null;
+      window.removeEventListener('keydown', onKeyDown);
+    }
+
     function onConfirm() {
       cleanup();
       resolve(true);
@@ -77,14 +85,18 @@ function showConfirmDialog({
       resolve(false);
     }
 
-    function cleanup() {
-      dialog.classList.remove('active');
-      confirmBtn.removeEventListener('click', onConfirm);
-      cancelBtn.removeEventListener('click', onCancel);
+    function onKeyDown(e) {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
     }
 
-    confirmBtn.addEventListener('click', onConfirm);
-    cancelBtn.addEventListener('click', onCancel);
+    confirmBtn.onclick = onConfirm;
+    cancelBtn.onclick = onCancel;
+    dialog.onclick = function(e) {
+      if (e.target === dialog) onCancel();
+    };
+    window.addEventListener('keydown', onKeyDown);
   });
 }
 
@@ -477,12 +489,17 @@ async function submitGroupForm(e) {
 }
 
 async function deleteGroup(id) {
-  const target = allGroupsData.find(g => g.id.toLowerCase() === String(id).toLowerCase());
-  const name = target ? target.name : id;
+  if (!id) {
+    showToast('未能获取到订阅 ID，请刷新页面重试！', 'error');
+    return;
+  }
+  const cleanId = String(id).trim();
+  const target = allGroupsData.find(g => g.id.toLowerCase() === cleanId.toLowerCase());
+  const name = target ? target.name : cleanId;
 
   const confirmed = await showConfirmDialog({
     title: '删除普通订阅',
-    message: '确定要删除普通订阅【' + name + '】(ID: ' + id + ') 吗？删除后相关客户端将无法继续拉取节点！',
+    message: '确定要删除普通订阅【' + name + '】(ID: ' + cleanId + ') 吗？删除后相关客户端将无法继续拉取节点！',
     icon: '🗑️',
     confirmText: '确认删除',
     confirmType: 'danger'
@@ -491,13 +508,22 @@ async function deleteGroup(id) {
   if (!confirmed) return;
 
   try {
-    const res = await fetch('/api/custom-groups/' + encodeURIComponent(id), { method: 'DELETE' });
+    let res = await fetch('/api/custom-groups/' + encodeURIComponent(cleanId), { method: 'DELETE' });
+    if (!res.ok && res.status !== 401) {
+      // 容错降级：若浏览器或代理拦截 DELETE 谓词，改用 POST 批量删除
+      res = await fetch('/api/custom-groups/batch-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [cleanId] })
+      });
+    }
+
     if (res.ok) {
-      showToast('普通订阅已成功删除！', 'success');
+      showToast('普通订阅【' + name + '】已成功删除！', 'success');
       setTimeout(() => {
         window.location.hash = '#custom-sub';
         location.reload();
-      }, 600);
+      }, 500);
     } else if (res.status === 401) {
       showToast('登录会话已超时，请重新登录！', 'error');
       setTimeout(() => location.href = '/login', 1200);
@@ -684,12 +710,17 @@ async function submitCfGroupForm(e) {
 }
 
 async function deleteCfGroup(id) {
-  const target = allCfGroupsData.find(g => g.id.toLowerCase() === String(id).toLowerCase());
-  const name = target ? target.name : id;
+  if (!id) {
+    showToast('未能获取到优选订阅 ID，请刷新页面重试！', 'error');
+    return;
+  }
+  const cleanId = String(id).trim();
+  const target = allCfGroupsData.find(g => g.id.toLowerCase() === cleanId.toLowerCase());
+  const name = target ? target.name : cleanId;
 
   const confirmed = await showConfirmDialog({
     title: '删除 CF 优选订阅',
-    message: '确定要删除 CF 优选订阅【' + name + '】(ID: ' + id + ') 吗？删除后相关客户端将无法获取优选节点！',
+    message: '确定要删除 CF 优选订阅【' + name + '】(ID: ' + cleanId + ') 吗？删除后相关客户端将无法获取优选节点！',
     icon: '🗑️',
     confirmText: '确认删除',
     confirmType: 'danger'
@@ -698,13 +729,22 @@ async function deleteCfGroup(id) {
   if (!confirmed) return;
 
   try {
-    const res = await fetch('/api/cf-groups/' + encodeURIComponent(id), { method: 'DELETE' });
+    let res = await fetch('/api/cf-groups/' + encodeURIComponent(cleanId), { method: 'DELETE' });
+    if (!res.ok && res.status !== 401) {
+      // 容错降级：若浏览器或代理拦截 DELETE 谓词，改用 POST 批量删除
+      res = await fetch('/api/cf-groups/batch-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [cleanId] })
+      });
+    }
+
     if (res.ok) {
-      showToast('CF 优选订阅已成功删除！', 'success');
+      showToast('CF 优选订阅【' + name + '】已成功删除！', 'success');
       setTimeout(() => {
         window.location.hash = '#cf-sub';
         location.reload();
-      }, 600);
+      }, 500);
     } else if (res.status === 401) {
       showToast('登录会话已超时，请重新登录！', 'error');
       setTimeout(() => location.href = '/login', 1200);
