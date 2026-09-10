@@ -10,6 +10,10 @@ console.log('[build] 正在检查与自动获取 KV 命名空间 ID...');
 
 let kvId = (process.env.KV_ID || process.env.CLOUDFLARE_KV_ID || '').trim();
 
+// 诊断构建机中可用的凭据环境变量
+const cfEnvs = Object.keys(process.env).filter(k => /CF|CLOUDFLARE|KV|TOKEN|ACCOUNT|BUILD|DEPLOY/i.test(k));
+console.log('[build] 当前环境可用环境标识:', cfEnvs.join(', ') || '无专有标识');
+
 // 1. 若未显式传入环境变量，尝试通过 wrangler 自动查询云端已有名为 KV 的命名空间
 if (!kvId) {
   const tempToml = path.join(__dirname, '.temp-query-wrangler.toml');
@@ -17,7 +21,7 @@ if (!kvId) {
     fs.writeFileSync(tempToml, 'name = "node-hub"\ncompatibility_date = "2026-09-06"\n', 'utf8');
     const listRaw = execSync(`npx wrangler kv namespace list -c "${tempToml}"`, {
       encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'ignore'],
+      stdio: ['pipe', 'pipe', 'pipe'],
       timeout: 10000
     });
     const list = JSON.parse(listRaw);
@@ -25,11 +29,12 @@ if (!kvId) {
       const match = list.find(item => item.title && (item.title === 'KV' || item.title.endsWith('-KV') || item.title.includes('KV')));
       if (match && match.id) {
         kvId = match.id.trim();
-        console.log(`[build] ✅ 成功自动匹配到云端 KV 命名空间 ID: ${kvId}`);
+        console.log(`[build] ✅ 成功动态匹配到云端已有 KV ID: ${kvId}`);
       }
     }
-  } catch {
-    // 忽略查询失败（如无 Token 或受限环境）
+  } catch (err) {
+    const msg = (err.stderr || err.stdout || err.message || '').toString().trim();
+    console.log(`[build] 自动探测云端 KV 返回: ${msg.split('\n')[0]}`);
   } finally {
     try { if (fs.existsSync(tempToml)) fs.unlinkSync(tempToml); } catch {}
   }
