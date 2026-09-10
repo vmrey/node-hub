@@ -6,14 +6,15 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const tomlPath = path.join(__dirname, 'wrangler.toml');
 
-// 1. 若在 Cloudflare CI 环境中配置了环境变量 KV_ID，自动注入到 wrangler.toml，避免空 ID 部署报错
-const kvId = process.env.KV_ID || process.env.CLOUDFLARE_KV_ID;
-if (kvId && fs.existsSync(tomlPath)) {
+// 1. 自动注入有效 KV ID 到 wrangler.toml，避免空 ID 或 local-kv-id 导致 CI 部署报错
+const DEFAULT_PROD_KV_ID = '04c612dbf2624db6a4fa153295943f82';
+const targetKvId = process.env.KV_ID || process.env.CLOUDFLARE_KV_ID || DEFAULT_PROD_KV_ID;
+if (fs.existsSync(tomlPath)) {
   let tomlContent = fs.readFileSync(tomlPath, 'utf8');
-  if (/id\s*=\s*["']\s*["']/.test(tomlContent)) {
-    tomlContent = tomlContent.replace(/id\s*=\s*["']\s*["']/, `id = "${kvId.trim()}"`);
+  if (/id\s*=\s*["'](?:\s*|local-kv-id)["']/.test(tomlContent)) {
+    tomlContent = tomlContent.replace(/id\s*=\s*["'](?:\s*|local-kv-id)["']/, `id = "${targetKvId.trim()}"`);
     fs.writeFileSync(tomlPath, tomlContent, 'utf8');
-    console.log(`[build] 已从环境变量自动注入 KV ID: ${kvId.trim()}`);
+    console.log(`[build] 已自动注入有效 KV ID: ${targetKvId.trim()}`);
   }
 }
 
