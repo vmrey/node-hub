@@ -51,14 +51,16 @@ if (!kvId) {
 // 3. 自动注入真实 KV ID 到 wrangler.toml
 if (kvId && fs.existsSync(tomlPath)) {
   let tomlContent = fs.readFileSync(tomlPath, 'utf8');
-  const kvSectionRegex = /\[\[kv_namespaces\]\]\s*\n\s*binding\s*=\s*["']KV["']\s*\n\s*id\s*=\s*["'][^"']*["']/;
+  const kvSectionRegex = /(?:#\s*)?\[\[kv_namespaces\]\][\s\S]*?(?:#\s*)?binding\s*=\s*["']KV["'][\s\S]*?(?:#\s*)?id\s*=\s*["'][^"']*["']/;
   const newKvSection = `[[kv_namespaces]]\nbinding = "KV"\nid = "${kvId}"`;
 
   if (kvSectionRegex.test(tomlContent)) {
     tomlContent = tomlContent.replace(kvSectionRegex, newKvSection);
-    fs.writeFileSync(tomlPath, tomlContent, 'utf8');
-    console.log('💾 已自动将真实 KV ID 写入 wrangler.toml，无需任何手动修改！');
+  } else {
+    tomlContent += `\n${newKvSection}\n`;
   }
+  fs.writeFileSync(tomlPath, tomlContent, 'utf8');
+  console.log(`💾 已自动将真实 KV ID (${kvId}) 写入 wrangler.toml，无需任何手动修改！`);
 }
 
 // 4. 执行一键发布部署

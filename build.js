@@ -38,17 +38,19 @@ if (!kvId) {
 // 2. 将获取到的 KV ID 注入 wrangler.toml；若未获取且当前为空，则智能处理避免语法报错
 if (fs.existsSync(tomlPath)) {
   let tomlContent = fs.readFileSync(tomlPath, 'utf8');
+  const kvSectionRegex = /(?:#\s*)?\[\[kv_namespaces\]\][\s\S]*?(?:#\s*)?binding\s*=\s*["']KV["'][\s\S]*?(?:#\s*)?id\s*=\s*["'][^"']*["']/;
   if (kvId) {
-    if (/\[\[kv_namespaces\]\][\s\S]*?id\s*=\s*["'][^"']*["']/.test(tomlContent)) {
-      tomlContent = tomlContent.replace(/id\s*=\s*["'][^"']*["']/, `id = "${kvId}"`);
+    const newKvSection = `[[kv_namespaces]]\nbinding = "KV"\nid = "${kvId}"`;
+    if (kvSectionRegex.test(tomlContent)) {
+      tomlContent = tomlContent.replace(kvSectionRegex, newKvSection);
     } else {
-      tomlContent += `\n[[kv_namespaces]]\nbinding = "KV"\nid = "${kvId}"\n`;
+      tomlContent += `\n${newKvSection}\n`;
     }
     fs.writeFileSync(tomlPath, tomlContent, 'utf8');
     console.log(`[build] 💾 已自动将真实 KV ID (${kvId}) 注入到 wrangler.toml`);
   } else {
-    // 若未能自动获取到 ID，且 toml 中声明了空的 id，则将其注释，避免 wrangler 报空值语法错误
-    if (/\[\[kv_namespaces\]\][\s\S]*?id\s*=\s*["']\s*["']/.test(tomlContent)) {
+    // 若未能自动获取到 ID，且 toml 中声明了未注释且空的 id，则将其注释，避免 wrangler 报空值语法错误
+    if (/^\s*\[\[kv_namespaces\]\][\s\S]*?id\s*=\s*["']\s*["']/m.test(tomlContent)) {
       tomlContent = tomlContent.replace(
         /\[\[kv_namespaces\]\]\s*\n\s*binding\s*=\s*["']KV["']\s*\n\s*id\s*=\s*["']\s*["']/,
         '# [[kv_namespaces]]\n# binding = "KV"\n# id = ""'

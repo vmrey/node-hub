@@ -24,16 +24,18 @@ if (fs.existsSync(rootDevVars)) {
 
 const tomlContent = fs.existsSync(tomlPath) ? fs.readFileSync(tomlPath, 'utf8') : '';
 
-// 检查是否 id 为空字符串，若为空则在 .wrangler 内部生成临时本地配置，避免 wrangler schema 校验报错
-const hasEmptyKvId = /\[\[kv_namespaces\]\][\s\S]*?id\s*=\s*["']\s*["']/.test(tomlContent);
+// 检查是否已有未注释的有效 KV 绑定（包含具体ID），若无则在 .wrangler 内部生成临时本地配置，确保本地开发有独立 KV 可用
+const hasActiveKv = /^\s*\[\[kv_namespaces\]\][\s\S]*?binding\s*=\s*["']KV["'][\s\S]*?id\s*=\s*["'][a-zA-Z0-9_-]{8,}["']/m.test(tomlContent);
 
 let args = ['wrangler', 'dev'];
-if (hasEmptyKvId) {
+if (!hasActiveKv) {
   const devTomlPath = path.join(wranglerDir, 'wrangler.dev.toml');
-  let devContent = tomlContent
-    .replace(/main\s*=\s*["']src\/index\.js["']/, 'main = "../src/index.js"')
-    .replace(/(id\s*=\s*["'])\s*(["'])/, '$1local-dev-kv$2');
+  let devContent = tomlContent.replace(/main\s*=\s*["']src\/index\.js["']/, 'main = "../src/index.js"');
   
+  // 清理可能存在的空声明或注释声明，添加本地专属 KV 配置
+  devContent = devContent.replace(/(?:#\s*)?\[\[kv_namespaces\]\][\s\S]*?(?:#\s*)?id\s*=\s*["'][^"']*["']/, '');
+  devContent += `\n[[kv_namespaces]]\nbinding = "KV"\nid = "local-dev-kv"\n`;
+
   fs.writeFileSync(devTomlPath, devContent, 'utf8');
   args = ['wrangler', 'dev', '-c', devTomlPath];
 }
