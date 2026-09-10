@@ -4,3 +4,7 @@ compatibility_date = "2026-09-06"
 
 [build]
 command = "npm run build"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "04c612dbf2624db6a4fa153295943f82"
