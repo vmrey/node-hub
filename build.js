@@ -49,14 +49,15 @@ if (fs.existsSync(tomlPath)) {
     fs.writeFileSync(tomlPath, tomlContent, 'utf8');
     console.log(`[build] 💾 已自动将真实 KV ID (${kvId}) 注入到 wrangler.toml`);
   } else {
-    // 若未能自动获取到 ID，且 toml 中声明了未注释且空的 id，则将其注释，避免 wrangler 报空值语法错误
-    if (/^\s*\[\[kv_namespaces\]\][\s\S]*?id\s*=\s*["']\s*["']/m.test(tomlContent)) {
+    // 仅在 CI 自动化构建部署环境中，若未能获取到 ID 且声明了空 id，自动临时转为注释，避免 wrangler deploy 报错中断
+    const isCI = Boolean(process.env.CI || process.env.CF_PAGES || process.env.GITHUB_ACTIONS || process.env.CF_BUILD || process.env.BUILD_ENVIRONMENT);
+    if (isCI && /^\s*\[\[kv_namespaces\]\][\s\S]*?id\s*=\s*["']\s*["']/m.test(tomlContent)) {
       tomlContent = tomlContent.replace(
         /\[\[kv_namespaces\]\]\s*\n\s*binding\s*=\s*["']KV["']\s*\n\s*id\s*=\s*["']\s*["']/,
         '# [[kv_namespaces]]\n# binding = "KV"\n# id = ""'
       );
       fs.writeFileSync(tomlPath, tomlContent, 'utf8');
-      console.log('[build] ℹ️ 未获取到指定 KV ID，已自动将空声明转为注释，保留 Cloudflare 控制台已有 KV 绑定');
+      console.log('[build] ℹ️ [CI环境] 未获取到指定 KV ID，已临时将空声明转为注释，保留 Cloudflare 控制台已有 KV 绑定');
     }
   }
 }
