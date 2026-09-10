@@ -1,6 +1,6 @@
 {
   "name": "node-hub",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cloudflare Workers VLESS Subscription Generator & Node Management Hub",
   "main": "src/index.js",
   "type": "module",
