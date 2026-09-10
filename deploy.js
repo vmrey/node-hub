@@ -12,32 +12,39 @@ console.log('🔍 正在检查 Cloudflare 账户与 KV 命名空间...');
 let kvId = '';
 
 // 1. 自动查询当前账号下是否已有名为 KV 的命名空间
+const tempToml = path.join(__dirname, '.temp-deploy-query.toml');
 try {
-  const listRaw = execSync('npx wrangler kv namespace list', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
+  fs.writeFileSync(tempToml, 'name = "node-hub"\ncompatibility_date = "2026-09-06"\n', 'utf8');
+  const listRaw = execSync(`npx wrangler kv namespace list -c "${tempToml}"`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
   const list = JSON.parse(listRaw);
   if (Array.isArray(list)) {
     const match = list.find(item => item.title && (item.title === 'KV' || item.title.endsWith('-KV') || item.title.includes('KV')));
     if (match && match.id) {
-      kvId = match.id;
+      kvId = match.id.trim();
       console.log(`✅ 自动匹配到已有 KV 命名空间 ID: ${kvId}`);
     }
   }
 } catch {
   // 忽略查询异常，继续尝试创建
+} finally {
+  try { if (fs.existsSync(tempToml)) fs.unlinkSync(tempToml); } catch {}
 }
 
 // 2. 若未找到，全自动创建并提取 ID
 if (!kvId) {
   try {
+    fs.writeFileSync(tempToml, 'name = "node-hub"\ncompatibility_date = "2026-09-06"\n', 'utf8');
     console.log('⚡ 正在自动创建专属 KV 命名空间 (KV)...');
-    const createOut = execSync('npx wrangler kv namespace create KV', { encoding: 'utf8' });
+    const createOut = execSync(`npx wrangler kv namespace create KV -c "${tempToml}"`, { encoding: 'utf8' });
     const match = createOut.match(/id\s*=\s*["']([^"']+)["']/);
     if (match && match[1]) {
-      kvId = match[1];
+      kvId = match[1].trim();
       console.log(`🎉 成功创建 KV 命名空间，自动获取 ID: ${kvId}`);
     }
   } catch (err) {
     console.warn('⚠️ 自动创建 KV 提示:', err.message);
+  } finally {
+    try { if (fs.existsSync(tempToml)) fs.unlinkSync(tempToml); } catch {}
   }
 }
 

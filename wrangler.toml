@@ -2,8 +2,8 @@ name = "node-hub"
 main = "src/index.js"
 compatibility_date = "2026-09-06"
 
-# KV 存储绑定：线上生产环境使用的 KV 命名空间 ID
-[[kv_namespaces]]
-binding = "KV"
-id = "04c612dbf2624db6a4fa153295943f82"
+# KV 存储绑定：构建与部署时由脚本自动获取并注入，无需手动填写
+# [[kv_namespaces]]
+# binding = "KV"
+# id = ""
 
