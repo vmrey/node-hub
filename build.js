@@ -62,7 +62,13 @@ if (fs.existsSync(tomlPath)) {
         '# [[kv_namespaces]]\n# binding = "KV"\n# id = ""'
       );
       fs.writeFileSync(tomlPath, tomlContent, 'utf8');
-      console.log('[build] ℹ️ [CI环境] 未获取到指定 KV ID，已临时将空声明转为注释，保留 Cloudflare 控制台已有 KV 绑定');
+      console.log('--------------------------------------------------------------------------------');
+      console.log('[build] ℹ️  [Workers CI 构建提示] 未检测到环境变量 KV_ID：');
+      console.log('[build]    1. 若使用 Cloudflare Pages 部署：无需处理，Pages 天生永不解绑。');
+      console.log('[build]    2. 若使用 Cloudflare Workers 部署：为防止发布后云端 KV 绑定被清除，');
+      console.log('[build]       建议前往该 Worker 设置 -> 变量与机密，添加环境变量：');
+      console.log('[build]       【KV_ID = 您的 32 位 KV 命名空间真实 ID】');
+      console.log('--------------------------------------------------------------------------------');
     }
   }
 }

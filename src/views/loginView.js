@@ -391,16 +391,20 @@ export function renderSetupNoticePage({ hasKV = false, hasAdmin = false } = {}) 
 
   const steps = [];
   if (!hasKV && !hasAdmin) {
-    steps.push('在 Cloudflare 控制台左侧导航栏点击 <strong>“存储与数据库”</strong> -> <strong>“KV”</strong> -> 点击 <strong>“创建命名空间”</strong>（名称填写 <code>KV</code>）。');
-    steps.push('进入 <strong>Workers 和 Pages</strong> -> 选择当前 Worker -> 点击 <strong>设置 (Settings)</strong> -> <strong>变量与机密 (Variables and Secrets)</strong>。');
-    steps.push('在 <strong>KV 命名空间绑定</strong> 区域点击 <strong>添加绑定</strong>：变量名称必须严格填写为 <code>KV</code>，选择刚创建的 KV 命名空间。');
-    steps.push('在下方 <strong>环境变量</strong> 区域点击 <strong>添加</strong>：变量名称填写 <code>ADMIN</code>，变量值填写您的管理密码。');
+    steps.push('<strong>创建 KV 空间</strong>：在 Cloudflare 左侧菜单点击 <strong>“存储与数据库”</strong> -> <strong>“KV”</strong>，创建名为 <code>KV</code> 的命名空间，并复制其 32 位真实 ID。');
+    steps.push('<strong>绑定存储与密码（Workers 用户）</strong>：进入 Worker 页面 -> <strong>设置 (Settings)</strong> -> <strong>变量与机密</strong>：<br/>' +
+      '① 在 <strong>KV 命名空间绑定</strong> 添加变量名 <code>KV</code> 并绑定。<br/>' +
+      '② 在 <strong>环境变量</strong> 添加：<code>ADMIN</code>（管理密码）；同时建议添加 <code>KV_ID</code>（填入复制的 32 位真实 ID，彻底防止 GitHub 自动发包时解绑）。');
+    steps.push('💡 <strong>更省心的方案（Pages 用户）</strong>：在 Cloudflare Pages 设置 -> 函数 (Functions) 中直接绑定 <code>KV</code>，终身无需配置 KV_ID 且永不解绑！');
     steps.push('点击 <strong>保存并部署</strong>，完成后点击下方按钮刷新页面。');
   } else if (!hasKV) {
-    steps.push('在 Cloudflare 控制台左侧导航栏点击 <strong>“存储与数据库”</strong> -> <strong>“KV”</strong> -> 点击 <strong>“创建命名空间”</strong>（名称填写 <code>KV</code>）。');
-    steps.push('进入 <strong>Workers 和 Pages</strong> -> 选择当前 Worker -> 点击 <strong>设置 (Settings)</strong> -> <strong>变量与机密 (Variables and Secrets)</strong>。');
-    steps.push('在 <strong>KV 命名空间绑定</strong> 区域点击 <strong>添加绑定</strong>：变量名称必须严格填写为 <code>KV</code>，选择刚创建的 KV 命名空间。');
-    steps.push('点击 <strong>保存并部署</strong>，完成后点击下方按钮刷新页面。');
+    steps.push('<strong>获取 KV 真实 ID</strong>：在 Cloudflare 左侧菜单点击 <strong>“存储与数据库”</strong> -> <strong>“KV”</strong>，找到你的 <code>KV</code> 命名空间，复制其 <strong>32 位真实 ID</strong>（如 <code>04c612db...</code>）。');
+    steps.push('<strong>完成绑定并防止解绑（Workers 用户）</strong>：进入当前 Worker -> <strong>设置 (Settings)</strong> -> <strong>变量与机密 (Variables and Secrets)</strong>：<br/>' +
+      '① 在 <strong>KV 命名空间绑定</strong> 区域点击添加绑定：变量名填写 <code>KV</code>，选择该空间。<br/>' +
+      '② <strong>【重要防解绑设置】</strong> 在下方 <strong>环境变量</strong> 点击添加：变量名称填 <code>KV_ID</code>，值填刚才复制的 32 位 ID。<br/>' +
+      '<em>（注：配置 KV_ID 可彻底避免每次从 GitHub 自动推送发包时 Cloudflare 强制清除线上绑定！）</em>');
+    steps.push('💡 <strong>零配置替代方案（Pages 用户）</strong>：直接使用 <strong>Cloudflare Pages</strong> 部署，在 Pages 设置 -> 函数中绑定一次 KV，永远不会被清除！');
+    steps.push('配置完成后点击 <strong>保存并部署</strong>，随后点击下方按钮刷新页面。');
   } else {
     steps.push('登录 <strong>Cloudflare 控制台</strong> 并进入 <strong>Workers 和 Pages</strong>，点击进入当前 Worker。');
     steps.push('切换至 <strong>设置 (Settings)</strong> 选项卡 -> 选择 <strong>变量与机密 (Variables and Secrets)</strong>。');
