@@ -419,9 +419,12 @@ export function renderSetupNoticePage({ hasKV = false, hasAdmin = false, hasKvId
       steps.push('在 <strong>环境变量与机密</strong> 区域点击添加：变量名称填写 <code>ADMIN</code>，值填写您的管理密码。');
     }
     if (!hasKvId) {
-      steps.push('<strong>【重要防解绑变量 KV_ID】</strong>：前往控制台 <strong>存储与数据库 -> KV</strong> 复制 <code>KV</code> 的 32 位真实 ID。在同一页面环境变量中添加：变量名 <code>KV_ID</code>，值为该 32 位 ID。<em>（配置后可彻底阻止 GitHub 自动发包时 Cloudflare 强制清除 KV 绑定！）</em>');
+      steps.push('<strong>【重要防解绑变量 KV_ID】</strong>：前往控制台 <strong>存储与数据库 -> KV</strong> 复制 <code>KV</code> 空间的 32 位真实 ID。<br/>' +
+        '在 Worker <strong>设置 -> 构建 (Build) -> 构建环境变量</strong> 添加：<code>KV_ID</code> = 32 位真实 ID；<br/>' +
+        '同时在 <strong>变量与机密</strong> 环境变量添加：<code>KV_ID</code> = 32 位真实 ID。<br/>' +
+        '<em>（双重注入后，每次 GitHub 自动发包即可永久锁定 KV 绑定，杜绝被官方 CI 强制清空！）</em>');
     }
-    steps.push('💡 <em>提示：您也可以转为 <strong>Cloudflare Pages</strong> 部署，Pages 天生无需配置 KV_ID 且永不解绑！</em>');
+    steps.push('💡 <strong>终极免折腾推荐</strong>：直接改用 <strong>Cloudflare Pages</strong> 部署！Pages 架构下绑定一次 KV 永生不掉，无需任何 KV_ID 与构建配置！');
     steps.push('点击 <strong>保存并部署</strong>，完成后点击下方按钮刷新页面。');
   }
 
