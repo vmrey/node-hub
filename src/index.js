@@ -679,32 +679,16 @@ export default {
     }
 
     // ==========================================================
-    // 🛡️ API 安全网关：未登录直接探测/调用后台管理接口，一律立即永久封禁 IP（白名单 IP 豁免）
+    // 🛡️ API 安全网关：未登录或会话超时访问后台管理接口，返回 401 引导重新登录
     // ==========================================================
     if (url.pathname.startsWith('/api/') && url.pathname !== '/api/captcha') {
       if (!isAuthed) {
-        if (!isWhitelisted) {
-          const currentBlocked = await getBlockedIPs(env);
-          if (!currentBlocked.includes(clientIP) && !isLocal) {
-            currentBlocked.push(clientIP);
-            await saveBlockedIPs(env, currentBlocked);
-          }
-        }
-        const unauthLogPromise = recordAccessLog(env, {
-          time: nowTime,
-          ip: clientIP,
-          location: clientLocation,
-          status: 403,
-          path: url.pathname,
-          type: '🚫 未经登录越权探测API，IP 已被永久封禁',
-          ua: userAgent
-        });
-        if (ctx && ctx.waitUntil) ctx.waitUntil(unauthLogPromise);
-        else await unauthLogPromise;
-
-        return new Response('403 Forbidden', {
-          status: 403,
-          headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        return new Response(JSON.stringify({
+          error: 'Unauthorized',
+          message: '登录会话已过期或未登录，请重新登录'
+        }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' }
         });
       }
 
@@ -901,7 +885,7 @@ export default {
       try {
         const body = await request.json();
         const idsToDelete = (Array.isArray(body.ids) ? body.ids : []).map(id => String(id).toLowerCase().trim());
-        const updated = currentCustomGroups.filter(g => !idsToDelete.includes(g.id.toLowerCase()));
+        const updated = currentCustomGroups.filter(g => g && g.id && !idsToDelete.includes(g.id.toLowerCase()));
         await saveCustomNodeGroups(env, updated);
         return authedJsonResponse({ success: true, count: idsToDelete.length });
       } catch {
@@ -1010,7 +994,7 @@ export default {
       try {
         const body = await request.json();
         const idsToDelete = (Array.isArray(body.ids) ? body.ids : []).map(id => String(id).toLowerCase().trim());
-        const updated = currentCfGroups.filter(g => !idsToDelete.includes(g.id.toLowerCase()));
+        const updated = currentCfGroups.filter(g => g && g.id && !idsToDelete.includes(g.id.toLowerCase()));
         await saveCfNodeGroups(env, updated);
         return authedJsonResponse({ success: true, count: idsToDelete.length });
       } catch {
