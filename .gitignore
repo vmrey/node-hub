@@ -1,9 +1,32 @@
+# 依赖目录
 node_modules/
+
+# Cloudflare Wrangler 本地开发与状态缓存
 .wrangler/
-.DS_Store
+.temp-*
+.temp-*.toml
+
+# 本地环境变量与机密凭证
 .env
+.env.*
 .dev.vars
 .dev.vars.*
+!.dev.vars.example
+
+# 系统与编辑器缓存
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 日志与临时调试文件
 *.log
-
-
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
