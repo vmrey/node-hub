@@ -808,10 +808,14 @@ export async function sendTelegramMessage(env, text, tgConfig = null) {
       })
     });
 
-    const resData = await response.json().catch(() => null);
+    const rawText = await response.text().catch(() => '');
+    let resData = null;
+    try {
+      resData = JSON.parse(rawText);
+    } catch {}
 
     if (!response.ok || (resData && !resData.ok)) {
-      const errDetail = resData?.description || (await response.text().catch(() => '')) || `HTTP ${response.status}`;
+      const errDetail = resData?.description || rawText || `HTTP ${response.status}`;
       return { success: false, error: `TG API 响应错误 [HTTP ${response.status}]: ${errDetail}` };
     }
 

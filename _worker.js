@@ -1,21 +1,21 @@
-var Ft="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Wt=(t="")=>{let e=String(t).trim();if(!e)return{cipherMap:Ft,xorKey:88};let o=Ft.split(""),n=2166136261;for(let i=0;i<e.length;i++)n^=e.charCodeAt(i),n=Math.imul(n,16777619)>>>0;let a=n&255,s=()=>{n=n+1831565813>>>0;let i=Math.imul(n^n>>>15,1|n);return i=i+Math.imul(i^i>>>7,61|i)^i,((i^i>>>14)>>>0)/4294967296};for(let i=o.length-1;i>0;i--){let l=Math.floor(s()*(i+1)),p=o[i];o[i]=o[l],o[l]=p}return{cipherMap:o.join(""),xorKey:a}},Ue=t=>{let e=[];for(let o=0;o<t.length;o++){let n=t.charCodeAt(o);if(n>=55296&&n<=56319){let a=t.charCodeAt(++o);n=(n-55296)*1024+(a-56320)+65536}n<128?e.push(n):n<2048?e.push(192|n>>6,128|n&63):n<65536?e.push(224|n>>12,128|n>>6&63,128|n&63):e.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|n&63)}return e},_e=t=>{let e=[],o=0;for(;o<t.length;){let n=t[o],a,s;if(n<128)a=n,s=0;else if((n&224)===192)a=n&31,s=1;else if((n&240)===224)a=n&15,s=2;else if((n&248)===240)a=n&7,s=3;else{e.push(""),o++;continue}if(o+s>=t.length){e.push("");break}for(let i=0;i<s;i++)a=a<<6|t[++o]&63;o++,a>65535?(a-=65536,e.push(String.fromCharCode(55296|a>>10,56320|a&1023))):e.push(String.fromCharCode(a))}return e.join("")},Me=(t,e)=>{let o="";for(let n=0;n<t.length;n+=3){let a=t[n],s=n+1<t.length?t[n+1]:0,i=n+2<t.length?t[n+2]:0;o+=e[a>>2],o+=e[(a&3)<<4|s>>4],o+=n+1<t.length?e[(s&15)<<2|i>>6]:"=",o+=n+2<t.length?e[i&63]:"="}return o},Ve=(t,e)=>{if(!t)return null;let o=String(t).trim();for(;o.endsWith("=");)o=o.slice(0,-1);if(!o)return null;let n=[],a=0,s=0;for(let i=0;i<o.length;i++){let l=e.indexOf(o[i]);if(l<0)return null;a=(a<<6|l)&4294967295,s+=6,s>=8&&(s-=8,n.push(a>>s&255))}return n},$=(t,e="")=>{if(!t)return"";let{cipherMap:o,xorKey:n}=Wt(e),a=Ue(t);for(let s=0;s<a.length;s++)a[s]=(a[s]^n+s&255)&255;return Me(a,o)},N=(t,e="")=>{if(!t)return"";let{cipherMap:o,xorKey:n}=Wt(e),a=Ve(t,o);if(!a)return"";let s=[];for(let i=0;i<a.length;i++)s.push((a[i]^n+i&255)&255);return _e(s)};var je=[{id:"cmcc",name:"\u4E2D\u56FD\u79FB\u52A8 (CMCC)",url:"https://cf.090227.xyz/cmcc?ips=10",enabled:!0},{id:"cu",name:"\u4E2D\u56FD\u8054\u901A (CU)",url:"https://cf.090227.xyz/cu?ips=10",enabled:!0},{id:"ct",name:"\u4E2D\u56FD\u7535\u4FE1 (CT)",url:"https://cf.090227.xyz/ct?ips=10",enabled:!0}],q=null;async function k(t){if(q)return q;if(t.CIPHER_KEY&&t.CIPHER_KEY.trim())return q=t.CIPHER_KEY.trim(),q;let e=T(t);if(e)try{let s=await e.get("sys_cipher_key");if(s&&s.trim()&&s.trim().length>=16)return q=s.trim(),q}catch(s){console.error("Failed to read sys_cipher_key from KV",s)}let o=new Uint8Array(1);crypto.getRandomValues(o);let n=64+o[0]%65,a=rt(n);if(e)try{await e.put("sys_cipher_key",a)}catch(s){console.error("Failed to save auto-generated sys_cipher_key to KV",s)}return q=a,q}async function Jt(t){let e=new TextEncoder().encode(t),o=await crypto.subtle.digest("SHA-256",e);return Array.from(new Uint8Array(o)).map(a=>a.toString(16).padStart(2,"0")).join("")}function Kt(t,e){let o=t.headers.get("Cookie");if(!o)return null;let n=o.split(";").map(a=>a.trim());for(let a of n)if(a.startsWith(e+"="))return decodeURIComponent(a.substring(e.length+1));return null}function xt(t){let e=new TextEncoder().encode(t),o="";for(let n=0;n<e.byteLength;n++)o+=String.fromCharCode(e[n]);return btoa(o)}function et(t){if(!t||typeof t!="string")return"";try{let o=t.trim().replace(/\s+/g,"").replace(/-/g,"+").replace(/_/g,"/");for(;o.length%4;)o+="=";let n=atob(o),a=new Uint8Array(n.length);for(let s=0;s<n.length;s++)a[s]=n.charCodeAt(s);return new TextDecoder().decode(a)}catch{return""}}function T(t){return t.KV||null}async function Gt(t){let e=T(t);if(e)try{let o=await e.get("custom_base_vless");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a&&a.trim())return a.trim();if(o.trim().startsWith("vless://"))return o.trim()}}catch(o){console.error("Failed to read custom_base_vless from KV",o)}return t.BASE_VLESS||""}async function qt(t){let e=T(t);if(e)try{let o=await e.get("custom_sources");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n),s=null;if(a)try{s=JSON.parse(a)}catch{}if(!s&&(o.startsWith("[")||o.startsWith("{")))try{s=JSON.parse(o)}catch{}if(s&&Array.isArray(s)&&s.length>0)return s}}catch(o){console.error("Failed to read from KV",o)}return je}async function wt(t,e){let o=T(t);if(o){let n=await k(t),a=JSON.stringify(e),s=$(a,n);await o.put("custom_sources",s)}}async function Yt(t){let e=T(t);if(e)try{let o=await e.get("custom_plain_groups");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a)try{let s=JSON.parse(a);if(Array.isArray(s))return s}catch{}}}catch(o){console.error("Failed to read custom_plain_groups from KV",o)}return[]}async function st(t,e){let o=T(t);if(o){let n=await k(t),a=JSON.stringify(e),s=$(a,n);await o.put("custom_plain_groups",s)}}async function Xt(t){let e=T(t);if(e)try{let o=await e.get("custom_cf_groups");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a)try{let s=JSON.parse(a);if(Array.isArray(s))return s}catch{}}}catch(o){console.error("Failed to read custom_cf_groups from KV",o)}return[]}async function it(t,e){let o=T(t);if(o){let n=await k(t),a=JSON.stringify(e),s=$(a,n);await o.put("custom_cf_groups",s)}}function rt(t=12,e=null){let o="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",n;if(e===null)n=t;else{let i=Math.min(t,e),l=Math.max(t,e),p=new Uint8Array(1);crypto.getRandomValues(p),n=i+p[0]%(l-i+1)}let a=new Uint8Array(n);crypto.getRandomValues(a);let s="";for(let i=0;i<n;i++)s+=o[a[i]%o.length];return s}async function Qt(t){let e=T(t);if(e)try{let n=await e.get("custom_token");if(n!=null){let a=await k(t),s=N(n.trim(),a);if(typeof s=="string")return s.trim()}}catch(n){console.error("Failed to read custom_token from KV",n)}if(t.TOKEN&&t.TOKEN.trim())return t.TOKEN.trim();let o=rt(12,33);if(e)try{await At(t,o)}catch{}return o}async function At(t,e){let o=T(t);if(o){let n=await k(t),a=e==null?"":String(e).trim(),s=$(a,n);await o.put("custom_token",s)}}async function Zt(t){let e=T(t);if(e)try{let o=await e.get("custom_allowed_countries");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s.map(i=>String(i).trim().toUpperCase()).filter(Boolean)}}}catch(o){console.error("Failed to read custom_allowed_countries from KV",o)}return t.ALLOWED_COUNTRIES&&t.ALLOWED_COUNTRIES.trim()?t.ALLOWED_COUNTRIES.split(",").map(o=>o.trim().toUpperCase()).filter(Boolean):[]}async function te(t,e){let o=T(t);if(o){let n=await k(t),a=Array.isArray(e)?e.map(i=>String(i).trim().toUpperCase()).filter(Boolean):typeof e=="string"?e.split(",").map(i=>i.trim().toUpperCase()).filter(Boolean):[],s=$(JSON.stringify(a),n);await o.put("custom_allowed_countries",s)}}async function ee(t){let e=T(t);if(e)try{let o=await e.get("custom_proxy_client_only");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a!=null)return a==="true"||a===!0}}catch(o){console.error("Failed to read custom_proxy_client_only from KV",o)}return t.PROXY_CLIENT_ONLY!==void 0&&t.PROXY_CLIENT_ONLY!==null&&t.PROXY_CLIENT_ONLY!==""?String(t.PROXY_CLIENT_ONLY).toLowerCase()==="true":!0}async function oe(t,e){let o=T(t);if(o){let n=await k(t),s=$(e===!0||e==="true"?"true":"false",n);await o.put("custom_proxy_client_only",s)}}async function ct(t){let e=T(t);if(e)try{let o=await e.get("blocked_ips");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s}}}catch(o){console.error("Failed to read blocked_ips from KV",o)}return[]}async function Y(t,e){let o=T(t);if(o){let n=await k(t),a=JSON.stringify(e),s=$(a,n);await o.put("blocked_ips",s)}}async function ne(t){let e=T(t);if(e)try{let o=await e.get("whitelist_ips");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s}}}catch(o){console.error("Failed to read whitelist_ips from KV",o)}return[]}async function ae(t,e){let o=T(t);if(o){let n=await k(t),a=JSON.stringify(e),s=$(a,n);await o.put("whitelist_ips",s)}}async function vt(t){let e=T(t);if(e)try{let o=await e.get("access_logs");if(o&&o.trim()){let n=await k(t),a=N(o.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s}}}catch(o){console.error("Failed to read access_logs from KV",o)}return[]}async function O(t,e){let o=T(t);if(o)try{let n=await vt(t),a=[e,...n].slice(0,100),s=await k(t),i=$(JSON.stringify(a),s);await o.put("access_logs",i)}catch(n){console.error("Failed to record access log in KV",n)}}async function se(t,e){let o=T(t);if(o)try{let n=await k(t),a=$(JSON.stringify(e.slice(0,100)),n);await o.put("access_logs",a)}catch(n){console.error("Failed to save access logs to KV",n)}}async function ie(t){let e=T(t);if(e)try{await e.delete("access_logs")}catch{}}async function kt(t,e){let o=T(t);if(!o||!e)return{count:0,lockUntil:0,lockSeconds:0};try{let n="login_fail_"+e.trim(),a=await o.get(n);if(a){let s=await k(t),i=N(a.trim(),s)||a.trim(),l=null;try{l=JSON.parse(i)}catch{let p=parseInt(i,10);isNaN(p)||(l={count:p,lockUntil:0})}if(l&&typeof l.count=="number"){let p=Date.now(),c=Number(l.lockUntil||0),h=c>p?Math.ceil((c-p)/1e3):0;return{count:l.count,lockUntil:c,lockSeconds:h}}}}catch(n){console.error("Failed to read login_fail count from KV",n)}return{count:0,lockUntil:0,lockSeconds:0}}async function re(t,e){let o=T(t);if(!o||!e)return{count:1,lockUntil:0,lockSeconds:0};try{let a=(await kt(t,e)).count+1,s=0,i=0;a>=3&&(s=60*Math.pow(2,a-3),i=Date.now()+s*1e3);let l={count:a,lockUntil:i},p="login_fail_"+e.trim(),c=await k(t),h=$(JSON.stringify(l),c),u=Math.max(86400,s+3600);return await o.put(p,h,{expirationTtl:u}),{count:a,lockUntil:i,lockSeconds:s}}catch(n){console.error("Failed to update login_fail in KV",n)}return{count:1,lockUntil:0,lockSeconds:0}}async function Lt(t,e){let o=T(t);if(!(!o||!e))try{let n="login_fail_"+e.trim();await o.delete(n)}catch{}}var Fe=600*1e3;async function ce(t,e){let o=await k(t),n=Date.now()+Fe;return $(`${e}:${n}`,o)}async function le(t,e,o,n){if(!T(t)||!n||!e||!e.trim())return!1;try{let a=await k(t),s=N(e.trim(),a);if(!s||!s.includes(":"))return s===o;let[i,l]=s.split(":"),p=parseInt(l,10);return Date.now()>p?!1:i===o}catch{return!1}}function Ht(t){let e=t.split(".").map(o=>parseInt(o,10));return e.length!==4||e.some(o=>isNaN(o)||o<0||o>255)?null:(e[0]<<24>>>0)+(e[1]<<16>>>0)+(e[2]<<8>>>0)+(e[3]>>>0)}function We(t,e){if(!e.includes("/"))return t.toLowerCase()===e.toLowerCase();let[o,n]=e.split("/"),a=parseInt(n,10);if(isNaN(a))return!1;let s=Ht(t),i=Ht(o);if(s!==null&&i!==null){if(a<=0)return!0;if(a>32)return!1;let l=a===32?4294967295:~((1<<32-a)-1)>>>0;return(s&l)===(i&l)}if(t.includes(":")&&o.includes(":")){let l=t.toLowerCase(),p=o.toLowerCase();if(a<=64&&l.startsWith(p.replace(/::?$/,"")))return!0}return!1}function zt(t){if(!t)return!1;let e=t.trim().toLowerCase();return e==="127.0.0.1"||e==="::1"||e==="localhost"||e.startsWith("127.")}function lt(t,e){if(!t||!Array.isArray(e)||e.length===0)return!1;let o=t.trim();for(let n of e){let a=String(n).trim();if(a)try{if(We(o,a))return!0}catch{if(o.toLowerCase()===a.toLowerCase())return!0}}return!1}async function de(t,e){let o=T(t);if(!o||!e)return 1;try{let n="sub_fail_"+e.trim(),a=await o.get(n),s=0;if(a){let p=await k(t),c=N(a.trim(),p);s=parseInt(c,10)||0}s+=1;let i=await k(t),l=$(String(s),i);return await o.put(n,l,{expirationTtl:3600}),s}catch{return 1}}async function $t(t,e){let o=T(t);if(!(!o||!e))try{await o.delete("sub_fail_"+e.trim())}catch{}}async function Nt(t){let e=(t.TG_BOT_TOKEN||"").trim(),o=(t.TG_CHAT_ID||"").trim(),n=(t.TG_API_HOST||"").trim().replace(/\/+$/,"")||"https://api.telegram.org",a=t.TG_NOTIFY_ENABLED!==void 0&&t.TG_NOTIFY_ENABLED!==null&&t.TG_NOTIFY_ENABLED!==""?String(t.TG_NOTIFY_ENABLED).toLowerCase()==="true":!1,s=T(t);if(s)try{let i=await s.get("custom_tg_config");if(i&&i.trim()){let l=await k(t),p=N(i.trim(),l);if(p){let c=JSON.parse(p);c&&typeof c=="object"&&(c.token!==void 0&&(e=String(c.token).trim()),c.chatId!==void 0&&(o=String(c.chatId).trim()),c.apiHost!==void 0&&String(c.apiHost).trim()&&(n=String(c.apiHost).trim().replace(/\/+$/,"")),c.enabled!==void 0&&(a=c.enabled===!0||c.enabled==="true"))}}}catch(i){console.error("Failed to read custom_tg_config from KV",i)}return{token:e,chatId:o,apiHost:n,enabled:a}}function pe(t){if(!t)return"";let e=String(t).trim();return e.toLowerCase().startsWith("bot")&&(e=e.slice(3).trim()),e}function ue(t){if(!t)return"";let e=String(t).trim(),o=e.match(/t\.me\/c\/(\d+)/i);if(o)return`-100${o[1]}`;let n=e.match(/t\.me\/([a-zA-Z0-9_]+)/i);return n&&!["c","joinchat","addstickers"].includes(n[1].toLowerCase())?`@${n[1]}`:e}async function fe(t,e){let o=T(t);if(o){let n=await k(t),a={token:pe(e.token),chatId:ue(e.chatId),apiHost:(e.apiHost||"").trim().replace(/\/+$/,"")||"https://api.telegram.org",enabled:e.enabled===!0||e.enabled==="true"},s=$(JSON.stringify(a),n);await o.put("custom_tg_config",s)}}async function Dt(t,e,o=null){try{let n=o||await Nt(t);if(!n.enabled&&!o?.force)return{success:!1,error:"Telegram \u901A\u77E5\u63A8\u9001\u672A\u5F00\u542F"};let a=pe(n.token),s=ue(n.chatId);if(!a||!s)return{success:!1,error:"Bot Token \u6216 Chat ID \u4E3A\u7A7A"};let l=`${(n.apiHost||"https://api.telegram.org").replace(/\/+$/,"")}/bot${a}/sendMessage`,p=await fetch(l,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:s,text:e,parse_mode:"HTML",disable_web_page_preview:!0})}),c=await p.json().catch(()=>null);if(!p.ok||c&&!c.ok){let h=c?.description||await p.text().catch(()=>"")||`HTTP ${p.status}`;return{success:!1,error:`TG API \u54CD\u5E94\u9519\u8BEF [HTTP ${p.status}]: ${h}`}}return{success:!0,chat:c?.result?.chat||null,messageId:c?.result?.message_id||null}}catch(n){return{success:!1,error:`\u7F51\u7EDC\u8BF7\u6C42\u5931\u8D25: ${n.message}`}}}var ge="23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";function He(t=4){let e="",o=new Uint8Array(t);crypto.getRandomValues(o);for(let n=0;n<t;n++)e+=ge[o[n]%ge.length];return e}function Je(t){let n=t.split(""),a="",s=["#94a3b8","#cbd5e1","#64748b","#0284c7","#8b5cf6"];for(let u=0;u<3;u++){let m=Math.floor(Math.random()*20),v=Math.floor(Math.random()*42),w=120-Math.floor(Math.random()*20),I=Math.floor(Math.random()*42),f=120/2+(Math.random()*40-20),B=Math.floor(Math.random()*42),_=s[u%s.length];a+=`<path d="M ${m} ${v} Q ${f} ${B} ${w} ${I}" stroke="${_}" stroke-width="1.5" fill="none" opacity="0.65"/>`}let i="";for(let u=0;u<20;u++){let m=Math.floor(Math.random()*120),v=Math.floor(Math.random()*42),w=(Math.random()*1.5+.5).toFixed(1);i+=`<circle cx="${m}" cy="${v}" r="${w}" fill="#94a3b8" opacity="0.5"/>`}let l=["#0f172a","#0369a1","#4338ca","#6d28d9","#b91c1c","#047857"],p="",c=120/(n.length+1);n.forEach((u,m)=>{let v=Math.floor((m+.8)*c),w=28+Math.floor(Math.random()*6-3),I=Math.floor(Math.random()*36-18),f=l[(m+Math.floor(Math.random()*l.length))%l.length],B=22+Math.floor(Math.random()*4);p+=`<text x="${v}" y="${w}" font-family="monospace, Arial" font-size="${B}" font-weight="bold" fill="${f}" transform="rotate(${I}, ${v}, ${w})">${u}</text>`});let h=`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="42" viewBox="0 0 120 42" style="border-radius: 6px; background: #f8fafc; border: 1px solid #cbd5e1; cursor: pointer; user-select: none;">
+var Jt="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Kt=(e="")=>{let t=String(e).trim();if(!t)return{cipherMap:Jt,xorKey:88};let o=Jt.split(""),n=2166136261;for(let i=0;i<t.length;i++)n^=t.charCodeAt(i),n=Math.imul(n,16777619)>>>0;let a=n&255,s=()=>{n=n+1831565813>>>0;let i=Math.imul(n^n>>>15,1|n);return i=i+Math.imul(i^i>>>7,61|i)^i,((i^i>>>14)>>>0)/4294967296};for(let i=o.length-1;i>0;i--){let l=Math.floor(s()*(i+1)),p=o[i];o[i]=o[l],o[l]=p}return{cipherMap:o.join(""),xorKey:a}},Me=e=>{let t=[];for(let o=0;o<e.length;o++){let n=e.charCodeAt(o);if(n>=55296&&n<=56319){let a=e.charCodeAt(++o);n=(n-55296)*1024+(a-56320)+65536}n<128?t.push(n):n<2048?t.push(192|n>>6,128|n&63):n<65536?t.push(224|n>>12,128|n>>6&63,128|n&63):t.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|n&63)}return t},Ve=e=>{let t=[],o=0;for(;o<e.length;){let n=e[o],a,s;if(n<128)a=n,s=0;else if((n&224)===192)a=n&31,s=1;else if((n&240)===224)a=n&15,s=2;else if((n&248)===240)a=n&7,s=3;else{t.push(""),o++;continue}if(o+s>=e.length){t.push("");break}for(let i=0;i<s;i++)a=a<<6|e[++o]&63;o++,a>65535?(a-=65536,t.push(String.fromCharCode(55296|a>>10,56320|a&1023))):t.push(String.fromCharCode(a))}return t.join("")},_e=(e,t)=>{let o="";for(let n=0;n<e.length;n+=3){let a=e[n],s=n+1<e.length?e[n+1]:0,i=n+2<e.length?e[n+2]:0;o+=t[a>>2],o+=t[(a&3)<<4|s>>4],o+=n+1<e.length?t[(s&15)<<2|i>>6]:"=",o+=n+2<e.length?t[i&63]:"="}return o},je=(e,t)=>{if(!e)return null;let o=String(e).trim();for(;o.endsWith("=");)o=o.slice(0,-1);if(!o)return null;let n=[],a=0,s=0;for(let i=0;i<o.length;i++){let l=t.indexOf(o[i]);if(l<0)return null;a=(a<<6|l)&4294967295,s+=6,s>=8&&(s-=8,n.push(a>>s&255))}return n},N=(e,t="")=>{if(!e)return"";let{cipherMap:o,xorKey:n}=Kt(t),a=Me(e);for(let s=0;s<a.length;s++)a[s]=(a[s]^n+s&255)&255;return _e(a,o)},D=(e,t="")=>{if(!e)return"";let{cipherMap:o,xorKey:n}=Kt(t),a=je(e,o);if(!a)return"";let s=[];for(let i=0;i<a.length;i++)s.push((a[i]^n+i&255)&255);return Ve(s)};function pt(e){let t=new TextEncoder().encode(e),o="";for(let n=0;n<t.byteLength;n++)o+=String.fromCharCode(t[n]);return btoa(o)}function Y(e){if(!e||typeof e!="string")return"";try{let t=e.trim().replace(/\s+/g,"");for(t=t.replace(/-/g,"+").replace(/_/g,"/");t.length%4;)t+="=";let o=atob(t),n=new Uint8Array(o.length);for(let a=0;a<o.length;a++)n[a]=o.charCodeAt(a);return new TextDecoder().decode(n)}catch{return""}}function kt(e){if(!e||typeof e!="string")return"";try{return decodeURIComponent(e)}catch{return e}}function ut(e){if(!e||typeof e!="string")return!1;let t=e.trim().replace(/^\[|\]$/g,"");return!!(/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})$/.test(t)||(t.match(/:/g)||[]).length>=2)}function Dt(e){if(!e||typeof e!="string")return"";let t=e.trim();return t.startsWith("[")&&t.endsWith("]")?t:(t.match(/:/g)||[]).length>=2?`[${t}]`:t}function Tt(e){if(!e)return!1;let t=e.trim().toLowerCase();return t==="127.0.0.1"||t==="::1"||t==="localhost"||t.startsWith("127.")}function ot(e,t){if(!e||!Array.isArray(t)||t.length===0)return!1;let o=e.trim();for(let n of t){let a=String(n).trim();if(a)try{if(Fe(o,a))return!0}catch{if(o.toLowerCase()===a.toLowerCase())return!0}}return!1}function Gt(e){let t=e.split(".").map(o=>parseInt(o,10));return t.length!==4||t.some(o=>isNaN(o)||o<0||o>255)?null:(t[0]<<24>>>0)+(t[1]<<16)+(t[2]<<8)+t[3]}function Fe(e,t){if(!t.includes("/"))return e.toLowerCase()===t.toLowerCase();let[o,n]=t.split("/"),a=parseInt(n,10);if(isNaN(a))return!1;let s=Gt(e),i=Gt(o);if(s!==null&&i!==null){if(a<=0)return!0;if(a>32)return!1;let l=a===32?4294967295:~((1<<32-a)-1)>>>0;return(s&l)===(i&l)}if(e.includes(":")&&o.includes(":")){let l=e.toLowerCase(),p=o.toLowerCase();if(a<=64&&l.startsWith(p.replace(/::?$/,"")))return!0}return!1}var We=[{id:"cmcc",name:"\u4E2D\u56FD\u79FB\u52A8 (CMCC)",url:"https://cf.090227.xyz/cmcc?ips=10",enabled:!0},{id:"cu",name:"\u4E2D\u56FD\u8054\u901A (CU)",url:"https://cf.090227.xyz/cu?ips=10",enabled:!0},{id:"ct",name:"\u4E2D\u56FD\u7535\u4FE1 (CT)",url:"https://cf.090227.xyz/ct?ips=10",enabled:!0}],X=null;async function T(e){if(X)return X;if(e.CIPHER_KEY&&e.CIPHER_KEY.trim())return X=e.CIPHER_KEY.trim(),X;let t=I(e);if(t)try{let s=await t.get("sys_cipher_key");if(s&&s.trim()&&s.trim().length>=16)return X=s.trim(),X}catch(s){console.error("Failed to read sys_cipher_key from KV",s)}let o=new Uint8Array(1);crypto.getRandomValues(o);let n=64+o[0]%65,a=ct(n);if(t)try{await t.put("sys_cipher_key",a)}catch(s){console.error("Failed to save auto-generated sys_cipher_key to KV",s)}return X=a,X}async function qt(e){let t=new TextEncoder().encode(e),o=await crypto.subtle.digest("SHA-256",t);return Array.from(new Uint8Array(o)).map(a=>a.toString(16).padStart(2,"0")).join("")}function Yt(e,t){let o=e.headers.get("Cookie");if(!o)return null;let n=o.split(";").map(a=>a.trim());for(let a of n)if(a.startsWith(t+"="))return decodeURIComponent(a.substring(t.length+1));return null}function I(e){return e.KV||null}async function Xt(e){let t=I(e);if(t)try{let o=await t.get("custom_base_vless");if(o&&o.trim()){let n=await T(e),a=D(o.trim(),n);if(a&&a.trim())return a.trim();if(o.trim().startsWith("vless://"))return o.trim()}}catch(o){console.error("Failed to read custom_base_vless from KV",o)}return e.BASE_VLESS||""}async function Zt(e){let t=I(e);if(t)try{let o=await t.get("custom_sources");if(o&&o.trim()){let n=await T(e),a=D(o.trim(),n),s=null;if(a)try{s=JSON.parse(a)}catch{}if(!s&&(o.startsWith("[")||o.startsWith("{")))try{s=JSON.parse(o)}catch{}if(s&&Array.isArray(s)&&s.length>0)return s}}catch(o){console.error("Failed to read from KV",o)}return We}async function It(e,t){let o=I(e);if(o){let n=await T(e),a=JSON.stringify(t),s=N(a,n);await o.put("custom_sources",s)}}async function Qt(e){let t=I(e);if(t)try{let o=await t.get("custom_plain_groups");if(o&&o.trim()){let n=await T(e),a=D(o.trim(),n);if(a)try{let s=JSON.parse(a);if(Array.isArray(s))return s}catch{}}}catch(o){console.error("Failed to read custom_plain_groups from KV",o)}return[]}async function it(e,t){let o=I(e);if(o){let n=await T(e),a=JSON.stringify(t),s=N(a,n);await o.put("custom_plain_groups",s)}}async function te(e){let t=I(e);if(t)try{let o=await t.get("custom_cf_groups");if(o&&o.trim()){let n=await T(e),a=D(o.trim(),n);if(a)try{let s=JSON.parse(a);if(Array.isArray(s))return s}catch{}}}catch(o){console.error("Failed to read custom_cf_groups from KV",o)}return[]}async function rt(e,t){let o=I(e);if(o){let n=await T(e),a=JSON.stringify(t),s=N(a,n);await o.put("custom_cf_groups",s)}}function ct(e=12,t=null){let o="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",n;if(t===null)n=e;else{let i=Math.min(e,t),l=Math.max(e,t),p=new Uint8Array(1);crypto.getRandomValues(p),n=i+p[0]%(l-i+1)}let a=new Uint8Array(n);crypto.getRandomValues(a);let s="";for(let i=0;i<n;i++)s+=o[a[i]%o.length];return s}async function ee(e){let t=I(e);if(t)try{let n=await t.get("custom_token");if(n!=null){let a=await T(e),s=D(n.trim(),a);if(typeof s=="string")return s.trim()}}catch(n){console.error("Failed to read custom_token from KV",n)}if(e.TOKEN&&e.TOKEN.trim())return e.TOKEN.trim();let o=ct(12,33);if(t)try{await Rt(e,o)}catch{}return o}async function Rt(e,t){let o=I(e);if(o){let n=await T(e),a=t==null?"":String(t).trim(),s=N(a,n);await o.put("custom_token",s)}}async function oe(e){let t=I(e);if(t)try{let o=await t.get("custom_allowed_countries");if(o&&o.trim()){let n=await T(e),a=D(o.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s.map(i=>String(i).trim().toUpperCase()).filter(Boolean)}}}catch(o){console.error("Failed to read custom_allowed_countries from KV",o)}return e.ALLOWED_COUNTRIES&&e.ALLOWED_COUNTRIES.trim()?e.ALLOWED_COUNTRIES.split(",").map(o=>o.trim().toUpperCase()).filter(Boolean):[]}async function ne(e,t){let o=I(e);if(o){let n=await T(e),a=Array.isArray(t)?t.map(i=>String(i).trim().toUpperCase()).filter(Boolean):typeof t=="string"?t.split(",").map(i=>i.trim().toUpperCase()).filter(Boolean):[],s=N(JSON.stringify(a),n);await o.put("custom_allowed_countries",s)}}async function ae(e){let t=I(e);if(t)try{let o=await t.get("custom_proxy_client_only");if(o&&o.trim()){let n=await T(e),a=D(o.trim(),n);if(a!=null)return a==="true"||a===!0}}catch(o){console.error("Failed to read custom_proxy_client_only from KV",o)}return e.PROXY_CLIENT_ONLY!==void 0&&e.PROXY_CLIENT_ONLY!==null&&e.PROXY_CLIENT_ONLY!==""?String(e.PROXY_CLIENT_ONLY).toLowerCase()==="true":!0}async function se(e,t){let o=I(e);if(o){let n=await T(e),s=N(t===!0||t==="true"?"true":"false",n);await o.put("custom_proxy_client_only",s)}}async function lt(e){let t=I(e);if(t)try{let o=await t.get("blocked_ips");if(o&&o.trim()){let n=await T(e),a=D(o.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s}}}catch(o){console.error("Failed to read blocked_ips from KV",o)}return[]}async function Z(e,t){let o=I(e);if(o){let n=await T(e),a=JSON.stringify(t),s=N(a,n);await o.put("blocked_ips",s)}}async function ie(e){let t=I(e);if(t)try{let o=await t.get("whitelist_ips");if(o&&o.trim()){let n=await T(e),a=D(o.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s}}}catch(o){console.error("Failed to read whitelist_ips from KV",o)}return[]}async function re(e,t){let o=I(e);if(o){let n=await T(e),a=JSON.stringify(t),s=N(a,n);await o.put("whitelist_ips",s)}}async function Ct(e){let t=I(e);if(t)try{let o=await t.get("access_logs");if(o&&o.trim()){let n=await T(e),a=D(o.trim(),n);if(a){let s=JSON.parse(a);if(Array.isArray(s))return s}}}catch(o){console.error("Failed to read access_logs from KV",o)}return[]}async function U(e,t){let o=I(e);if(o)try{let n=await Ct(e),a=[t,...n].slice(0,100),s=await T(e),i=N(JSON.stringify(a),s);await o.put("access_logs",i)}catch(n){console.error("Failed to record access log in KV",n)}}async function ce(e,t){let o=I(e);if(o)try{let n=await T(e),a=N(JSON.stringify(t.slice(0,100)),n);await o.put("access_logs",a)}catch(n){console.error("Failed to save access logs to KV",n)}}async function le(e){let t=I(e);if(t)try{await t.delete("access_logs")}catch{}}async function St(e,t){let o=I(e);if(!o||!t)return{count:0,lockUntil:0,lockSeconds:0};try{let n="login_fail_"+t.trim(),a=await o.get(n);if(a){let s=await T(e),i=D(a.trim(),s)||a.trim(),l=null;try{l=JSON.parse(i)}catch{let p=parseInt(i,10);isNaN(p)||(l={count:p,lockUntil:0})}if(l&&typeof l.count=="number"){let p=Date.now(),c=Number(l.lockUntil||0),m=c>p?Math.ceil((c-p)/1e3):0;return{count:l.count,lockUntil:c,lockSeconds:m}}}}catch(n){console.error("Failed to read login_fail count from KV",n)}return{count:0,lockUntil:0,lockSeconds:0}}async function de(e,t){let o=I(e);if(!o||!t)return{count:1,lockUntil:0,lockSeconds:0};try{let a=(await St(e,t)).count+1,s=0,i=0;a>=3&&(s=60*Math.pow(2,a-3),i=Date.now()+s*1e3);let l={count:a,lockUntil:i},p="login_fail_"+t.trim(),c=await T(e),m=N(JSON.stringify(l),c),u=Math.max(86400,s+3600);return await o.put(p,m,{expirationTtl:u}),{count:a,lockUntil:i,lockSeconds:s}}catch(n){console.error("Failed to update login_fail in KV",n)}return{count:1,lockUntil:0,lockSeconds:0}}async function Ot(e,t){let o=I(e);if(!(!o||!t))try{let n="login_fail_"+t.trim();await o.delete(n)}catch{}}var He=600*1e3;async function pe(e,t){let o=await T(e),n=Date.now()+He;return N(`${t}:${n}`,o)}async function ue(e,t,o,n){if(!I(e)||!n||!t||!t.trim())return!1;try{let a=await T(e),s=D(t.trim(),a);if(!s||!s.includes(":"))return s===o;let[i,l]=s.split(":"),p=parseInt(l,10);return Date.now()>p?!1:i===o}catch{return!1}}async function fe(e,t){let o=I(e);if(!o||!t)return 1;try{let n="sub_fail_"+t.trim(),a=await o.get(n),s=0;if(a){let p=await T(e),c=D(a.trim(),p);s=parseInt(c,10)||0}s+=1;let i=await T(e),l=N(String(s),i);return await o.put(n,l,{expirationTtl:3600}),s}catch{return 1}}async function Ut(e,t){let o=I(e);if(!(!o||!t))try{await o.delete("sub_fail_"+t.trim())}catch{}}async function Mt(e){let t=(e.TG_BOT_TOKEN||"").trim(),o=(e.TG_CHAT_ID||"").trim(),n=(e.TG_API_HOST||"").trim().replace(/\/+$/,"")||"https://api.telegram.org",a=e.TG_NOTIFY_ENABLED!==void 0&&e.TG_NOTIFY_ENABLED!==null&&e.TG_NOTIFY_ENABLED!==""?String(e.TG_NOTIFY_ENABLED).toLowerCase()==="true":!1,s=I(e);if(s)try{let i=await s.get("custom_tg_config");if(i&&i.trim()){let l=await T(e),p=D(i.trim(),l);if(p){let c=JSON.parse(p);c&&typeof c=="object"&&(c.token!==void 0&&(t=String(c.token).trim()),c.chatId!==void 0&&(o=String(c.chatId).trim()),c.apiHost!==void 0&&String(c.apiHost).trim()&&(n=String(c.apiHost).trim().replace(/\/+$/,"")),c.enabled!==void 0&&(a=c.enabled===!0||c.enabled==="true"))}}}catch(i){console.error("Failed to read custom_tg_config from KV",i)}return{token:t,chatId:o,apiHost:n,enabled:a}}function ge(e){if(!e)return"";let t=String(e).trim();return t.toLowerCase().startsWith("bot")&&(t=t.slice(3).trim()),t}function me(e){if(!e)return"";let t=String(e).trim(),o=t.match(/t\.me\/c\/(\d+)/i);if(o)return`-100${o[1]}`;let n=t.match(/t\.me\/([a-zA-Z0-9_]+)/i);return n&&!["c","joinchat","addstickers"].includes(n[1].toLowerCase())?`@${n[1]}`:t}async function he(e,t){let o=I(e);if(o){let n=await T(e),a={token:ge(t.token),chatId:me(t.chatId),apiHost:(t.apiHost||"").trim().replace(/\/+$/,"")||"https://api.telegram.org",enabled:t.enabled===!0||t.enabled==="true"},s=N(JSON.stringify(a),n);await o.put("custom_tg_config",s)}}async function Vt(e,t,o=null){try{let n=o||await Mt(e);if(!n.enabled&&!o?.force)return{success:!1,error:"Telegram \u901A\u77E5\u63A8\u9001\u672A\u5F00\u542F"};let a=ge(n.token),s=me(n.chatId);if(!a||!s)return{success:!1,error:"Bot Token \u6216 Chat ID \u4E3A\u7A7A"};let l=`${(n.apiHost||"https://api.telegram.org").replace(/\/+$/,"")}/bot${a}/sendMessage`,p=await fetch(l,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:s,text:t,parse_mode:"HTML",disable_web_page_preview:!0})}),c=await p.text().catch(()=>""),m=null;try{m=JSON.parse(c)}catch{}if(!p.ok||m&&!m.ok){let u=m?.description||c||`HTTP ${p.status}`;return{success:!1,error:`TG API \u54CD\u5E94\u9519\u8BEF [HTTP ${p.status}]: ${u}`}}return{success:!0,chat:m?.result?.chat||null,messageId:m?.result?.message_id||null}}catch(n){return{success:!1,error:`\u7F51\u7EDC\u8BF7\u6C42\u5931\u8D25: ${n.message}`}}}var be="23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";function Je(e=4){let t="",o=new Uint8Array(e);crypto.getRandomValues(o);for(let n=0;n<e;n++)t+=be[o[n]%be.length];return t}function Ke(e){let n=e.split(""),a="",s=["#94a3b8","#cbd5e1","#64748b","#0284c7","#8b5cf6"];for(let u=0;u<3;u++){let h=Math.floor(Math.random()*20),k=Math.floor(Math.random()*42),v=120-Math.floor(Math.random()*20),C=Math.floor(Math.random()*42),g=120/2+(Math.random()*40-20),E=Math.floor(Math.random()*42),_=s[u%s.length];a+=`<path d="M ${h} ${k} Q ${g} ${E} ${v} ${C}" stroke="${_}" stroke-width="1.5" fill="none" opacity="0.65"/>`}let i="";for(let u=0;u<20;u++){let h=Math.floor(Math.random()*120),k=Math.floor(Math.random()*42),v=(Math.random()*1.5+.5).toFixed(1);i+=`<circle cx="${h}" cy="${k}" r="${v}" fill="#94a3b8" opacity="0.5"/>`}let l=["#0f172a","#0369a1","#4338ca","#6d28d9","#b91c1c","#047857"],p="",c=120/(n.length+1);n.forEach((u,h)=>{let k=Math.floor((h+.8)*c),v=28+Math.floor(Math.random()*6-3),C=Math.floor(Math.random()*36-18),g=l[(h+Math.floor(Math.random()*l.length))%l.length],E=22+Math.floor(Math.random()*4);p+=`<text x="${k}" y="${v}" font-family="monospace, Arial" font-size="${E}" font-weight="bold" fill="${g}" transform="rotate(${C}, ${k}, ${v})">${u}</text>`});let m=`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="42" viewBox="0 0 120 42" style="border-radius: 6px; background: #f8fafc; border: 1px solid #cbd5e1; cursor: pointer; user-select: none;">
     ${a}
     ${i}
     ${p}
-  </svg>`;return"data:image/svg+xml;utf8,"+encodeURIComponent(h)}async function me(t,e,o){let n=He(4),a=Je(n),s=await e(t),i=Date.now()+300*1e3,l=o(`${n.toUpperCase()}:${i}`,s);return{svgDataUri:a,captchaToken:l}}async function he(t,e,o,n,a){if(!t||!e)return!1;try{let s=await n(o),i=a(e.trim(),s);if(!i||!i.includes(":"))return!1;let[l,p]=i.split(":"),c=parseInt(p,10);return Date.now()>c?!1:t.trim().toUpperCase()===l.trim().toUpperCase()}catch{return!1}}function be(t){if(!t||typeof t!="string")return"";try{return decodeURIComponent(t)}catch{return t}}function ye(t){if(!t||typeof t!="string")return null;try{let e=t.trim();if(!e)return null;if(!e.startsWith("vless://")){let f=et(e);return f&&f.includes("vless://")?we(f):null}let o=e.slice(8).trim();if(!o.includes("@")&&!o.includes("?")&&!o.includes("#")){let f=et(o);f&&f.includes("@")&&(f.includes(":")||f.includes("?"))&&(o=f.trim())}let n="",a=o.indexOf("#");a!==-1&&(n=be(o.slice(a+1)),o=o.slice(0,a));let s="",i=o.indexOf("?");i!==-1&&(s=o.slice(i+1),o=o.slice(0,i));let l=o,p=!1;if(!l.includes("@")){let f=et(l);f&&f.includes("@")&&(l=f,p=!0)}let c=l.lastIndexOf("@");if(c===-1)return null;let h=l.slice(0,c),u=l.slice(c+1),m="",v="443";if(u.startsWith("[")){let f=u.indexOf("]");if(f!==-1){m=u.slice(0,f+1);let B=u.slice(f+1);B.startsWith(":")&&(v=B.slice(1))}else m=u}else{let f=u.lastIndexOf(":");f!==-1?(m=u.slice(0,f),v=u.slice(f+1)):m=u}if(m=m.trim(),!m||m.includes("?")||m.includes("/")||m.includes("#")||m.includes(" "))return null;let w=h.trim();if(h.includes(":")){let f=h.split(":"),B=_=>/^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(_);B(f[0])?w=f[0]:B(f[1])?w=f[1]:f[0].length>=32?w=f[0]:w=f[1]||f[0]}if(!w||w.length<6||w.includes("?")||w.includes("/")||w.includes("#"))return null;let I=new URLSearchParams(s);return n||(n=I.get("remarks")||I.get("remark")||I.get("name")||""),{isBase64Encoded:p,userInfo:h,uuid:w,host:m,port:v,queryStr:s,searchParams:I,remark:n}}catch(e){return console.error("Error in parseSingleVless:",e),null}}var Ke={fieldAliases:{security:["security","tls"],sni:["sni","peer","obfsParam","host"],host:["host","obfsParam","peer","sni"],fp:["fp","fingerprint"],type:["type","net","obfs","network"],path:["path"],pbk:["pbk","publicKey"],sid:["sid","shortId"],spx:["spx","spiderX"],serviceName:["serviceName","service_name"],mode:["mode"],flow:["flow"],alpn:["alpn"],allowInsecure:["allowInsecure","insecure"],headerType:["headerType","header_type"],seed:["seed","kcpSeed"],quicSecurity:["quicSecurity","quic_security"],key:["key","quicKey"]},valueTransformers:{type:{xhttp:"xhttp",splithttp:"xhttp",websocket:"ws",ws:"ws",httpupgrade:"httpupgrade",grpc:"grpc",gun:"grpc",multi:"grpc",http:"tcp",tcp:"tcp",raw:"tcp",h2:"h2",kcp:"kcp",mkcp:"kcp",quic:"quic"},security:{1:"tls",true:"tls",tls:"tls",reality:"reality",none:"none",0:"none",false:"none"}},tlsDefaultPorts:["443","8443","2053","2083","2087","2096"]};function Rt(t){if(!t||typeof t!="string")return!1;let e=t.trim().replace(/^\[|\]$/g,"");return!!(/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})$/.test(e)||(e.match(/:/g)||[]).length>=2)}function Ge(t){if(!t||typeof t!="string")return"";let e=t.trim();return e.startsWith("[")&&e.endsWith("]")?e:(e.match(/:/g)||[]).length>=2?`[${e}]`:e}function L(t,e=[]){if(!t||!Array.isArray(e))return"";for(let o of e)if(t.has(o)){let n=t.get(o);if(n!=null&&n!=="")return n}return""}function Tt(t,e={}){if(!t||!t.uuid)return"";try{let o=e.host||t.host||"",n=Ge(o),a=e.port||t.port||"443",s=e.remark!==void 0?e.remark:t.remark||"",i=t.searchParams||new URLSearchParams(t.queryStr||""),l=new URLSearchParams,{fieldAliases:p,valueTransformers:c,tlsDefaultPorts:h}=Ke,u=L(i,p.pbk),m=L(i,p.security),v=c.security[m.toLowerCase()]||m;u?v="reality":v||(v=h.includes(a)?"tls":"none"),l.set("security",v),l.set("encryption",i.get("encryption")||"none");let w=L(i,p.type),I=c.type[w.toLowerCase()];I||(i.has("path")&&w!=="tcp"?I="ws":v==="reality"?I="tcp":w?I=w:I="tcp"),l.set("type",I);let f=L(i,p.headerType);f&&l.set("headerType",f);let B=L(i,p.flow);B&&I==="tcp"&&l.set("flow",B);let _=L(i,p.alpn);_&&l.set("alpn",_);let K=L(i,p.allowInsecure);K&&l.set("allowInsecure",K);let X=L(i,p.seed);X&&l.set("seed",X);let G=L(i,p.quicSecurity);G&&l.set("quicSecurity",G);let z=L(i,p.key);z&&l.set("key",z);let D=Rt(t.host)?"":t.host,St=L(i,p.sni),ht=L(i,p.host),F=St||D,Q=ht||D;Rt(F)&&!Rt(Q)&&(F=Q),F&&v!=="none"&&l.set("sni",F);let W=["ws","xhttp","splithttp","httpupgrade","h2"].includes(I)||I==="tcp"&&f==="http";W&&Q&&l.set("host",Q);let H=L(i,p.fp);H&&l.set("fp",H);let M=L(i,p.path);if(M&&(W||I==="ws"||I==="xhttp")&&(M=be(M),M.startsWith("/")||(M="/"+M),l.set("path",M)),v==="reality"){let E=L(i,p.pbk);E&&l.set("pbk",E);let S=L(i,p.sid);S&&l.set("sid",S);let x=L(i,p.spx);x&&l.set("spx",x)}if(I==="grpc"){let E=L(i,p.serviceName);E&&l.set("serviceName",E);let S=L(i,p.mode);S&&l.set("mode",S)}let nt=l.toString().replace(/%2F/g,"/"),dt=nt?`?${nt}`:"",at=String(s||"").replace(/[\r\n#]/g,"").trim(),bt=at?`#${at}`:"";return`vless://${t.uuid}@${n}:${a}${dt}${bt}`}catch(o){return console.error("Error in buildStandardVless:",o),""}}function qe(t){if(!t||typeof t!="string")return null;let e=t.trim();if(!e.toLowerCase().startsWith("vless="))return null;try{let n=e.slice(6).trim().split(",").map(u=>u.trim());if(n.length===0)return null;let a=n[0],s={};for(let u=1;u<n.length;u++){let m=n[u],v=m.indexOf("=");v!==-1&&(s[m.slice(0,v).trim().toLowerCase()]=m.slice(v+1).trim())}let i=s.password||s.uuid||"";if(!i)return null;let l=a,p="443";if(a.includes(":")){let u=a.lastIndexOf(":");l=a.slice(0,u),p=a.slice(u+1)}let c=new URLSearchParams,h=s.tls==="true"||s.tls==="1";return c.set("security",h?"tls":"none"),c.set("type",s.obfs||"ws"),s["obfs-host"]&&c.set("host",s["obfs-host"]),s["obfs-uri"]&&c.set("path",s["obfs-uri"]),s.pbk&&(c.set("security","reality"),c.set("pbk",s.pbk)),s.sid&&c.set("sid",s.sid),Tt({uuid:i,host:l,port:p,remark:s.tag||"",searchParams:c})}catch{return null}}function xe(t){if(!t||typeof t!="string")return"";try{let e=t.trim();if(!e||e.startsWith("#")||e.startsWith("//")||e.startsWith(";")||e.startsWith("!"))return"";if(e.toLowerCase().startsWith("vless=")){let o=qe(e);if(o)return o}if(e.toLowerCase().startsWith("vless://")){let o=ye(e);if(o&&o.uuid&&o.port){let n=Tt(o);if(n)return n}return e}if(!e.includes("://")){let o=et(e);if(o&&(o.includes("://")||o.toLowerCase().includes("vless=")))return o.replace(/\r\n|\r/g,`
+  </svg>`;return"data:image/svg+xml;utf8,"+encodeURIComponent(m)}async function ye(e,t,o){let n=Je(4),a=Ke(n),s=await t(e),i=Date.now()+300*1e3,l=o(`${n.toUpperCase()}:${i}`,s);return{svgDataUri:a,captchaToken:l}}async function xe(e,t,o,n,a){if(!e||!t)return!1;try{let s=await n(o),i=a(t.trim(),s);if(!i||!i.includes(":"))return!1;let[l,p]=i.split(":"),c=parseInt(p,10);return Date.now()>c?!1:e.trim().toUpperCase()===l.trim().toUpperCase()}catch{return!1}}function we(e){if(!e||typeof e!="string")return null;try{let t=e.trim();if(!t)return null;if(!t.startsWith("vless://")){let g=Y(t);return g&&g.includes("vless://")?ft(g):null}let o=t.slice(8).trim();if(!o.includes("@")&&!o.includes("?")&&!o.includes("#")){let g=Y(o);g&&g.includes("@")&&(g.includes(":")||g.includes("?"))&&(o=g.trim())}let n="",a=o.indexOf("#");a!==-1&&(n=kt(o.slice(a+1)),o=o.slice(0,a));let s="",i=o.indexOf("?");i!==-1&&(s=o.slice(i+1),o=o.slice(0,i));let l=o,p=!1;if(!l.includes("@")){let g=Y(l);g&&g.includes("@")&&(l=g,p=!0)}let c=l.lastIndexOf("@");if(c===-1)return null;let m=l.slice(0,c),u=l.slice(c+1),h="",k="443";if(u.startsWith("[")){let g=u.indexOf("]");if(g!==-1){h=u.slice(0,g+1);let E=u.slice(g+1);E.startsWith(":")&&(k=E.slice(1))}else h=u}else{let g=u.lastIndexOf(":");g!==-1?(h=u.slice(0,g),k=u.slice(g+1)):h=u}if(h=h.trim(),!h||h.includes("?")||h.includes("/")||h.includes("#")||h.includes(" "))return null;let v=m.trim();if(m.includes(":")){let g=m.split(":"),E=_=>/^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(_);E(g[0])?v=g[0]:E(g[1])?v=g[1]:g[0].length>=32?v=g[0]:v=g[1]||g[0]}if(!v||v.length<6||v.includes("?")||v.includes("/")||v.includes("#"))return null;let C=new URLSearchParams(s);return n||(n=C.get("remarks")||C.get("remark")||C.get("name")||""),{isBase64Encoded:p,userInfo:m,uuid:v,host:h,port:k,queryStr:s,searchParams:C,remark:n}}catch(t){return console.error("Error in parseSingleVless:",t),null}}var Ge={fieldAliases:{security:["security","tls"],sni:["sni","peer","obfsParam","host"],host:["host","obfsParam","peer","sni"],fp:["fp","fingerprint"],type:["type","net","obfs","network"],path:["path"],pbk:["pbk","publicKey"],sid:["sid","shortId"],spx:["spx","spiderX"],serviceName:["serviceName","service_name"],mode:["mode"],flow:["flow"],alpn:["alpn"],allowInsecure:["allowInsecure","insecure"],headerType:["headerType","header_type"],seed:["seed","kcpSeed"],quicSecurity:["quicSecurity","quic_security"],key:["key","quicKey"]},valueTransformers:{type:{xhttp:"xhttp",splithttp:"xhttp",websocket:"ws",ws:"ws",httpupgrade:"httpupgrade",grpc:"grpc",gun:"grpc",multi:"grpc",http:"tcp",tcp:"tcp",raw:"tcp",h2:"h2",kcp:"kcp",mkcp:"kcp",quic:"quic"},security:{1:"tls",true:"tls",tls:"tls",reality:"reality",none:"none",0:"none",false:"none"}},tlsDefaultPorts:["443","8443","2053","2083","2087","2096"]};function z(e,t=[]){if(!e||!Array.isArray(t))return"";for(let o of t)if(e.has(o)){let n=e.get(o);if(n!=null&&n!=="")return n}return""}function Pt(e,t={}){if(!e||!e.uuid)return"";try{let o=t.host||e.host||"",n=Dt(o),a=t.port||e.port||"443",s=t.remark!==void 0?t.remark:e.remark||"",i=e.searchParams||new URLSearchParams(e.queryStr||""),l=new URLSearchParams,{fieldAliases:p,valueTransformers:c,tlsDefaultPorts:m}=Ge,u=z(i,p.pbk),h=z(i,p.security),k=c.security[h.toLowerCase()]||h;u?k="reality":k||(k=m.includes(a)?"tls":"none"),l.set("security",k),l.set("encryption",i.get("encryption")||"none");let v=z(i,p.type),C=c.type[v.toLowerCase()];C||(i.has("path")&&v!=="tcp"?C="ws":k==="reality"?C="tcp":v?C=v:C="tcp"),l.set("type",C);let g=z(i,p.headerType);g&&l.set("headerType",g);let E=z(i,p.flow);E&&C==="tcp"&&l.set("flow",E);let _=z(i,p.alpn);_&&l.set("alpn",_);let G=z(i,p.allowInsecure);G&&l.set("allowInsecure",G);let Q=z(i,p.seed);Q&&l.set("seed",Q);let q=z(i,p.quicSecurity);q&&l.set("quicSecurity",q);let $=z(i,p.key);$&&l.set("key",$);let R=ut(e.host)?"":e.host,At=z(i,p.sni),xt=z(i,p.host),W=At||R,tt=xt||R;ut(W)&&!ut(tt)&&(W=tt),W&&k!=="none"&&l.set("sni",W);let H=["ws","xhttp","splithttp","httpupgrade","h2"].includes(C)||C==="tcp"&&g==="http";H&&tt&&l.set("host",tt);let J=z(i,p.fp);J&&l.set("fp",J);let j=z(i,p.path);if(j&&(H||C==="ws"||C==="xhttp")&&(j=kt(j),j.startsWith("/")||(j="/"+j),l.set("path",j)),k==="reality"){let A=z(i,p.pbk);A&&l.set("pbk",A);let S=z(i,p.sid);S&&l.set("sid",S);let b=z(i,p.spx);b&&l.set("spx",b)}if(C==="grpc"){let A=z(i,p.serviceName);A&&l.set("serviceName",A);let S=z(i,p.mode);S&&l.set("mode",S)}let at=l.toString().replace(/%2F/g,"/"),dt=at?`?${at}`:"",st=String(s||"").replace(/[\r\n#]/g,"").trim(),wt=st?`#${st}`:"";return`vless://${e.uuid}@${n}:${a}${dt}${wt}`}catch(o){return console.error("Error in buildStandardVless:",o),""}}function qe(e){if(!e||typeof e!="string")return null;let t=e.trim();if(!t.toLowerCase().startsWith("vless="))return null;try{let n=t.slice(6).trim().split(",").map(u=>u.trim());if(n.length===0)return null;let a=n[0],s={};for(let u=1;u<n.length;u++){let h=n[u],k=h.indexOf("=");k!==-1&&(s[h.slice(0,k).trim().toLowerCase()]=h.slice(k+1).trim())}let i=s.password||s.uuid||"";if(!i)return null;let l=a,p="443";if(a.includes(":")){let u=a.lastIndexOf(":");l=a.slice(0,u),p=a.slice(u+1)}let c=new URLSearchParams,m=s.tls==="true"||s.tls==="1";return c.set("security",m?"tls":"none"),c.set("type",s.obfs||"ws"),s["obfs-host"]&&c.set("host",s["obfs-host"]),s["obfs-uri"]&&c.set("path",s["obfs-uri"]),s.pbk&&(c.set("security","reality"),c.set("pbk",s.pbk)),s.sid&&c.set("sid",s.sid),Pt({uuid:i,host:l,port:p,remark:s.tag||"",searchParams:c})}catch{return null}}function ve(e){if(!e||typeof e!="string")return"";try{let t=e.trim();if(!t||t.startsWith("#")||t.startsWith("//")||t.startsWith(";")||t.startsWith("!"))return"";if(t.toLowerCase().startsWith("vless=")){let o=qe(t);if(o)return o}if(t.toLowerCase().startsWith("vless://")){let o=we(t);if(o&&o.uuid&&o.port){let n=Pt(o);if(n)return n}return t}if(!t.includes("://")){let o=Y(t);if(o&&(o.includes("://")||o.toLowerCase().includes("vless=")))return o.replace(/\r\n|\r/g,`
 `).split(`
-`).map(s=>s.trim()).filter(Boolean).map(xe).filter(Boolean).join(`
-`)}return e.includes("://")?e:""}catch(e){return console.error("Error in standardizeNode:",e),String(t||"").trim()}}function Ot(t){if(!t)return[];try{let e="";if(Array.isArray(t)?e=t.join(`
-`):e=String(t||""),!e.includes("://")){let a=et(e.trim());a&&a.includes("://")&&(e=a)}let o=e.replace(/\r\n|\r/g,`
+`).map(s=>s.trim()).filter(Boolean).map(ve).filter(Boolean).join(`
+`)}return t.includes("://")?t:""}catch(t){return console.error("Error in standardizeNode:",t),String(e||"").trim()}}function _t(e){if(!e)return[];try{let t="";if(Array.isArray(e)?t=e.join(`
+`):t=String(e||""),!t.includes("://")){let a=Y(t.trim());a&&a.includes("://")&&(t=a)}let o=t.replace(/\r\n|\r/g,`
 `).split(`
-`).map(a=>a.trim()).filter(Boolean),n=[];for(let a of o){let s=xe(a);if(s){let i=s.split(`
-`).map(l=>l.trim()).filter(Boolean);n.push(...i)}}return[...new Set(n)]}catch(e){return console.error("Error in standardizeNodesText:",e),Array.isArray(t)?t.map(String).filter(Boolean):String(t||"").split(`
-`).map(o=>o.trim()).filter(Boolean)}}function we(t){if(!t||typeof t!="string")return null;let e=t.trim();if(!e)return null;if(!e.startsWith("vless://")){let n=et(e);n&&n.includes("vless://")&&(e=n.trim())}let o=e.replace(/\r\n|\r/g,`
+`).map(a=>a.trim()).filter(Boolean),n=[];for(let a of o){let s=ve(a);if(s){let i=s.split(`
+`).map(l=>l.trim()).filter(Boolean);n.push(...i)}}return[...new Set(n)]}catch(t){return console.error("Error in standardizeNodesText:",t),Array.isArray(e)?e.map(String).filter(Boolean):String(e||"").split(`
+`).map(o=>o.trim()).filter(Boolean)}}function ft(e){if(!e||typeof e!="string")return null;let t=e.trim();if(!t)return null;if(!t.startsWith("vless://")){let n=Y(t);n&&n.includes("vless://")&&(t=n.trim())}let o=t.replace(/\r\n|\r/g,`
 `).split(`
-`);for(let n of o){if(n=n.trim(),!n)continue;let a=ye(n);if(a&&a.uuid&&a.port)return a}return null}function Ye(t){let e=t.trim();if(!e)return"";if(e.startsWith("[")){let a=e.match(/^\[([^\]]+)\](?::\d+)?/);if(a)return`[${a[1]}]`}if((e.match(/:/g)||[]).length>=2)return`[${e}]`;let o=e.match(/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})(?::\d+)?/);if(o)return o[1];let n=e.match(/^([a-zA-Z0-9.-]+)(?::\d+)?/);return n?n[1]:e.split(":")[0].trim()}async function Ut(t,e,o="base64"){if(!t)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let n=we(t);if(!n)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let s=(e||[]).filter(u=>u&&(u.url||u.content)&&u.enabled!==!1).map(async u=>{if(u.content&&typeof u.content=="string")return{source:u,text:u.content};if(!u.url)return{source:u,text:""};try{let m=new AbortController,v=setTimeout(()=>m.abort(),2500),w=await fetch(u.url,{signal:m.signal,headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"}});if(clearTimeout(v),!w.ok)return{source:u,text:""};let I=await w.text();return{source:u,text:I}}catch{return{source:u,text:""}}}),i=await Promise.all(s),l=[];i.forEach(({source:u,text:m})=>{if(!m)return;m.replace(/,|\r\n|\r/g,`
+`);for(let n of o){if(n=n.trim(),!n)continue;let a=we(n);if(a&&a.uuid&&a.port)return a}return null}function Ye(e){let t=e.trim();if(!t)return"";if(t.startsWith("[")){let a=t.match(/^\[([^\]]+)\](?::\d+)?/);if(a)return`[${a[1]}]`}if((t.match(/:/g)||[]).length>=2)return`[${t}]`;let o=t.match(/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})(?::\d+)?/);if(o)return o[1];let n=t.match(/^([a-zA-Z0-9.-]+)(?::\d+)?/);return n?n[1]:t.split(":")[0].trim()}async function jt(e,t,o="base64"){if(!e)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let n=ft(e);if(!n)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let s=(t||[]).filter(u=>u&&(u.url||u.content)&&u.enabled!==!1).map(async u=>{if(u.content&&typeof u.content=="string")return{source:u,text:u.content};if(!u.url)return{source:u,text:""};try{let h=new AbortController,k=setTimeout(()=>h.abort(),2500),v=await fetch(u.url,{signal:h.signal,headers:{"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"}});if(clearTimeout(k),!v.ok)return{source:u,text:""};let C=await v.text();return{source:u,text:C}}catch{return{source:u,text:""}}}),i=await Promise.all(s),l=[];i.forEach(({source:u,text:h})=>{if(!h)return;h.replace(/,|\r\n|\r/g,`
 `).split(`
-`).forEach(w=>{if(w=w.trim(),!w)return;let I="",f="";if(w.includes("#")){let z=w.split("#");I=z[0].trim(),f=z.slice(1).join("#").trim()}else I=w.trim();let B=Ye(I);if(!B)return;let _="";f?_=f.replace(/^CF\s*/i,"").trim():u&&u.name&&!u.name.startsWith("\u6E90-")&&!u.name.startsWith("http")&&(_=u.name.replace(/\s*\(.*?\)/g,"").trim());let K=B.replace(/^\[|\]$/g,""),X=_?`${_}-${K}`:K,G=Tt(n,{host:B,remark:X});G&&l.push(G)})});let p=[...new Set(l)];p.length===0&&p.push(Tt(n));let c=p.join(`
-`),h=o==="base64"?xt(c):c;return new Response(h,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate, max-age=0",Pragma:"no-cache","Access-Control-Allow-Origin":"*","Subscription-Userinfo":"upload=0; download=0; total=1073741824000; expire=0","Profile-Update-Interval":"24"}})}function ve(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function It(t="",e="",o="",n=0){let a=n>0;return`<!DOCTYPE html>
+`).forEach(v=>{if(v=v.trim(),!v)return;let C="",g="";if(v.includes("#")){let $=v.split("#");C=$[0].trim(),g=$.slice(1).join("#").trim()}else C=v.trim();let E=Ye(C);if(!E)return;let _="";g?_=g.replace(/^CF\s*/i,"").trim():u&&u.name&&!u.name.startsWith("\u6E90-")&&!u.name.startsWith("http")&&(_=u.name.replace(/\s*\(.*?\)/g,"").trim());let G=E.replace(/^\[|\]$/g,""),Q=_?`${_}-${G}`:G,q=Pt(n,{host:E,remark:Q});q&&l.push(q)})});let p=[...new Set(l)];p.length===0&&p.push(Pt(n));let c=p.join(`
+`),m=o==="base64"?pt(c):c;return new Response(m,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate, max-age=0",Pragma:"no-cache","Access-Control-Allow-Origin":"*","Subscription-Userinfo":"upload=0; download=0; total=1073741824000; expire=0","Profile-Update-Interval":"24"}})}function ke(e){return e==null?"":String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Bt(e="",t="",o="",n=0){let a=n>0;return`<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -272,9 +272,9 @@ var Ft="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Wt=(t=
     <div class="card-icon">\u26A1</div>
     <h2>\u767B\u9646\u9762\u677F</h2>
     <p class="subtitle">\u8BF7\u8F93\u5165\u7BA1\u7406\u5458\u5BC6\u7801\u53CA\u9A8C\u8BC1\u7801\u4EE5\u8FDB\u5165\u63A7\u5236\u9762\u677F</p>
-    ${t?`<div class="error-msg" id="error-alert">${ve(t)}</div>`:""}
+    ${e?`<div class="error-msg" id="error-alert">${ke(e)}</div>`:""}
     <form method="POST" id="login-form">
-      <input type="hidden" name="captcha_token" id="captcha-token-input" value="${ve(o)}" />
+      <input type="hidden" name="captcha_token" id="captcha-token-input" value="${ke(o)}" />
       
       <div class="form-group">
         <label for="password">\u7BA1\u7406\u5458\u5BC6\u7801</label>
@@ -294,7 +294,7 @@ var Ft="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Wt=(t=
         <div class="captcha-row">
           <input type="text" id="captcha" name="captcha" placeholder="4\u4F4D\u5B57\u7B26" maxlength="6" ${a?"disabled":""} required autocomplete="off" />
           <div class="captcha-img-box" id="captcha-box" onclick="refreshCaptcha()" title="\u70B9\u51FB\u6362\u4E00\u5F20">
-            <img id="captcha-img" src="${e}" alt="\u9A8C\u8BC1\u7801" />
+            <img id="captcha-img" src="${t}" alt="\u9A8C\u8BC1\u7801" />
           </div>
         </div>
       </div>
@@ -369,7 +369,7 @@ var Ft="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Wt=(t=
     }
   <\/script>
 </body>
-</html>`}function Ct({hasKV:t=!1,hasAdmin:e=!1}={}){let o="\u7CFB\u7EDF\u521D\u59CB\u5316\u914D\u7F6E\u672A\u5B8C\u6210",n="\u51FA\u4E8E\u5B89\u5168\u9632\u62A4\u4E0E\u6570\u636E\u6301\u4E45\u5316\u8981\u6C42\uFF0C\u5F53\u524D\u670D\u52A1\u5DF2\u963B\u6B62\u76F4\u63A5\u8FDB\u5165\u63A7\u5236\u53F0",a="\u26A1",s="";!t&&!e?(o="\u672A\u7ED1\u5B9A KV \u4E14\u672A\u914D\u7F6E\u5BC6\u7801",a="\u26A0\uFE0F",s="\u7CFB\u7EDF\u68C0\u6D4B\u5230\u65E2\u672A\u7ED1\u5B9A <code>KV</code> \u5B58\u50A8\u6570\u636E\u5E93\uFF0C\u4E5F\u672A\u8BBE\u7F6E <code>ADMIN</code> \u7BA1\u7406\u5458\u5BC6\u7801\u3002\u7CFB\u7EDF\u65E0\u6CD5\u6301\u4E45\u5316\u8282\u70B9\u914D\u7F6E\uFF0C\u4E14\u672A\u6388\u6743\u76F4\u63A5\u8BBF\u95EE\u5B58\u5728\u5B89\u5168\u9690\u60A3\u3002"):t?(o="\u672A\u914D\u7F6E\u7BA1\u7406\u5458\u5BC6\u7801",a="\u{1F510}",s="\u7CFB\u7EDF\u672A\u68C0\u6D4B\u5230 <code>ADMIN</code> \u73AF\u5883\u53D8\u91CF\u3002\u4E3A\u907F\u514D\u672A\u6388\u6743\u8BBF\u95EE\u53CA\u8282\u70B9\u914D\u7F6E\u6CC4\u9732\uFF0C\u5FC5\u987B\u5148\u5728 Cloudflare \u540E\u53F0\u8BBE\u7F6E\u7BA1\u7406\u5458\u5BC6\u7801\u3002"):(o="\u672A\u7ED1\u5B9A KV \u547D\u540D\u7A7A\u95F4",a="\u{1F5C4}\uFE0F",s="\u7CFB\u7EDF\u68C0\u6D4B\u5230\u5C1A\u672A\u7ED1\u5B9A <code>KV</code> \u547D\u540D\u7A7A\u95F4\u3002\u6240\u6709\u8282\u70B9\u6570\u636E\u3001\u4F18\u9009\u6E90\u53CA\u52A0\u5BC6\u5BC6\u94A5\u5747\u4F9D\u8D56 Cloudflare KV \u8FDB\u884C\u6301\u4E45\u5316\u52A0\u5BC6\u5B58\u50A8\uFF0C\u672A\u7ED1\u5B9A KV \u7CFB\u7EDF\u65E0\u6CD5\u6B63\u5E38\u8FD0\u884C\u3002");let i=[];return!t&&!e?(i.push("\u5728 Cloudflare \u63A7\u5236\u53F0\u5DE6\u4FA7\u5BFC\u822A\u680F\u70B9\u51FB <strong>\u201C\u5B58\u50A8\u4E0E\u6570\u636E\u5E93\u201D</strong> -> <strong>\u201CKV\u201D</strong> -> \u70B9\u51FB <strong>\u201C\u521B\u5EFA\u547D\u540D\u7A7A\u95F4\u201D</strong>\uFF08\u540D\u79F0\u586B\u5199 <code>KV</code>\uFF09\u3002"),i.push("\u8FDB\u5165 <strong>Workers \u548C Pages</strong> -> \u9009\u62E9\u5F53\u524D Worker -> \u70B9\u51FB <strong>\u8BBE\u7F6E (Settings)</strong> -> <strong>\u53D8\u91CF\u4E0E\u673A\u5BC6 (Variables and Secrets)</strong>\u3002"),i.push("\u5728 <strong>KV \u547D\u540D\u7A7A\u95F4\u7ED1\u5B9A</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0\u7ED1\u5B9A</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u5FC5\u987B\u4E25\u683C\u586B\u5199\u4E3A <code>KV</code>\uFF0C\u9009\u62E9\u521A\u521B\u5EFA\u7684 KV \u547D\u540D\u7A7A\u95F4\u3002"),i.push("\u5728\u4E0B\u65B9 <strong>\u73AF\u5883\u53D8\u91CF</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u586B\u5199 <code>ADMIN</code>\uFF0C\u53D8\u91CF\u503C\u586B\u5199\u60A8\u7684\u7BA1\u7406\u5BC6\u7801\u3002"),i.push("\u70B9\u51FB <strong>\u4FDD\u5B58\u5E76\u90E8\u7F72</strong>\uFF0C\u5B8C\u6210\u540E\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u5237\u65B0\u9875\u9762\u3002")):t?(i.push("\u767B\u5F55 <strong>Cloudflare \u63A7\u5236\u53F0</strong> \u5E76\u8FDB\u5165 <strong>Workers \u548C Pages</strong>\uFF0C\u70B9\u51FB\u8FDB\u5165\u5F53\u524D Worker\u3002"),i.push("\u5207\u6362\u81F3 <strong>\u8BBE\u7F6E (Settings)</strong> \u9009\u9879\u5361 -> \u9009\u62E9 <strong>\u53D8\u91CF\u4E0E\u673A\u5BC6 (Variables and Secrets)</strong>\u3002"),i.push("\u5728 <strong>\u73AF\u5883\u53D8\u91CF</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u586B\u5199 <code>ADMIN</code>\uFF0C\u53D8\u91CF\u503C\u586B\u5199\u60A8\u7684\u7BA1\u7406\u5BC6\u7801\u3002"),i.push("\u70B9\u51FB <strong>\u4FDD\u5B58\u5E76\u90E8\u7F72</strong>\uFF0C\u5B8C\u6210\u540E\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u5237\u65B0\u9875\u9762\u3002")):(i.push("\u5728 Cloudflare \u63A7\u5236\u53F0\u5DE6\u4FA7\u5BFC\u822A\u680F\u70B9\u51FB <strong>\u201C\u5B58\u50A8\u4E0E\u6570\u636E\u5E93\u201D</strong> -> <strong>\u201CKV\u201D</strong> -> \u70B9\u51FB <strong>\u201C\u521B\u5EFA\u547D\u540D\u7A7A\u95F4\u201D</strong>\uFF08\u540D\u79F0\u586B\u5199 <code>KV</code>\uFF09\u3002"),i.push("\u8FDB\u5165 <strong>Workers \u548C Pages</strong> -> \u9009\u62E9\u5F53\u524D Worker -> \u70B9\u51FB <strong>\u8BBE\u7F6E (Settings)</strong> -> <strong>\u53D8\u91CF\u4E0E\u673A\u5BC6 (Variables and Secrets)</strong>\u3002"),i.push("\u5728 <strong>KV \u547D\u540D\u7A7A\u95F4\u7ED1\u5B9A</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0\u7ED1\u5B9A</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u5FC5\u987B\u4E25\u683C\u586B\u5199\u4E3A <code>KV</code>\uFF0C\u9009\u62E9\u521A\u521B\u5EFA\u7684 KV \u547D\u540D\u7A7A\u95F4\u3002"),i.push("\u70B9\u51FB <strong>\u4FDD\u5B58\u5E76\u90E8\u7F72</strong>\uFF0C\u5B8C\u6210\u540E\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u5237\u65B0\u9875\u9762\u3002")),`<!DOCTYPE html>
+</html>`}function Et({hasKV:e=!1,hasAdmin:t=!1}={}){let o="\u7CFB\u7EDF\u521D\u59CB\u5316\u914D\u7F6E\u672A\u5B8C\u6210",n="\u51FA\u4E8E\u5B89\u5168\u9632\u62A4\u4E0E\u6570\u636E\u6301\u4E45\u5316\u8981\u6C42\uFF0C\u5F53\u524D\u670D\u52A1\u5DF2\u963B\u6B62\u76F4\u63A5\u8FDB\u5165\u63A7\u5236\u53F0",a="\u26A1",s="";!e&&!t?(o="\u672A\u7ED1\u5B9A KV \u4E14\u672A\u914D\u7F6E\u5BC6\u7801",a="\u26A0\uFE0F",s="\u7CFB\u7EDF\u68C0\u6D4B\u5230\u65E2\u672A\u7ED1\u5B9A <code>KV</code> \u5B58\u50A8\u6570\u636E\u5E93\uFF0C\u4E5F\u672A\u8BBE\u7F6E <code>ADMIN</code> \u7BA1\u7406\u5458\u5BC6\u7801\u3002\u7CFB\u7EDF\u65E0\u6CD5\u6301\u4E45\u5316\u8282\u70B9\u914D\u7F6E\uFF0C\u4E14\u672A\u6388\u6743\u76F4\u63A5\u8BBF\u95EE\u5B58\u5728\u5B89\u5168\u9690\u60A3\u3002"):e?(o="\u672A\u914D\u7F6E\u7BA1\u7406\u5458\u5BC6\u7801",a="\u{1F510}",s="\u7CFB\u7EDF\u672A\u68C0\u6D4B\u5230 <code>ADMIN</code> \u73AF\u5883\u53D8\u91CF\u3002\u4E3A\u907F\u514D\u672A\u6388\u6743\u8BBF\u95EE\u53CA\u8282\u70B9\u914D\u7F6E\u6CC4\u9732\uFF0C\u5FC5\u987B\u5148\u5728 Cloudflare \u540E\u53F0\u8BBE\u7F6E\u7BA1\u7406\u5458\u5BC6\u7801\u3002"):(o="\u672A\u7ED1\u5B9A KV \u547D\u540D\u7A7A\u95F4",a="\u{1F5C4}\uFE0F",s="\u7CFB\u7EDF\u68C0\u6D4B\u5230\u5C1A\u672A\u7ED1\u5B9A <code>KV</code> \u547D\u540D\u7A7A\u95F4\u3002\u6240\u6709\u8282\u70B9\u6570\u636E\u3001\u4F18\u9009\u6E90\u53CA\u52A0\u5BC6\u5BC6\u94A5\u5747\u4F9D\u8D56 Cloudflare KV \u8FDB\u884C\u6301\u4E45\u5316\u52A0\u5BC6\u5B58\u50A8\uFF0C\u672A\u7ED1\u5B9A KV \u7CFB\u7EDF\u65E0\u6CD5\u6B63\u5E38\u8FD0\u884C\u3002");let i=[];return!e&&!t?(i.push("\u5728 Cloudflare \u63A7\u5236\u53F0\u5DE6\u4FA7\u5BFC\u822A\u680F\u70B9\u51FB <strong>\u201C\u5B58\u50A8\u4E0E\u6570\u636E\u5E93\u201D</strong> -> <strong>\u201CKV\u201D</strong> -> \u70B9\u51FB <strong>\u201C\u521B\u5EFA\u547D\u540D\u7A7A\u95F4\u201D</strong>\uFF08\u540D\u79F0\u586B\u5199 <code>KV</code>\uFF09\u3002"),i.push("\u8FDB\u5165 <strong>Workers \u548C Pages</strong> -> \u9009\u62E9\u5F53\u524D Worker -> \u70B9\u51FB <strong>\u8BBE\u7F6E (Settings)</strong> -> <strong>\u53D8\u91CF\u4E0E\u673A\u5BC6 (Variables and Secrets)</strong>\u3002"),i.push("\u5728 <strong>KV \u547D\u540D\u7A7A\u95F4\u7ED1\u5B9A</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0\u7ED1\u5B9A</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u5FC5\u987B\u4E25\u683C\u586B\u5199\u4E3A <code>KV</code>\uFF0C\u9009\u62E9\u521A\u521B\u5EFA\u7684 KV \u547D\u540D\u7A7A\u95F4\u3002"),i.push("\u5728\u4E0B\u65B9 <strong>\u73AF\u5883\u53D8\u91CF</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u586B\u5199 <code>ADMIN</code>\uFF0C\u53D8\u91CF\u503C\u586B\u5199\u60A8\u7684\u7BA1\u7406\u5BC6\u7801\u3002"),i.push("\u70B9\u51FB <strong>\u4FDD\u5B58\u5E76\u90E8\u7F72</strong>\uFF0C\u5B8C\u6210\u540E\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u5237\u65B0\u9875\u9762\u3002")):e?(i.push("\u767B\u5F55 <strong>Cloudflare \u63A7\u5236\u53F0</strong> \u5E76\u8FDB\u5165 <strong>Workers \u548C Pages</strong>\uFF0C\u70B9\u51FB\u8FDB\u5165\u5F53\u524D Worker\u3002"),i.push("\u5207\u6362\u81F3 <strong>\u8BBE\u7F6E (Settings)</strong> \u9009\u9879\u5361 -> \u9009\u62E9 <strong>\u53D8\u91CF\u4E0E\u673A\u5BC6 (Variables and Secrets)</strong>\u3002"),i.push("\u5728 <strong>\u73AF\u5883\u53D8\u91CF</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u586B\u5199 <code>ADMIN</code>\uFF0C\u53D8\u91CF\u503C\u586B\u5199\u60A8\u7684\u7BA1\u7406\u5BC6\u7801\u3002"),i.push("\u70B9\u51FB <strong>\u4FDD\u5B58\u5E76\u90E8\u7F72</strong>\uFF0C\u5B8C\u6210\u540E\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u5237\u65B0\u9875\u9762\u3002")):(i.push("\u5728 Cloudflare \u63A7\u5236\u53F0\u5DE6\u4FA7\u5BFC\u822A\u680F\u70B9\u51FB <strong>\u201C\u5B58\u50A8\u4E0E\u6570\u636E\u5E93\u201D</strong> -> <strong>\u201CKV\u201D</strong> -> \u70B9\u51FB <strong>\u201C\u521B\u5EFA\u547D\u540D\u7A7A\u95F4\u201D</strong>\uFF08\u540D\u79F0\u586B\u5199 <code>KV</code>\uFF09\u3002"),i.push("\u8FDB\u5165 <strong>Workers \u548C Pages</strong> -> \u9009\u62E9\u5F53\u524D Worker -> \u70B9\u51FB <strong>\u8BBE\u7F6E (Settings)</strong> -> <strong>\u53D8\u91CF\u4E0E\u673A\u5BC6 (Variables and Secrets)</strong>\u3002"),i.push("\u5728 <strong>KV \u547D\u540D\u7A7A\u95F4\u7ED1\u5B9A</strong> \u533A\u57DF\u70B9\u51FB <strong>\u6DFB\u52A0\u7ED1\u5B9A</strong>\uFF1A\u53D8\u91CF\u540D\u79F0\u5FC5\u987B\u4E25\u683C\u586B\u5199\u4E3A <code>KV</code>\uFF0C\u9009\u62E9\u521A\u521B\u5EFA\u7684 KV \u547D\u540D\u7A7A\u95F4\u3002"),i.push("\u70B9\u51FB <strong>\u4FDD\u5B58\u5E76\u90E8\u7F72</strong>\uFF0C\u5B8C\u6210\u540E\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u5237\u65B0\u9875\u9762\u3002")),`<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -574,12 +574,12 @@ var Ft="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Wt=(t=
     <p class="subtitle">${n}</p>
 
     <div class="status-box">
-      <div class="status-item ${t?"status-ok":"status-err"}">
-        <span class="status-badge">${t?"\u2713 \u5DF2\u7ED1\u5B9A":"\u2715 \u672A\u7ED1\u5B9A"}</span>
+      <div class="status-item ${e?"status-ok":"status-err"}">
+        <span class="status-badge">${e?"\u2713 \u5DF2\u7ED1\u5B9A":"\u2715 \u672A\u7ED1\u5B9A"}</span>
         <span class="status-name">KV \u547D\u540D\u7A7A\u95F4 (KV)</span>
       </div>
-      <div class="status-item ${e?"status-ok":"status-err"}">
-        <span class="status-badge">${e?"\u2713 \u5DF2\u914D\u7F6E":"\u2715 \u672A\u914D\u7F6E"}</span>
+      <div class="status-item ${t?"status-ok":"status-err"}">
+        <span class="status-badge">${t?"\u2713 \u5DF2\u914D\u7F6E":"\u2715 \u672A\u914D\u7F6E"}</span>
         <span class="status-name">\u7BA1\u7406\u5458\u5BC6\u7801 (ADMIN)</span>
       </div>
     </div>
@@ -609,7 +609,7 @@ var Ft="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",Wt=(t=
     </div>
   </div>
 </body>
-</html>`}var ke=`
+</html>`}var Te=`
 :root {
   --bg-body: #f1f5f9;
   --bg-main: #f8fafc;
@@ -2084,7 +2084,7 @@ input:disabled {
     padding: 18px;
   }
 }
-`;var Te=`
+`;var Ie=`
 // \u9875\u9762\u5185\u5168\u5C40\u7EC4\u6570\u636E
 const allGroupsData = JSON.parse(document.getElementById('data-plain-groups').textContent);
 const allCfGroupsData = JSON.parse(document.getElementById('data-cf-groups').textContent);
@@ -2249,7 +2249,7 @@ async function saveTgConfig() {
 }
 
 function randomGroupId() {
-  document.getElementById('form-group-id').value = generateRandomString(12, 33);
+  document.getElementById('form-group-id').value = generateRandomString(12, 33).toLowerCase();
 }
 
 function updateNodeStats() {
@@ -2278,7 +2278,7 @@ function openAddGroupModal() {
 function openEditGroupModal(id) {
   document.getElementById('modal-group-title').innerText = '\u7F16\u8F91\u666E\u901A\u8BA2\u9605';
   document.getElementById('form-group-id').value = id;
-  const target = allGroupsData.find(g => g.id === id);
+  const target = allGroupsData.find(g => g.id.toLowerCase() === String(id).toLowerCase());
   document.getElementById('form-group-name').value = target ? (target.name || '') : '';
   document.getElementById('form-group-max-views').value = (target && target.maxViews > 0) ? target.maxViews : '';
   const countryEl = document.getElementById('form-group-allowed-countries');
@@ -2481,9 +2481,12 @@ async function submitGroupForm(e) {
   e.preventDefault();
   let id = document.getElementById('form-group-id').value.trim();
   if (!id) {
-    id = generateRandomString(12, 33);
+    id = generateRandomString(12, 33).toLowerCase();
     document.getElementById('form-group-id').value = id;
+  } else {
+    id = id.toLowerCase();
   }
+
   const name = document.getElementById('form-group-name').value.trim();
   if (!name) {
     showToast('\u8BF7\u8F93\u5165\u8BA2\u9605\u540D\u79F0\uFF01', 'error');
@@ -2516,8 +2519,17 @@ async function submitGroupForm(e) {
     return;
   }
 
+  // \u6821\u9A8C\u8282\u70B9\u6709\u6548\u6027\uFF1A\u81F3\u5C11\u5E94\u5305\u542B\u4E00\u4E2A\u652F\u6301\u7684\u534F\u8BAE\u94FE\u63A5\u6216 Base64 \u8BA2\u9605\u6587\u672C
+  const validProtocolRegex = /^(vless|vmess|ss|ssr|trojan|tuic|hysteria|hysteria2|hy2|wireguard|wg|socks|socks5):\\/\\//i;
+  const isBase64Block = rawNodes.length > 20 && /^[A-Za-z0-9+\\/=\\r\\n\\s]+$/.test(rawNodes) && !rawNodes.includes('://');
+  const hasValidProtocolNode = nodes.some(n => validProtocolRegex.test(n) || n.toLowerCase().startsWith('vless='));
+  if (!hasValidProtocolNode && !isBase64Block) {
+    showToast('\u672A\u80FD\u8BC6\u522B\u5230\u6709\u6548\u7684\u8282\u70B9\u94FE\u63A5\uFF0C\u8BF7\u786E\u8BA4\u5305\u542B vless://\u3001vmess://\u3001ss:// \u7B49\u5408\u6CD5\u534F\u8BAE\u8282\u70B9\u6216 Base64 \u6587\u672C\uFF01', 'error');
+    return;
+  }
+
   const rawCountries = document.getElementById('form-group-allowed-countries') ? document.getElementById('form-group-allowed-countries').value.trim() : '';
-  const allowedCountries = rawCountries ? rawCountries.split(',').map(c => c.trim().toUpperCase()).filter(Boolean) : [];
+  const allowedCountries = rawCountries ? rawCountries.split(',').map(c => c.trim().toUpperCase()).filter(c => /^[A-Z]{2}$/.test(c)) : [];
 
   try {
     const res = await fetch('/api/custom-groups', {
@@ -2528,7 +2540,10 @@ async function submitGroupForm(e) {
 
     if (res.ok) {
       showToast('\u666E\u901A\u8BA2\u9605\u3010' + name + '\u3011\u4FDD\u5B58\u6210\u529F\uFF01', 'success');
-      setTimeout(() => location.reload(), 600);
+      setTimeout(() => {
+        window.location.hash = '#custom-sub';
+        location.reload();
+      }, 600);
     } else if (res.status === 401) {
       showToast('\u767B\u5F55\u4F1A\u8BDD\u5DF2\u8D85\u65F6\uFF0C\u8BF7\u91CD\u65B0\u767B\u5F55\uFF01', 'error');
       setTimeout(() => location.href = '/login', 1200);
@@ -2548,7 +2563,7 @@ async function submitGroupForm(e) {
 }
 
 async function deleteGroup(id) {
-  const target = allGroupsData.find(g => g.id === id);
+  const target = allGroupsData.find(g => g.id.toLowerCase() === String(id).toLowerCase());
   const name = target ? target.name : id;
 
   const confirmed = await showConfirmDialog({
@@ -2561,12 +2576,27 @@ async function deleteGroup(id) {
 
   if (!confirmed) return;
 
-  const res = await fetch('/api/custom-groups/' + encodeURIComponent(id), { method: 'DELETE' });
-  if (res.ok) {
-    showToast('\u666E\u901A\u8BA2\u9605\u5DF2\u6210\u529F\u5220\u9664\uFF01', 'success');
-    setTimeout(() => location.reload(), 600);
-  } else {
-    showToast('\u5220\u9664\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5', 'error');
+  try {
+    const res = await fetch('/api/custom-groups/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (res.ok) {
+      showToast('\u666E\u901A\u8BA2\u9605\u5DF2\u6210\u529F\u5220\u9664\uFF01', 'success');
+      setTimeout(() => {
+        window.location.hash = '#custom-sub';
+        location.reload();
+      }, 600);
+    } else if (res.status === 401) {
+      showToast('\u767B\u5F55\u4F1A\u8BDD\u5DF2\u8D85\u65F6\uFF0C\u8BF7\u91CD\u65B0\u767B\u5F55\uFF01', 'error');
+      setTimeout(() => location.href = '/login', 1200);
+    } else {
+      let errMsg = '\u5220\u9664\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5';
+      try {
+        const data = await res.json();
+        errMsg = data.error || data.message || errMsg;
+      } catch {}
+      showToast(errMsg, 'error');
+    }
+  } catch (err) {
+    showToast('\u7F51\u7EDC\u8BF7\u6C42\u5F02\u5E38: ' + err.message, 'error');
   }
 }
 
@@ -2575,7 +2605,7 @@ async function deleteGroup(id) {
 // ==========================================
 function openAddCfGroupModal() {
   document.getElementById('modal-cf-group-title').innerText = '\u6DFB\u52A0\u65B0 CF \u4F18\u9009\u8BA2\u9605';
-  document.getElementById('form-cf-group-id').value = generateRandomString(12, 33);
+  document.getElementById('form-cf-group-id').value = generateRandomString(12, 33).toLowerCase();
   document.getElementById('form-cf-group-name').value = '';
   document.getElementById('form-cf-group-max-views').value = '';
   const countryEl = document.getElementById('form-cf-group-allowed-countries');
@@ -2591,7 +2621,7 @@ function openAddCfGroupModal() {
 function openEditCfGroupModal(id) {
   document.getElementById('modal-cf-group-title').innerText = '\u7F16\u8F91 CF \u4F18\u9009\u8BA2\u9605';
   document.getElementById('form-cf-group-id').value = id;
-  const target = allCfGroupsData.find(g => g.id === id);
+  const target = allCfGroupsData.find(g => g.id.toLowerCase() === String(id).toLowerCase());
   document.getElementById('form-cf-group-name').value = target ? (target.name || '') : '';
   document.getElementById('form-cf-group-max-views').value = (target && target.maxViews > 0) ? target.maxViews : '';
   const countryEl = document.getElementById('form-cf-group-allowed-countries');
@@ -2613,10 +2643,22 @@ async function submitCfGroupForm(e) {
   e.preventDefault();
   let id = document.getElementById('form-cf-group-id').value.trim();
   if (!id) {
-    id = generateRandomString(12, 33);
+    id = generateRandomString(12, 33).toLowerCase();
     document.getElementById('form-cf-group-id').value = id;
+  } else {
+    id = id.toLowerCase();
   }
+
   const name = document.getElementById('form-cf-group-name').value.trim();
+  if (!name) {
+    showToast('\u8BF7\u8F93\u5165\u4F18\u9009\u8BA2\u9605\u540D\u79F0\uFF01', 'error');
+    return;
+  }
+  if (name.length > 30) {
+    showToast('\u8BA2\u9605\u540D\u79F0/\u5907\u6CE8\u4E0D\u80FD\u8D85\u8FC730\u4E2A\u5B57\uFF01', 'error');
+    return;
+  }
+
   const maxViewsRaw = document.getElementById('form-cf-group-max-views').value.trim();
   let maxViews = 0;
   if (maxViewsRaw) {
@@ -2627,54 +2669,63 @@ async function submitCfGroupForm(e) {
     }
     maxViews = val;
   }
-  const baseVless = document.getElementById('form-cf-group-base').value.trim();
 
-  if (name.length > 30) {
-    showToast('\u8BA2\u9605\u540D\u79F0/\u5907\u6CE8\u4E0D\u80FD\u8D85\u8FC730\u4E2A\u5B57\uFF01', 'error');
-    return;
+  const baseVless = document.getElementById('form-cf-group-base').value.trim();
+  if (baseVless) {
+    const isVless = baseVless.toLowerCase().startsWith('vless://') || baseVless.toLowerCase().startsWith('vless=');
+    const isBase64 = /^[A-Za-z0-9+\\/=\\s]+$/.test(baseVless) && baseVless.length > 20;
+    if (!isVless && !isBase64) {
+      showToast('\u57FA\u7840\u6A21\u677F\u8282\u70B9\u683C\u5F0F\u4E0D\u6B63\u786E\uFF0C\u5FC5\u987B\u4E3A\u6709\u6548\u7684 vless:// \u8282\u70B9\u94FE\u63A5\uFF08\u6216 Base64 \u7F16\u7801\uFF09\uFF01', 'error');
+      return;
+    }
   }
 
   // 1. \u5982\u679C\u5728\u5F39\u7A97\u5185\u7F16\u8F91\u4E86\u4F18\u9009\u6E90\u6587\u672C\u57DF\uFF0C\u4E00\u5E76\u540C\u6B65\u4FDD\u5B58\u4F18\u9009\u6E90
   const sourcesTextEl = document.getElementById('global-sources-text');
   if (sourcesTextEl) {
     const rawText = sourcesTextEl.value.trim();
-    const lines = rawText.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
-    const parsedSources = [];
-    let counter = 1;
+    if (rawText) {
+      const lines = rawText.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
+      const parsedSources = [];
+      let counter = 1;
 
-    for (const line of lines) {
-      let srcName = '';
-      let srcUrl = '';
-      let srcId = '';
+      for (const line of lines) {
+        let srcName = '';
+        let srcUrl = '';
+        let srcId = '';
 
-      if (line.includes(',')) {
-        const parts = line.split(',');
-        srcName = parts[0].trim();
-        srcUrl = parts.slice(1).join(',').trim();
-      } else {
-        srcUrl = line.trim();
-      }
-
-      if (srcUrl.startsWith('http://') || srcUrl.startsWith('https://')) {
-        const existing = allSourcesData.find(s => s.url === srcUrl);
-        if (existing) {
-          srcId = existing.id;
-          if (!srcName) srcName = existing.name;
+        if (line.includes(',')) {
+          const parts = line.split(',');
+          srcName = parts[0].trim();
+          srcUrl = parts.slice(1).join(',').trim();
         } else {
-          srcId = 'src_' + counter + '_' + generateRandomString(6);
-          if (!srcName) srcName = '\u4F18\u9009\u6E90 ' + counter;
+          srcUrl = line.trim();
         }
-        parsedSources.push({
-          id: srcId.toLowerCase(),
-          name: srcName || ('\u4F18\u9009\u6E90 ' + counter),
-          url: srcUrl,
-          enabled: true
-        });
-        counter++;
-      }
-    }
 
-    if (parsedSources.length > 0) {
+        if (srcUrl.startsWith('http://') || srcUrl.startsWith('https://')) {
+          const existing = allSourcesData.find(s => s.url === srcUrl);
+          if (existing) {
+            srcId = existing.id;
+            if (!srcName) srcName = existing.name;
+          } else {
+            srcId = 'src_' + counter + '_' + generateRandomString(6).toLowerCase();
+            if (!srcName) srcName = '\u4F18\u9009\u6E90 ' + counter;
+          }
+          parsedSources.push({
+            id: srcId.toLowerCase(),
+            name: srcName || ('\u4F18\u9009\u6E90 ' + counter),
+            url: srcUrl,
+            enabled: true
+          });
+          counter++;
+        }
+      }
+
+      if (parsedSources.length === 0) {
+        showToast('\u4F18\u9009\u6E90\u914D\u7F6E\u4E2D\u672A\u8BC6\u522B\u5230\u6709\u6548\u7684 http:// \u6216 https:// \u63A5\u53E3\u5730\u5740\uFF01', 'error');
+        return;
+      }
+
       await fetch('/api/sources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2685,25 +2736,41 @@ async function submitCfGroupForm(e) {
 
   // 2. \u4FDD\u5B58 CF \u4F18\u9009\u8BA2\u9605
   const rawCountries = document.getElementById('form-cf-group-allowed-countries') ? document.getElementById('form-cf-group-allowed-countries').value.trim() : '';
-  const allowedCountries = rawCountries ? rawCountries.split(',').map(c => c.trim().toUpperCase()).filter(Boolean) : [];
+  const allowedCountries = rawCountries ? rawCountries.split(',').map(c => c.trim().toUpperCase()).filter(c => /^[A-Z]{2}$/.test(c)) : [];
 
-  const res = await fetch('/api/cf-groups', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, name, maxViews, baseVless, sources: [], allowedCountries })
-  });
+  try {
+    const res = await fetch('/api/cf-groups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, name, maxViews, baseVless, sources: [], allowedCountries })
+    });
 
-  if (res.ok) {
-    showToast('CF \u4F18\u9009\u8BA2\u9605\u3010' + name + '\u3011\u4FDD\u5B58\u6210\u529F\uFF01', 'success');
-    setTimeout(() => location.reload(), 600);
-  } else {
-    const err = await res.text();
-    showToast('\u4FDD\u5B58\u5931\u8D25: ' + err, 'error');
+    if (res.ok) {
+      showToast('CF \u4F18\u9009\u8BA2\u9605\u3010' + name + '\u3011\u4FDD\u5B58\u6210\u529F\uFF01', 'success');
+      setTimeout(() => {
+        window.location.hash = '#cf-sub';
+        location.reload();
+      }, 600);
+    } else if (res.status === 401) {
+      showToast('\u767B\u5F55\u4F1A\u8BDD\u5DF2\u8D85\u65F6\uFF0C\u8BF7\u91CD\u65B0\u767B\u5F55\uFF01', 'error');
+      setTimeout(() => location.href = '/login', 1200);
+    } else {
+      let errMsg = '\u4FDD\u5B58\u5931\u8D25';
+      try {
+        const data = await res.json();
+        errMsg = data.error || data.message || JSON.stringify(data);
+      } catch {
+        errMsg = await res.text();
+      }
+      showToast('\u4FDD\u5B58\u5931\u8D25: ' + errMsg, 'error');
+    }
+  } catch (err) {
+    showToast('\u7F51\u7EDC\u8BF7\u6C42\u5F02\u5E38: ' + (err.message || '\u8BF7\u68C0\u67E5\u7F51\u7EDC'), 'error');
   }
 }
 
 async function deleteCfGroup(id) {
-  const target = allCfGroupsData.find(g => g.id === id);
+  const target = allCfGroupsData.find(g => g.id.toLowerCase() === String(id).toLowerCase());
   const name = target ? target.name : id;
 
   const confirmed = await showConfirmDialog({
@@ -2716,12 +2783,27 @@ async function deleteCfGroup(id) {
 
   if (!confirmed) return;
 
-  const res = await fetch('/api/cf-groups/' + encodeURIComponent(id), { method: 'DELETE' });
-  if (res.ok) {
-    showToast('CF \u4F18\u9009\u8BA2\u9605\u5DF2\u6210\u529F\u5220\u9664\uFF01', 'success');
-    setTimeout(() => location.reload(), 600);
-  } else {
-    showToast('\u5220\u9664\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5', 'error');
+  try {
+    const res = await fetch('/api/cf-groups/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (res.ok) {
+      showToast('CF \u4F18\u9009\u8BA2\u9605\u5DF2\u6210\u529F\u5220\u9664\uFF01', 'success');
+      setTimeout(() => {
+        window.location.hash = '#cf-sub';
+        location.reload();
+      }, 600);
+    } else if (res.status === 401) {
+      showToast('\u767B\u5F55\u4F1A\u8BDD\u5DF2\u8D85\u65F6\uFF0C\u8BF7\u91CD\u65B0\u767B\u5F55\uFF01', 'error');
+      setTimeout(() => location.href = '/login', 1200);
+    } else {
+      let errMsg = '\u5220\u9664\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5';
+      try {
+        const data = await res.json();
+        errMsg = data.error || data.message || errMsg;
+      } catch {}
+      showToast(errMsg, 'error');
+    }
+  } catch (err) {
+    showToast('\u7F51\u7EDC\u8BF7\u6C42\u5F02\u5E38: ' + err.message, 'error');
   }
 }
 
@@ -2854,16 +2936,17 @@ async function testModalCfNodes() {
 
 // 2. \u6D4B\u8BD5\u5DF2\u6709 CF \u72EC\u7ACB\u8BA2\u9605\u7EC4
 async function testCfGroup(id) {
-  const target = allCfGroupsData.find(g => g.id === id);
+  const target = allCfGroupsData.find(g => g.id.toLowerCase() === String(id).toLowerCase());
   const name = target ? target.name : id;
   const baseVless = target ? (target.baseVless || '') : '';
+  const sources = target && Array.isArray(target.sources) ? target.sources : [];
 
   showToast('\u6B63\u5728\u6D4B\u8BD5\u3010' + name + '\u3011\u4F18\u9009\u8282\u70B9\u751F\u6210...', 'info', 1800);
   try {
     const res = await fetch('/api/test-cf-nodes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ baseVless })
+      body: JSON.stringify({ baseVless, sources })
     });
 
     const data = await res.json();
@@ -3610,7 +3693,13 @@ async function batchDeletePlainGroups() {
     });
     if (res.ok) {
       showToast('\u5DF2\u6210\u529F\u6279\u91CF\u5220\u9664 ' + idsToDelete.length + ' \u4E2A\u666E\u901A\u8BA2\u9605\uFF01', 'success');
-      setTimeout(() => location.reload(), 600);
+      setTimeout(() => {
+        window.location.hash = '#custom-sub';
+        location.reload();
+      }, 600);
+    } else if (res.status === 401) {
+      showToast('\u767B\u5F55\u4F1A\u8BDD\u5DF2\u8D85\u65F6\uFF0C\u8BF7\u91CD\u65B0\u767B\u5F55\uFF01', 'error');
+      setTimeout(() => location.href = '/login', 1200);
     } else {
       showToast('\u6279\u91CF\u5220\u9664\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5', 'error');
     }
@@ -3646,7 +3735,13 @@ async function batchDeleteCfGroups() {
     });
     if (res.ok) {
       showToast('\u5DF2\u6210\u529F\u6279\u91CF\u5220\u9664 ' + idsToDelete.length + ' \u4E2A CF \u4F18\u9009\u8BA2\u9605\uFF01', 'success');
-      setTimeout(() => location.reload(), 600);
+      setTimeout(() => {
+        window.location.hash = '#cf-sub';
+        location.reload();
+      }, 600);
+    } else if (res.status === 401) {
+      showToast('\u767B\u5F55\u4F1A\u8BDD\u5DF2\u8D85\u65F6\uFF0C\u8BF7\u91CD\u65B0\u767B\u5F55\uFF01', 'error');
+      setTimeout(() => location.href = '/login', 1200);
     } else {
       showToast('\u6279\u91CF\u5220\u9664\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5', 'error');
     }
@@ -4157,7 +4252,7 @@ async function handleLogout() {
     window.location.href = '/logout';
   }
 }
-`;function pt(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Ie(t,e,o){return`
+`;function gt(e){return e==null?"":String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Ce(e,t,o){return`
     <!-- \u89C6\u56FE 1: \u666E\u901A\u8BA2\u9605\u7BA1\u7406 -->
     <section class="tab-content active" id="tab-custom-sub">
       <div class="section-card">
@@ -4199,7 +4294,7 @@ async function handleLogout() {
                     \u6682\u65E0\u666E\u901A\u8BA2\u9605\uFF0C\u70B9\u51FB\u53F3\u4E0A\u89D2 \u201C+ \u6DFB\u52A0\u65B0\u8BA2\u9605\u201D \u5F00\u59CB\u521B\u5EFA
                   </td>
                 </tr>
-              `:o.map((n,a)=>{let s=`${t}/${n.id}${e?`?token=${encodeURIComponent(e)}`:""}`,i=n.maxViews!==void 0&&n.maxViews!==null&&n.maxViews>0?n.maxViews:0,l=n.views||0,p=pt(n.name||"\u672A\u547D\u540D\u8BA2\u9605"),c=pt(n.id),h=n.nodes?n.nodes.split(`
+              `:o.map((n,a)=>{let s=`${e}/${n.id}${t?`?token=${encodeURIComponent(t)}`:""}`,i=n.maxViews!==void 0&&n.maxViews!==null&&n.maxViews>0?n.maxViews:0,l=n.views||0,p=gt(n.name||"\u672A\u547D\u540D\u8BA2\u9605"),c=gt(n.id),m=n.nodes?n.nodes.split(`
 `).map(u=>u.trim()).filter(Boolean).length:0;return`
                   <tr class="plain-table-row" data-index="${a}" data-id="${c}">
                     <td class="checkbox-cell">
@@ -4207,7 +4302,7 @@ async function handleLogout() {
                     </td>
                     <td>
                       <div class="copy-box" style="gap: 6px;">
-                        <input type="text" class="copy-input" id="plain-link-${a}" value="${pt(s)}" readonly style="padding: 6px 10px; font-size: 12px; width: 100%; min-width: 160px;" />
+                        <input type="text" class="copy-input" id="plain-link-${a}" value="${gt(s)}" readonly style="padding: 6px 10px; font-size: 12px; width: 100%; min-width: 160px;" />
                         <button class="btn-action" style="height: 32px; padding: 0 10px; font-size: 12px; flex-shrink: 0;" onclick="copyText('plain-link-${a}')">\u{1F4CB} \u590D\u5236</button>
                       </div>
                     </td>
@@ -4225,9 +4320,9 @@ async function handleLogout() {
                     <td style="font-weight: 600; color: var(--text-title); font-size: 14px;" title="${p}">
                       <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                         <span>${p}</span>
-                        ${h>0?`
+                        ${m>0?`
                           <span class="node-count-badge" style="background: #eef2ff; color: #4338ca; font-size: 11px;">
-                            \u{1F4E6} ${h} \u4E2A\u8282\u70B9
+                            \u{1F4E6} ${m} \u4E2A\u8282\u70B9
                           </span>
                         `:`
                           <span class="node-count-badge" style="background: #fee2e2; color: #b91c1c; font-size: 11px;">
@@ -4235,8 +4330,8 @@ async function handleLogout() {
                           </span>
                         `}
                         ${n.allowedCountries&&n.allowedCountries.length>0?`
-                          <span class="node-count-badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px;" title="\u4EC5\u5F00\u653E\u6307\u5B9A\u56FD\u5BB6: ${pt(n.allowedCountries.join(", "))}">
-                            \u{1F30D} ${pt(n.allowedCountries.join(", "))}
+                          <span class="node-count-badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px;" title="\u4EC5\u5F00\u653E\u6307\u5B9A\u56FD\u5BB6: ${gt(n.allowedCountries.join(", "))}">
+                            \u{1F30D} ${gt(n.allowedCountries.join(", "))}
                           </span>
                         `:""}
                       </div>
@@ -4315,7 +4410,7 @@ async function handleLogout() {
         </form>
       </div>
     </div>
-  `}function ut(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Ce(t,e,o,n){return`
+  `}function mt(e){return e==null?"":String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Se(e,t,o,n){return`
     <!-- \u89C6\u56FE 2: CF \u4F18\u9009\u8BA2\u9605\u7BA1\u7406 -->
     <section class="tab-content" id="tab-cf-sub">
       <div class="section-card">
@@ -4357,14 +4452,14 @@ async function handleLogout() {
                     \u6682\u65E0\u72EC\u7ACB CF \u4F18\u9009\u8BA2\u9605\uFF0C\u70B9\u51FB\u53F3\u4E0A\u89D2 \u201C+ \u6DFB\u52A0\u4F18\u9009\u8BA2\u9605\u201D \u521B\u5EFA\u4E2A\u6027\u5316\u4F18\u9009\u8BA2\u9605\u7EC4
                   </td>
                 </tr>
-              `:o.map((a,s)=>{let i=`${t}/${a.id}${e?`?token=${encodeURIComponent(e)}`:""}`,l=a.maxViews!==void 0&&a.maxViews!==null&&a.maxViews>0?a.maxViews:0,p=a.views||0,c=ut(a.name||"\u672A\u547D\u540D\u4F18\u9009\u8BA2\u9605"),h=ut(a.id);return`
-                  <tr class="cf-table-row" data-index="${s}" data-id="${h}">
+              `:o.map((a,s)=>{let i=`${e}/${a.id}${t?`?token=${encodeURIComponent(t)}`:""}`,l=a.maxViews!==void 0&&a.maxViews!==null&&a.maxViews>0?a.maxViews:0,p=a.views||0,c=mt(a.name||"\u672A\u547D\u540D\u4F18\u9009\u8BA2\u9605"),m=mt(a.id);return`
+                  <tr class="cf-table-row" data-index="${s}" data-id="${m}">
                     <td class="checkbox-cell">
-                      <input type="checkbox" class="table-checkbox cf-row-checkbox" value="${h}" onchange="updateBatchSelection('cf')" />
+                      <input type="checkbox" class="table-checkbox cf-row-checkbox" value="${m}" onchange="updateBatchSelection('cf')" />
                     </td>
                     <td>
                       <div class="copy-box" style="gap: 6px;">
-                        <input type="text" class="copy-input" id="cf-link-${s}" value="${ut(i)}" readonly style="padding: 6px 10px; font-size: 12px; width: 100%; min-width: 160px;" />
+                        <input type="text" class="copy-input" id="cf-link-${s}" value="${mt(i)}" readonly style="padding: 6px 10px; font-size: 12px; width: 100%; min-width: 160px;" />
                         <button class="btn-action" style="height: 32px; padding: 0 10px; font-size: 12px; flex-shrink: 0;" onclick="copyText('cf-link-${s}')">\u{1F4CB} \u590D\u5236</button>
                       </div>
                     </td>
@@ -4382,16 +4477,16 @@ async function handleLogout() {
                     <td style="font-weight: 600; color: var(--text-title); font-size: 14px;" title="${c}">
                       ${c}
                       ${a.allowedCountries&&a.allowedCountries.length>0?`
-                        <span class="node-count-badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px; margin-left: 6px;" title="\u4EC5\u5F00\u653E\u6307\u5B9A\u56FD\u5BB6: ${ut(a.allowedCountries.join(", "))}">
-                          \u{1F30D} ${ut(a.allowedCountries.join(", "))}
+                        <span class="node-count-badge" style="background: #e0f2fe; color: #0369a1; font-size: 11px; margin-left: 6px;" title="\u4EC5\u5F00\u653E\u6307\u5B9A\u56FD\u5BB6: ${mt(a.allowedCountries.join(", "))}">
+                          \u{1F30D} ${mt(a.allowedCountries.join(", "))}
                         </span>
                       `:""}
                     </td>
                     <td style="text-align: right; white-space: nowrap;">
                       <div class="table-actions">
-                        <button class="btn-action btn-purple" style="height: 32px; padding: 0 10px; font-size: 12px;" data-id="${h}" onclick="testCfGroup(this.dataset.id)">\u{1F9EA} \u6D4B\u8BD5</button>
-                        <button class="btn-action btn-secondary" style="height: 32px; padding: 0 12px; font-size: 12px;" data-id="${h}" onclick="openEditCfGroupModal(this.dataset.id)">\u270F\uFE0F \u7F16\u8F91</button>
-                        <button class="btn-action btn-danger" style="height: 32px; padding: 0 12px; font-size: 12px;" data-id="${h}" onclick="deleteCfGroup(this.dataset.id)">\u{1F5D1}\uFE0F \u5220\u9664</button>
+                        <button class="btn-action btn-purple" style="height: 32px; padding: 0 10px; font-size: 12px;" data-id="${m}" onclick="testCfGroup(this.dataset.id)">\u{1F9EA} \u6D4B\u8BD5</button>
+                        <button class="btn-action btn-secondary" style="height: 32px; padding: 0 12px; font-size: 12px;" data-id="${m}" onclick="openEditCfGroupModal(this.dataset.id)">\u270F\uFE0F \u7F16\u8F91</button>
+                        <button class="btn-action btn-danger" style="height: 32px; padding: 0 12px; font-size: 12px;" data-id="${m}" onclick="deleteCfGroup(this.dataset.id)">\u{1F5D1}\uFE0F \u5220\u9664</button>
                       </div>
                     </td>
                   </tr>
@@ -4478,7 +4573,7 @@ async function handleLogout() {
         </form>
       </div>
     </div>
-  `}function ot(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Se(t=[],e=[],o=[]){return`
+  `}function nt(e){return e==null?"":String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Pe(e=[],t=[],o=[]){return`
     <!-- \u89C6\u56FE 3: \u8BBF\u95EE\u65E5\u5FD7\u4E0E IP \u62E6\u622A\u7BA1\u7406 -->
     <section class="tab-content" id="tab-access-logs">
 
@@ -4487,7 +4582,7 @@ async function handleLogout() {
         <div class="section-header">
           <div style="display: flex; align-items: center; gap: 10px;">
             <h2 class="section-title">\u{1F4CA} \u5BA2\u6237\u7AEF\u8BA2\u9605\u8BBF\u95EE\u5B9E\u65F6\u65E5\u5FD7</h2>
-            <span class="node-count-badge">\u6700\u8FD1 ${t.length} \u6761\u8BB0\u5F55</span>
+            <span class="node-count-badge">\u6700\u8FD1 ${e.length} \u6761\u8BB0\u5F55</span>
           </div>
           <div style="display: flex; gap: 8px;">
             <button class="btn-action btn-secondary" onclick="location.reload()">\u{1F504} \u5237\u65B0\u65E5\u5FD7</button>
@@ -4536,7 +4631,7 @@ async function handleLogout() {
           </div>
 
           <div class="logs-filter-summary">
-            <span id="logs-filter-stats">\u663E\u793A <strong>${t.length}</strong> / \u5171 <strong>${t.length}</strong> \u6761\u8BB0\u5F55</span>
+            <span id="logs-filter-stats">\u663E\u793A <strong>${e.length}</strong> / \u5171 <strong>${e.length}</strong> \u6761\u8BB0\u5F55</span>
           </div>
         </div>
 
@@ -4568,26 +4663,26 @@ async function handleLogout() {
               </tr>
             </thead>
             <tbody id="logs-table-body">
-              ${t.length===0?`
+              ${e.length===0?`
                 <tr>
                   <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 36px;">
                     \u6682\u65E0\u8BBF\u95EE\u65E5\u5FD7\u8BB0\u5F55\uFF0C\u5BA2\u6237\u7AEF\u53D1\u8D77\u8BA2\u9605\u62C9\u53D6\u6216\u8BBF\u95EE\u540E\u5C06\u5728\u6B64\u5B9E\u65F6\u663E\u793A
                   </td>
                 </tr>
-              `:t.map((n,a)=>{let s=o.includes(n.ip),i=e.includes(n.ip),l=n.status===200?'<span class="node-count-badge badge-success">200 OK</span>':n.status===403?'<span class="node-count-badge badge-danger">403 \u62E6\u622A</span>':n.status===401?'<span class="node-count-badge badge-warning">401 \u9274\u6743</span>':`<span class="node-count-badge">${ot(String(n.status||200))}</span>`,p=ot(n.ip||"\u672A\u77E5 IP"),c=ot(n.location||"\u5168\u7403 / \u672C\u5730"),h=ot(n.time||"-"),u=ot(n.path||"/"),m=ot(n.type||"\u8BA2\u9605\u8BF7\u6C42"),v=ot(n.ua||"-");return`
+              `:e.map((n,a)=>{let s=o.includes(n.ip),i=t.includes(n.ip),l=n.status===200?'<span class="node-count-badge badge-success">200 OK</span>':n.status===403?'<span class="node-count-badge badge-danger">403 \u62E6\u622A</span>':n.status===401?'<span class="node-count-badge badge-warning">401 \u9274\u6743</span>':`<span class="node-count-badge">${nt(String(n.status||200))}</span>`,p=nt(n.ip||"\u672A\u77E5 IP"),c=nt(n.location||"\u5168\u7403 / \u672C\u5730"),m=nt(n.time||"-"),u=nt(n.path||"/"),h=nt(n.type||"\u8BA2\u9605\u8BF7\u6C42"),k=nt(n.ua||"-");return`
                   <tr class="logs-table-row" data-index="${a}"
                       data-ip="${p}"
                       data-location="${c}"
                       data-status="${n.status||200}"
                       data-path="${u}"
-                      data-type="${m}"
-                      data-ua="${v}"
+                      data-type="${h}"
+                      data-ua="${k}"
                       data-whitelisted="${s?"1":"0"}"
                       data-blocked="${i?"1":"0"}">
                     <td class="checkbox-cell">
                       <input type="checkbox" class="table-checkbox logs-row-checkbox" value="${a}" onchange="updateBatchSelection('logs')" />
                     </td>
-                    <td style="white-space: nowrap; font-size: 12px; color: var(--text-muted);">${h}</td>
+                    <td style="white-space: nowrap; font-size: 12px; color: var(--text-muted);">${m}</td>
                     <td>
                       <div style="display: flex; flex-direction: column; gap: 2px;">
                         <div style="display: flex; align-items: center; gap: 6px; white-space: nowrap;">
@@ -4601,10 +4696,10 @@ async function handleLogout() {
                     <td>
                       <div style="display: flex; flex-direction: column; gap: 2px;">
                         <span style="font-family: monospace; font-size: 12px; color: var(--code-color); font-weight: 600;">${u}</span>
-                        <span style="font-size: 11px; color: var(--text-muted);">${m}</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">${h}</span>
                       </div>
                     </td>
-                    <td style="font-size: 12px; color: var(--text-muted); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${v}">${v}</td>
+                    <td style="font-size: 12px; color: var(--text-muted); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${k}">${k}</td>
                     <td style="text-align: right; white-space: nowrap;">
                       <div style="display: inline-flex; gap: 6px; justify-content: flex-end;">
                         ${s?`
@@ -4632,7 +4727,7 @@ async function handleLogout() {
         </div>
       </div>
     </section>
-  `}function Xe(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Qe(t){return t?t.includes("/")?"CIDR \u7F51\u6BB5":t.includes(":")?"IPv6 \u5355\u673A":"IPv4 \u5355\u673A":"\u672A\u77E5"}function Pe(t=[]){let e=t.length;return`
+  `}function Xe(e){return e==null?"":String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Ze(e){return e?e.includes("/")?"CIDR \u7F51\u6BB5":e.includes(":")?"IPv6 \u5355\u673A":"IPv4 \u5355\u673A":"\u672A\u77E5"}function Be(e=[]){let t=e.length;return`
     <!-- \u89C6\u56FE: \u72EC\u7ACB IP \u767D\u540D\u5355\u7BA1\u7406 -->
     <section class="tab-content" id="tab-ip-whitelist">
       <div class="section-card">
@@ -4640,7 +4735,7 @@ async function handleLogout() {
           <div class="section-title-group">
             <h2 class="section-title">\u2728 IP \u8BBF\u95EE\u767D\u540D\u5355\u7BA1\u7406</h2>
             <span class="node-count-badge badge-success">\u6C38\u4E45\u8C41\u514D\u62E6\u622A</span>
-            <span class="node-count-badge" id="whitelist-total-badge">\u5171 ${e} \u4E2A\u653E\u884C\u9879</span>
+            <span class="node-count-badge" id="whitelist-total-badge">\u5171 ${t} \u4E2A\u653E\u884C\u9879</span>
           </div>
           <div style="display: flex; gap: 8px;">
             <button type="button" class="btn-action btn-danger" onclick="clearAllWhitelistIPs()">\u{1F5D1}\uFE0F \u6E05\u7A7A\u6240\u6709\u767D\u540D\u5355</button>
@@ -4678,7 +4773,7 @@ async function handleLogout() {
             </button>
           </div>
           <div class="logs-filter-summary">
-            <span id="whitelist-filter-stats">\u663E\u793A <strong>${e}</strong> / \u5171 <strong>${e}</strong> \u4E2A IP</span>
+            <span id="whitelist-filter-stats">\u663E\u793A <strong>${t}</strong> / \u5171 <strong>${t}</strong> \u4E2A IP</span>
           </div>
         </div>
 
@@ -4709,7 +4804,7 @@ async function handleLogout() {
               </tr>
             </thead>
             <tbody id="whitelist-table-body">
-              ${e===0?`
+              ${t===0?`
                 <tr>
                   <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 48px 16px;">
                     <div style="font-size: 32px; margin-bottom: 8px;">\u2728</div>
@@ -4717,7 +4812,7 @@ async function handleLogout() {
                     <div style="font-size: 12px;">\u4F60\u53EF\u4EE5\u4F7F\u7528\u4E0A\u65B9\u7684\u8F93\u5165\u6846\u8F93\u5165 IP \u6216 CIDR \u7F51\u6BB5\u5FEB\u901F\u6DFB\u52A0\u5230\u767D\u540D\u5355</div>
                   </td>
                 </tr>
-              `:t.map((o,n)=>{let a=Xe(o),s=Qe(o);return`
+              `:e.map((o,n)=>{let a=Xe(o),s=Ze(o);return`
                   <tr class="whitelist-table-row" data-index="${n}" data-ip="${a}">
                     <td class="checkbox-cell">
                       <input type="checkbox" class="table-checkbox whitelist-row-checkbox" value="${a}" onchange="updateBatchSelection('whitelist')" />
@@ -4752,7 +4847,7 @@ async function handleLogout() {
         </div>
       </div>
     </section>
-  `}function Ze(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function to(t){return t?t.includes("/")?"CIDR \u7F51\u6BB5":t.includes(":")?"IPv6 \u5355\u673A":"IPv4 \u5355\u673A":"\u672A\u77E5"}function Be(t=[]){let e=t.length;return`
+  `}function Qe(e){return e==null?"":String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function to(e){return e?e.includes("/")?"CIDR \u7F51\u6BB5":e.includes(":")?"IPv6 \u5355\u673A":"IPv4 \u5355\u673A":"\u672A\u77E5"}function Ee(e=[]){let t=e.length;return`
     <!-- \u89C6\u56FE: \u72EC\u7ACB IP \u9ED1\u540D\u5355\u7BA1\u7406 -->
     <section class="tab-content" id="tab-ip-blacklist">
       <div class="section-card">
@@ -4760,7 +4855,7 @@ async function handleLogout() {
           <div class="section-title-group">
             <h2 class="section-title">\u{1F6E1}\uFE0F IP \u8BBF\u95EE\u9ED1\u540D\u5355 / \u5C4F\u853D\u7BA1\u7406</h2>
             <span class="node-count-badge badge-danger">403 \u5F3A\u5236\u963B\u65AD</span>
-            <span class="node-count-badge" id="blacklist-total-badge">\u5171 ${e} \u4E2A\u5C4F\u853D\u9879</span>
+            <span class="node-count-badge" id="blacklist-total-badge">\u5171 ${t} \u4E2A\u5C4F\u853D\u9879</span>
           </div>
           <div style="display: flex; gap: 8px;">
             <button type="button" class="btn-action btn-danger" onclick="clearAllBlockedIPs()">\u{1F5D1}\uFE0F \u6E05\u7A7A\u6240\u6709\u9ED1\u540D\u5355</button>
@@ -4798,7 +4893,7 @@ async function handleLogout() {
             </button>
           </div>
           <div class="logs-filter-summary">
-            <span id="blacklist-filter-stats">\u663E\u793A <strong>${e}</strong> / \u5171 <strong>${e}</strong> \u4E2A IP</span>
+            <span id="blacklist-filter-stats">\u663E\u793A <strong>${t}</strong> / \u5171 <strong>${t}</strong> \u4E2A IP</span>
           </div>
         </div>
 
@@ -4829,7 +4924,7 @@ async function handleLogout() {
               </tr>
             </thead>
             <tbody id="blacklist-table-body">
-              ${e===0?`
+              ${t===0?`
                 <tr>
                   <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 48px 16px;">
                     <div style="font-size: 32px; margin-bottom: 8px;">\u{1F6E1}\uFE0F</div>
@@ -4837,7 +4932,7 @@ async function handleLogout() {
                     <div style="font-size: 12px;">\u4F60\u53EF\u4EE5\u4F7F\u7528\u4E0A\u65B9\u7684\u8F93\u5165\u6846\u8F93\u5165 IP \u6216 CIDR \u7F51\u6BB5\u5FEB\u901F\u5C4F\u853D</div>
                   </td>
                 </tr>
-              `:t.map((o,n)=>{let a=Ze(o),s=to(o);return`
+              `:e.map((o,n)=>{let a=Qe(o),s=to(o);return`
                   <tr class="blacklist-table-row" data-index="${n}" data-ip="${a}">
                     <td class="checkbox-cell">
                       <input type="checkbox" class="table-checkbox blacklist-row-checkbox" value="${a}" onchange="updateBatchSelection('blacklist')" />
@@ -4872,7 +4967,7 @@ async function handleLogout() {
         </div>
       </div>
     </section>
-  `}function ft(t){return t==null?"":String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Ee(t,e=[],o=!0){let n=ft(t||""),a=Array.isArray(e)?e.join(", "):"";return`
+  `}function ht(e){return e==null?"":String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}function Ae(e,t=[],o=!0){let n=ht(e||""),a=Array.isArray(t)?t.join(", "):"";return`
     <!-- \u89C6\u56FE: \u8BA2\u9605\u5B89\u5168\u914D\u7F6E (\u5168\u5C40) -->
     <section class="tab-content" id="tab-security-config">
       <div class="section-card">
@@ -4936,7 +5031,7 @@ async function handleLogout() {
                   <button type="button" class="btn-action btn-danger" style="height: 26px; font-size: 11px; padding: 0 8px;" onclick="clearInput('cfg-allowed-countries')">\u6E05\u7A7A</button>
                 </div>
               </div>
-              <input type="text" id="cfg-allowed-countries" class="form-input" value="${ft(a)}" placeholder="\u4F8B\u5982: CN, HK, TW, JP, SG (\u7559\u7A7A\u5219\u5BF9\u6240\u6709\u56FD\u5BB6/\u5730\u533A\u5F00\u653E)" />
+              <input type="text" id="cfg-allowed-countries" class="form-input" value="${ht(a)}" placeholder="\u4F8B\u5982: CN, HK, TW, JP, SG (\u7559\u7A7A\u5219\u5BF9\u6240\u6709\u56FD\u5BB6/\u5730\u533A\u5F00\u653E)" />
               <p style="font-size: 11px; color: var(--text-muted); margin-top: 5px; line-height: 1.5;">
                 \u57FA\u4E8E Cloudflare \u771F\u5B9E IP \u5730\u7406\u4F4D\u7F6E\u8BC6\u522B\u3002\u586B\u5199 ISO \u4E24\u5B57\u6BCD\u5927\u5199\u4EE3\u7801\uFF08\u591A\u4E2A\u4EE5\u9017\u53F7\u5206\u9694\uFF09\u3002\u7559\u7A7A\u8868\u793A\u5BF9\u6240\u6709\u56FD\u5BB6/\u5730\u533A IP \u5F00\u653E\u3002\u82E5\u67D0\u5206\u7EC4\u914D\u7F6E\u4E86\u4E13\u5C5E\u56FD\u5BB6\u767D\u540D\u5355\uFF0C\u5C06\u4F18\u5148\u91C7\u7528\u5206\u7EC4\u914D\u7F6E\u3002
               </p>
@@ -4955,7 +5050,7 @@ async function handleLogout() {
         </div>
       </div>
     </section>
-  `}function Ae(t={}){let e=t&&(t.enabled===!0||t.enabled==="true"),o=ft(t?.token||""),n=ft(t?.chatId||""),a=ft(t?.apiHost||"https://api.telegram.org");return`
+  `}function Le(e={}){let t=e&&(e.enabled===!0||e.enabled==="true"),o=ht(e?.token||""),n=ht(e?.chatId||""),a=ht(e?.apiHost||"https://api.telegram.org");return`
     <!-- \u89C6\u56FE: TG \u8BA2\u9605\u901A\u77E5 (\u5168\u5C40) -->
     <section class="tab-content" id="tab-tg-config">
       <div class="section-card">
@@ -4989,7 +5084,7 @@ async function handleLogout() {
                 <span>Bot \u51ED\u8BC1\u4E0E\u63A8\u9001\u72B6\u6001</span>
               </div>
               <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-title);">
-                <input type="checkbox" id="cfg-tg-enabled" ${e?"checked":""} style="width: 16px; height: 16px; cursor: pointer;" />
+                <input type="checkbox" id="cfg-tg-enabled" ${t?"checked":""} style="width: 16px; height: 16px; cursor: pointer;" />
                 <span>\u542F\u7528\u901A\u77E5\u63A8\u9001</span>
               </label>
             </div>
@@ -5035,7 +5130,7 @@ async function handleLogout() {
         </div>
       </div>
     </section>
-  `}function Le(t,e,o,n=[],a=[],s=[],i=[],l=[],p=[],c=!0,h={}){return`<!DOCTYPE html>
+  `}function ze(e,t,o,n=[],a=[],s=[],i=[],l=[],p=[],c=!0,m={}){return`<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -5106,7 +5201,7 @@ async function handleLogout() {
     })();
   <\/script>
   <style>
-    ${ke}
+    ${Te}
   </style>
 </head>
 <body>
@@ -5197,13 +5292,13 @@ async function handleLogout() {
     </div>
 
     <div class="content-area">
-      ${Ie(t,e,n)}
-      ${Ce(t,e,a,o)}
-      ${Se(s,i,l)}
-      ${Pe(l)}
-      ${Be(i)}
-      ${Ee(e,p,c)}
-      ${Ae(h)}
+      ${Ce(e,t,n)}
+      ${Se(e,t,a,o)}
+      ${Pe(s,i,l)}
+      ${Be(l)}
+      ${Ee(i)}
+      ${Ae(t,p,c)}
+      ${Le(m)}
     </div>
   </main>
 
@@ -5249,27 +5344,27 @@ async function handleLogout() {
   <script type="application/json" id="data-whitelist-ips">${JSON.stringify(l).replace(/</g,"\\u003c")}<\/script>
 
   <script>
-    ${Te}
+    ${Ie}
   <\/script>
 </body>
-</html>`}var gt=new Map;function eo(t){let e=Date.now(),o=gt.get(t);if(!o||e>o.resetAt){if(o={count:1,resetAt:e+6e4},gt.set(t,o),gt.size>2e3)for(let[n,a]of gt.entries())e>a.resetAt&&gt.delete(n);return{allowed:!0,count:1}}return o.count+=1,o.count>100?{allowed:!1,banned:!0,count:o.count}:o.count>30?{allowed:!1,banned:!1,count:o.count}:{allowed:!0,count:o.count}}function oo(t){let e="";try{e=decodeURIComponent(t.pathname+t.search).toLowerCase()}catch{e=(t.pathname+t.search).toLowerCase()}let o=[{name:"\u654F\u611F\u6269\u5C55\u540D\u626B\u63CF",regex:/\.(php\d?|asp|aspx|jsp|jspx|cgi|sh|bash|sql|bak|swp|zip|tar|gz|rar|7z)(\?|$)/i},{name:"\u5178\u578B\u63A2\u6D4B\u8DEF\u5F84",regex:/(^|\/)(wp-admin|wp-login|wp-content|wordpress|phpmyadmin|pma|adminer|actuator|swagger|api-docs|solr|struts)(\/|$)/i},{name:"\u654F\u611F\u914D\u7F6E\u6587\u4EF6\u626B\u63CF",regex:/(^|\/)(\.env|\.git|\.svn|\.docker|\.aws|\.ssh|\.htaccess|\.config)(\/|$)/i},{name:"\u6CE8\u5165\u7279\u5F81",regex:/(union\s+select|select\s+.*from|exec\s*\(|eval\s*\(|base64_decode|system\s*\(|cmd\.exe|\/bin\/(ba)?sh)/i},{name:"XSS \u8DE8\u7AD9\u7279\u5F81",regex:/(<script|javascript:|alert\(|document\.cookie)/i},{name:"\u8DEF\u5F84\u7A7F\u8D8A\u7279\u5F81",regex:/(\.\.\/|\.\.\\)/}];for(let n of o)if(n.regex.test(e))return n.name;return null}var mt=new Map;function no(t){let e=Date.now(),o=mt.get(t);if(!o||e-o.lastLoggedAt>3e5){let n=o?o.blockedCount:1;if(mt.set(t,{lastLoggedAt:e,blockedCount:1}),mt.size>2e3)for(let[a,s]of mt.entries())e-s.lastLoggedAt>6e5&&mt.delete(a);return{shouldLog:!0,count:n}}return o.blockedCount+=1,{shouldLog:!1,count:o.blockedCount}}var ao=["clash","mihomo","meta","stash","shadowrocket","quantumult","surge","loon","sing-box","singbox","v2ray","v2rayn","v2rayng","v2rayu","v2rayx","xray","nekoray","nekobox","matsuri","hiddify","egern","passwall","openwrt","surfboard","flclash","karing","potatso","pharos","subconverter","leaf","trojan"];function ze({request:t,userAgent:e,isAuthed:o,isWhitelisted:n,groupAllowedCountries:a,globalAllowedCountries:s,proxyClientOnly:i,isLocal:l}){if(o||n||l)return{allowed:!0};if(i){let c=(e||"").toLowerCase();if(!(c?ao.some(u=>c.includes(u)):!1))return{allowed:!1,status:403,reason:"\u975E\u4EE3\u7406\u5BA2\u6237\u7AEF\u62E6\u622A",message:"403 Forbidden"}}let p=Array.isArray(a)&&a.length>0?a:s;if(Array.isArray(p)&&p.length>0){let c=t.cf?(t.cf.country||"").toUpperCase():"";if(!c||!p.includes(c))return{allowed:!1,status:403,reason:`\u56FD\u5BB6\u5730\u533A\u53D7\u9650 [${c||"\u672A\u77E5\u5730\u533A"}]`,message:"403 Forbidden"}}return{allowed:!0}}function J(t){return t?String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"):""}function $e(t,e,o,n){if(!e||!e.enabled||!e.token||!e.chatId)return;let{subType:a,subName:s,ip:i,location:l,ua:p,time:c,viewsInfo:h}=o,u=`\u{1F4E2} <b>\u8BA2\u9605\u62C9\u53D6\u901A\u77E5</b>
+</html>`}var bt=new Map;function eo(e){let t=Date.now(),o=bt.get(e);if(!o||t>o.resetAt){if(o={count:1,resetAt:t+6e4},bt.set(e,o),bt.size>2e3)for(let[n,a]of bt.entries())t>a.resetAt&&bt.delete(n);return{allowed:!0,count:1}}return o.count+=1,o.count>100?{allowed:!1,banned:!0,count:o.count}:o.count>30?{allowed:!1,banned:!1,count:o.count}:{allowed:!0,count:o.count}}function oo(e){let t="";try{t=decodeURIComponent(e.pathname+e.search).toLowerCase()}catch{t=(e.pathname+e.search).toLowerCase()}let o=[{name:"\u654F\u611F\u6269\u5C55\u540D\u626B\u63CF",regex:/\.(php\d?|asp|aspx|jsp|jspx|cgi|sh|bash|sql|bak|swp|zip|tar|gz|rar|7z)(\?|$)/i},{name:"\u5178\u578B\u63A2\u6D4B\u8DEF\u5F84",regex:/(^|\/)(wp-admin|wp-login|wp-content|wordpress|phpmyadmin|pma|adminer|actuator|swagger|api-docs|solr|struts)(\/|$)/i},{name:"\u654F\u611F\u914D\u7F6E\u6587\u4EF6\u626B\u63CF",regex:/(^|\/)(\.env|\.git|\.svn|\.docker|\.aws|\.ssh|\.htaccess|\.config)(\/|$)/i},{name:"\u6CE8\u5165\u7279\u5F81",regex:/(union\s+select|select\s+.*from|exec\s*\(|eval\s*\(|base64_decode|system\s*\(|cmd\.exe|\/bin\/(ba)?sh)/i},{name:"XSS \u8DE8\u7AD9\u7279\u5F81",regex:/(<script|javascript:|alert\(|document\.cookie)/i},{name:"\u8DEF\u5F84\u7A7F\u8D8A\u7279\u5F81",regex:/(\.\.\/|\.\.\\)/}];for(let n of o)if(n.regex.test(t))return n.name;return null}var yt=new Map;function no(e){let t=Date.now(),o=yt.get(e);if(!o||t-o.lastLoggedAt>3e5){let n=o?o.blockedCount:1;if(yt.set(e,{lastLoggedAt:t,blockedCount:1}),yt.size>2e3)for(let[a,s]of yt.entries())t-s.lastLoggedAt>6e5&&yt.delete(a);return{shouldLog:!0,count:n}}return o.blockedCount+=1,{shouldLog:!1,count:o.blockedCount}}var ao=["clash","mihomo","meta","stash","shadowrocket","quantumult","surge","loon","sing-box","singbox","v2ray","v2rayn","v2rayng","v2rayu","v2rayx","xray","nekoray","nekobox","matsuri","hiddify","egern","passwall","openwrt","surfboard","flclash","karing","potatso","pharos","subconverter","leaf","trojan"];function $e({request:e,userAgent:t,isAuthed:o,isWhitelisted:n,groupAllowedCountries:a,globalAllowedCountries:s,proxyClientOnly:i,isLocal:l}){if(o||n||l)return{allowed:!0};if(i){let c=(t||"").toLowerCase();if(!(c?ao.some(u=>c.includes(u)):!1))return{allowed:!1,status:403,reason:"\u975E\u4EE3\u7406\u5BA2\u6237\u7AEF\u62E6\u622A",message:"403 Forbidden"}}let p=Array.isArray(a)&&a.length>0?a:s;if(Array.isArray(p)&&p.length>0){let c=e.cf?(e.cf.country||"").toUpperCase():"";if(!c||!p.includes(c))return{allowed:!1,status:403,reason:`\u56FD\u5BB6\u5730\u533A\u53D7\u9650 [${c||"\u672A\u77E5\u5730\u533A"}]`,message:"403 Forbidden"}}return{allowed:!0}}function K(e){return e?String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"):""}function Ne(e,t,o,n){if(!t||!t.enabled||!t.token||!t.chatId)return;let{subType:a,subName:s,ip:i,location:l,ua:p,time:c,viewsInfo:m}=o,u=`\u{1F4E2} <b>\u8BA2\u9605\u62C9\u53D6\u901A\u77E5</b>
 
-\u{1F4CC} <b>\u8BA2\u9605\u7C7B\u578B:</b> ${J(a)}
-`+(s?`\u{1F3F7}\uFE0F <b>\u8BA2\u9605\u540D\u79F0:</b> ${J(s)}
-`:"")+`\u{1F310} <b>\u5BA2\u6237\u7AEF IP:</b> <code>${J(i)}</code>
-\u{1F4CD} <b>\u5730\u7406\u4F4D\u7F6E:</b> ${J(l||"\u672A\u77E5")}
-`+(h?`\u{1F4CA} <b>\u8BBF\u95EE\u7EDF\u8BA1:</b> ${J(h)}
-`:"")+`\u23F0 <b>\u62C9\u53D6\u65F6\u95F4:</b> ${J(c)}
-\u{1F4F1} <b>User-Agent:</b> <code>${J(p||"\u672A\u77E5")}</code>`,m=Dt(t,u,e);n&&n.waitUntil?n.waitUntil(m):m.catch(v=>console.error("[TG Notify Error]:",v))}var Ro={async fetch(t,e,o){try{let Mt=function(r){try{let d=new URL(r);if(d.protocol!=="http:"&&d.protocol!=="https:")return!1;let g=d.hostname.toLowerCase();return!(g==="localhost"||g==="0.0.0.0"||g==="::1"||g==="[::1]"||g.startsWith("127.")||g.startsWith("10.")||g.startsWith("192.168.")||g.startsWith("169.254.")||/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(g)||g.startsWith("fc")||g.startsWith("fd")||g.startsWith("fe80:"))}catch{return!1}},n=new URL(t.url),a=(e.ADMIN||"").trim(),s=a?await Jt(a):"",i=!!(e.KV&&typeof e.KV.get=="function"),l=!!a;if(n.pathname==="/favicon.ico"||n.pathname.startsWith("/favicon")||n.pathname.startsWith("/apple-touch-icon")||n.pathname==="/site.webmanifest"||n.pathname==="/browserconfig.xml")return new Response(null,{status:204});if(n.pathname==="/robots.txt")return new Response(`User-agent: *
+\u{1F4CC} <b>\u8BA2\u9605\u7C7B\u578B:</b> ${K(a)}
+`+(s?`\u{1F3F7}\uFE0F <b>\u8BA2\u9605\u540D\u79F0:</b> ${K(s)}
+`:"")+`\u{1F310} <b>\u5BA2\u6237\u7AEF IP:</b> <code>${K(i)}</code>
+\u{1F4CD} <b>\u5730\u7406\u4F4D\u7F6E:</b> ${K(l||"\u672A\u77E5")}
+`+(m?`\u{1F4CA} <b>\u8BBF\u95EE\u7EDF\u8BA1:</b> ${K(m)}
+`:"")+`\u23F0 <b>\u62C9\u53D6\u65F6\u95F4:</b> ${K(c)}
+\u{1F4F1} <b>User-Agent:</b> <code>${K(p||"\u672A\u77E5")}</code>`,h=Vt(e,u,t);n&&n.waitUntil?n.waitUntil(h):h.catch(k=>console.error("[TG Notify Error]:",k))}var Wo={async fetch(e,t,o){try{let Lt=function(r){try{let d=new URL(r);if(d.protocol!=="http:"&&d.protocol!=="https:")return!1;let f=d.hostname.toLowerCase();return!(f==="localhost"||f==="0.0.0.0"||f==="::1"||f==="[::1]"||f.startsWith("127.")||f.startsWith("10.")||f.startsWith("192.168.")||f.startsWith("169.254.")||/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(f)||f.startsWith("fc")||f.startsWith("fd")||f.startsWith("fe80:"))}catch{return!1}},n=new URL(e.url),a=(t.ADMIN||"").trim(),s=a?await qt(a):"",i=!!(t.KV&&typeof t.KV.get=="function"),l=!!a;if(n.pathname==="/favicon.ico"||n.pathname.startsWith("/favicon")||n.pathname.startsWith("/apple-touch-icon")||n.pathname==="/site.webmanifest"||n.pathname==="/browserconfig.xml")return new Response(null,{status:204});if(n.pathname==="/robots.txt")return new Response(`User-agent: *
 Disallow: /
-`,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8"}});let p=t.headers.get("x-forwarded-for")||"",c=t.headers.get("CF-Connecting-IP")||(p?p.split(",")[0].trim():"")||"127.0.0.1",h=t.cf?`${t.cf.country||"Global"} ${t.cf.city||""}`.trim():"Local",u=t.headers.get("User-Agent")||"",m=new Date().toLocaleString("zh-CN",{timeZone:"Asia/Shanghai",hour12:!1}),w=n.protocol==="https:"?"; Secure":"",I=Kt(t,"auth_session"),f=await le(e,I,s,a),B=()=>me(e,k,$),_=(r,d)=>he(r,d,e,k,N),K=()=>ce(e,s);async function X(r){if(!f||!a)return r;try{let d=await K(),g=new Headers(r.headers);return g.set("Set-Cookie",`auth_session=${d}; Path=/; HttpOnly${w}; SameSite=Lax; Max-Age=600`),new Response(r.body,{status:r.status,statusText:r.statusText,headers:g})}catch{return r}}let[G,z]=await Promise.all([ne(e),ct(e)]),j=zt(c),D=lt(c,G),St=!j&&lt(c,z);if(!D&&St){let r=no(c);if(r.shouldLog){let d=r.count>1?`\u{1F6AB} IP\u62E6\u622A\u62D2\u7EDD (\u8FD15\u5206\u949F\u7D2F\u8BA1\u62E6\u622A ${r.count} \u6B21)`:"\u{1F6AB} IP\u62E6\u622A\u62D2\u7EDD",g=O(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:d,ua:u});o&&o.waitUntil?o.waitUntil(g):await g}return new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}if(!D){let r=oo(n);if(r){!lt(c,z)&&!j&&(z.push(c),await Y(e,z));let d=O(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:`\u{1F6AB} \u89E6\u53D1 WAF \u5A01\u80C1\u6307\u7EB9\u963B\u65AD [${r}] (${n.pathname})\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(d):await d,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}if(!j&&!f){let d=eo(c);if(!d.allowed)if(d.banned){!lt(c,z)&&!j&&(z.push(c),await Y(e,z));let g=O(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:`\u{1F6AB} \u89E6\u53D1 CC \u5237\u9891\u6076\u610F\u653B\u51FB (${d.count} \u6B21/\u5206)\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(g):await g,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}else{let g=O(e,{time:m,ip:c,location:h,status:429,path:n.pathname,type:`\u26A0\uFE0F \u89E6\u53D1\u9AD8\u9891\u9650\u6D41\u4FDD\u62A4 (${d.count} \u6B21/\u5206)`,ua:u});return o&&o.waitUntil?o.waitUntil(g):await g,new Response("429 Too Many Requests",{status:429,headers:{"Content-Type":"text/plain; charset=utf-8","Retry-After":"60"}})}}}async function ht(r){let d=await de(e,c);if(d>=3&&!D){!lt(c,z)&&!j&&(z.push(c),await Y(e,z));let y=O(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:`\u{1F6AB} \u8BA2\u9605\u4EE4\u724C\u66B4\u529B\u7834\u89E3\u5C1D\u8BD5\u8FDE\u7EED\u8FBE 3 \u6B21 (${r})\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(y):await y,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let g=Math.max(0,3-d),b=O(e,{time:m,ip:c,location:h,status:401,path:n.pathname,type:`\u{1F512} ${r}\u9274\u6743\u672A\u901A\u8FC7 (\u7B2C ${d} \u6B21\u5931\u8D25${D?"\uFF0C\u767D\u540D\u5355\u8C41\u514D":`\uFF0C\u5269\u4F59 ${g} \u6B21\u5C06\u88AB\u6C38\u4E45\u5C01\u7981`})`,ua:u});return o&&o.waitUntil?o.waitUntil(b):await b,new Response("401 Unauthorized",{status:401,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let[F,Q,W,H,M,nt,dt,at]=await Promise.all([qt(e),Gt(e),Yt(e),Xt(e),Qt(e),Zt(e),ee(e),Nt(e)]),bt=n.pathname.replace(/^\/+|\/+$/g,""),E=W.find(r=>r.id.toLowerCase()===bt.toLowerCase());if(E){let r=ze({request:t,userAgent:u,isAuthed:f,isWhitelisted:D,groupAllowedCountries:E.allowedCountries,globalAllowedCountries:nt,proxyClientOnly:dt,isLocal:j});if(!r.allowed){let C=O(e,{time:m,ip:c,location:h,status:r.status,path:n.pathname,type:`\u{1F6AB} \u666E\u901A\u8BA2\u9605\u62E6\u622A [${r.reason}]`,ua:u});return o&&o.waitUntil?o.waitUntil(C):await C,new Response(r.message,{status:r.status,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let d=n.searchParams.get("token")||n.searchParams.get("pwd")||"";if(M&&!f&&d!==M)return ht("\u666E\u901A\u8BA2\u9605");let g=$t(e,c);o&&o.waitUntil?o.waitUntil(g):await g;let b=E.maxViews!==void 0&&E.maxViews!==null&&E.maxViews>0?E.maxViews:0,y=(E.views||0)+1;if(b>0&&y>=b){let C=W.filter(Pt=>Pt.id.toLowerCase()!==E.id.toLowerCase()),Z=st(e,C);o&&o.waitUntil?o.waitUntil(Z):await Z}else{E.views=y;let C=st(e,W);o&&o.waitUntil?o.waitUntil(C):await C}let P=O(e,{time:m,ip:c,location:h,status:200,path:n.pathname,type:`\u666E\u901A\u8BA2\u9605 [${E.name||E.id}]`,ua:u});o&&o.waitUntil?o.waitUntil(P):await P,$e(e,at,{subType:"\u72EC\u7ACB\u666E\u901A\u8BA2\u9605",subName:E.name||E.id,ip:c,location:h,ua:u,time:m,viewsInfo:b>0?`${y} / ${b} \u6B21 (\u9605\u540E\u5373\u711A)`:`${y} \u6B21`},o);let U=n.searchParams.get("format")||"base64",V=Ot(E.nodes);if(V.length===0)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let A=V.join(`
-`),R=U==="raw"?A:xt(A);return new Response(R,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate, max-age=0",Pragma:"no-cache","Access-Control-Allow-Origin":"*","Subscription-Userinfo":"upload=0; download=0; total=1073741824000; expire=0","Profile-Update-Interval":"24"}})}let S=H.find(r=>r.id.toLowerCase()===bt.toLowerCase());if(S){let r=ze({request:t,userAgent:u,isAuthed:f,isWhitelisted:D,groupAllowedCountries:S.allowedCountries,globalAllowedCountries:nt,proxyClientOnly:dt,isLocal:j});if(!r.allowed){let R=O(e,{time:m,ip:c,location:h,status:r.status,path:n.pathname,type:`\u{1F6AB} CF\u4F18\u9009\u8BA2\u9605\u62E6\u622A [${r.reason}]`,ua:u});return o&&o.waitUntil?o.waitUntil(R):await R,new Response(r.message,{status:r.status,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let d=n.searchParams.get("token")||n.searchParams.get("pwd")||"";if(M&&!f&&d!==M)return ht("CF\u4F18\u9009\u8BA2\u9605");let g=$t(e,c);o&&o.waitUntil?o.waitUntil(g):await g;let b=S.maxViews!==void 0&&S.maxViews!==null&&S.maxViews>0?S.maxViews:0,y=(S.views||0)+1;if(b>0&&y>=b){let R=H.filter(Z=>Z.id.toLowerCase()!==S.id.toLowerCase()),C=it(e,R);o&&o.waitUntil?o.waitUntil(C):await C}else{S.views=y;let R=it(e,H);o&&o.waitUntil?o.waitUntil(R):await R}let P=O(e,{time:m,ip:c,location:h,status:200,path:n.pathname,type:`CF\u4F18\u9009\u8BA2\u9605 [${S.name||S.id}]`,ua:u});o&&o.waitUntil?o.waitUntil(P):await P,$e(e,at,{subType:"\u72EC\u7ACB CF \u4F18\u9009\u8BA2\u9605",subName:S.name||S.id,ip:c,location:h,ua:u,time:m,viewsInfo:b>0?`${y} / ${b} \u6B21 (\u9605\u540E\u5373\u711A)`:`${y} \u6B21`},o);let U=n.searchParams.get("format")||"base64",V=S.baseVless&&S.baseVless.trim()?S.baseVless.trim():Q,A=F;if(Array.isArray(S.sources)&&S.sources.length>0)if(typeof S.sources[0]=="object")A=S.sources;else{let R=S.sources.map(C=>String(C).toLowerCase());A=F.filter(C=>C&&C.id&&R.includes(String(C.id).toLowerCase())),A.length===0&&(A=F)}return await Ut(V,A,U)}if(n.pathname.startsWith("/api/")&&n.pathname!=="/api/captcha"){if(!f){if(!D){let d=await ct(e);!d.includes(c)&&!j&&(d.push(c),await Y(e,d))}let r=O(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:"\u{1F6AB} \u672A\u7ECF\u767B\u5F55\u8D8A\u6743\u63A2\u6D4BAPI\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981",ua:u});return o&&o.waitUntil?o.waitUntil(r):await r,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}if(!i||!l)return new Response(JSON.stringify({success:!1,error:"\u7CFB\u7EDF\u5C1A\u672A\u5B8C\u6210\u521D\u59CB\u5316\u914D\u7F6E"}),{status:500,headers:{"Content-Type":"application/json; charset=utf-8"}})}async function x(r,d=200){let g=typeof r=="string"?r:JSON.stringify(r);return X(new Response(g,{status:d,headers:{"Content-Type":"application/json; charset=utf-8"}}))}if(n.pathname==="/api/session-ping"&&t.method==="POST")return f?x({success:!0}):new Response("Unauthorized",{status:401});if(n.pathname==="/api/security-config"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json();return await At(e,r.token||""),r.allowedCountries!==void 0&&await te(e,r.allowedCountries),r.proxyClientOnly!==void 0&&await oe(e,r.proxyClientOnly),x({success:!0})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/tg-config"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json();return await fe(e,{enabled:!!r.enabled,token:(r.token||"").trim(),chatId:(r.chatId||"").trim(),apiHost:(r.apiHost||"").trim()||"https://api.telegram.org"}),x({success:!0})}catch(r){return x({error:r.message||"Invalid JSON payload"},400)}}if(n.pathname==="/api/test-tg-notify"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d={enabled:!0,force:!0,token:(r.token||"").trim(),chatId:(r.chatId||"").trim(),apiHost:(r.apiHost||"").trim()||"https://api.telegram.org"};if(!d.token||!d.chatId)return x({error:"Bot Token \u548C Chat ID \u4E0D\u80FD\u4E3A\u7A7A"},400);let g=`\u{1F389} <b>Telegram \u8BA2\u9605\u901A\u77E5\u8FDE\u901A\u6027\u6D4B\u8BD5\u6210\u529F\uFF01</b>
+`,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8"}});let p=e.headers.get("x-forwarded-for")||"",c=e.headers.get("CF-Connecting-IP")||(p?p.split(",")[0].trim():"")||"127.0.0.1",m=e.cf?`${e.cf.country||"Global"} ${e.cf.city||""}`.trim():"Local",u=e.headers.get("User-Agent")||"",h=new Date().toLocaleString("zh-CN",{timeZone:"Asia/Shanghai",hour12:!1}),v=n.protocol==="https:"?"; Secure":"",C=Yt(e,"auth_session"),g=await ue(t,C,s,a),E=()=>ye(t,T,N),_=(r,d)=>xe(r,d,t,T,D),G=()=>pe(t,s);async function Q(r){if(!g||!a)return r;try{let d=await G(),f=new Headers(r.headers);return f.set("Set-Cookie",`auth_session=${d}; Path=/; HttpOnly${v}; SameSite=Lax; Max-Age=600`),new Response(r.body,{status:r.status,statusText:r.statusText,headers:f})}catch{return r}}let[q,$]=await Promise.all([ie(t),lt(t)]),F=Tt(c),R=ot(c,q),At=!F&&ot(c,$);if(!R&&At){let r=no(c);if(r.shouldLog){let d=r.count>1?`\u{1F6AB} IP\u62E6\u622A\u62D2\u7EDD (\u8FD15\u5206\u949F\u7D2F\u8BA1\u62E6\u622A ${r.count} \u6B21)`:"\u{1F6AB} IP\u62E6\u622A\u62D2\u7EDD",f=U(t,{time:h,ip:c,location:m,status:403,path:n.pathname,type:d,ua:u});o&&o.waitUntil?o.waitUntil(f):await f}return new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}if(!R){let r=oo(n);if(r){!ot(c,$)&&!F&&($.push(c),await Z(t,$));let d=U(t,{time:h,ip:c,location:m,status:403,path:n.pathname,type:`\u{1F6AB} \u89E6\u53D1 WAF \u5A01\u80C1\u6307\u7EB9\u963B\u65AD [${r}] (${n.pathname})\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(d):await d,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}if(!F&&!g){let d=eo(c);if(!d.allowed)if(d.banned){!ot(c,$)&&!F&&($.push(c),await Z(t,$));let f=U(t,{time:h,ip:c,location:m,status:403,path:n.pathname,type:`\u{1F6AB} \u89E6\u53D1 CC \u5237\u9891\u6076\u610F\u653B\u51FB (${d.count} \u6B21/\u5206)\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(f):await f,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}else{let f=U(t,{time:h,ip:c,location:m,status:429,path:n.pathname,type:`\u26A0\uFE0F \u89E6\u53D1\u9AD8\u9891\u9650\u6D41\u4FDD\u62A4 (${d.count} \u6B21/\u5206)`,ua:u});return o&&o.waitUntil?o.waitUntil(f):await f,new Response("429 Too Many Requests",{status:429,headers:{"Content-Type":"text/plain; charset=utf-8","Retry-After":"60"}})}}}async function xt(r){let d=await fe(t,c);if(d>=3&&!R){!ot(c,$)&&!F&&($.push(c),await Z(t,$));let w=U(t,{time:h,ip:c,location:m,status:403,path:n.pathname,type:`\u{1F6AB} \u8BA2\u9605\u4EE4\u724C\u66B4\u529B\u7834\u89E3\u5C1D\u8BD5\u8FDE\u7EED\u8FBE 3 \u6B21 (${r})\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(w):await w,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let f=Math.max(0,3-d),y=U(t,{time:h,ip:c,location:m,status:401,path:n.pathname,type:`\u{1F512} ${r}\u9274\u6743\u672A\u901A\u8FC7 (\u7B2C ${d} \u6B21\u5931\u8D25${R?"\uFF0C\u767D\u540D\u5355\u8C41\u514D":`\uFF0C\u5269\u4F59 ${f} \u6B21\u5C06\u88AB\u6C38\u4E45\u5C01\u7981`})`,ua:u});return o&&o.waitUntil?o.waitUntil(y):await y,new Response("401 Unauthorized",{status:401,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let[W,tt,H,J,j,at,dt,st]=await Promise.all([Zt(t),Xt(t),Qt(t),te(t),ee(t),oe(t),ae(t),Mt(t)]),wt=n.pathname.replace(/^\/+|\/+$/g,""),A=H.find(r=>r.id.toLowerCase()===wt.toLowerCase());if(A){let r=$e({request:e,userAgent:u,isAuthed:g,isWhitelisted:R,groupAllowedCountries:A.allowedCountries,globalAllowedCountries:at,proxyClientOnly:dt,isLocal:F});if(!r.allowed){let B=U(t,{time:h,ip:c,location:m,status:r.status,path:n.pathname,type:`\u{1F6AB} \u666E\u901A\u8BA2\u9605\u62E6\u622A [${r.reason}]`,ua:u});return o&&o.waitUntil?o.waitUntil(B):await B,new Response(r.message,{status:r.status,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let d=n.searchParams.get("token")||n.searchParams.get("pwd")||"";if(j&&!g&&d!==j)return xt("\u666E\u901A\u8BA2\u9605");let f=Ut(t,c);o&&o.waitUntil?o.waitUntil(f):await f;let y=A.maxViews!==void 0&&A.maxViews!==null&&A.maxViews>0?A.maxViews:0,w=(A.views||0)+1;if(y>0&&w>=y){let B=H.filter(zt=>zt.id.toLowerCase()!==A.id.toLowerCase()),x=it(t,B);o&&o.waitUntil?o.waitUntil(x):await x}else{A.views=w;let B=it(t,H);o&&o.waitUntil?o.waitUntil(B):await B}let P=U(t,{time:h,ip:c,location:m,status:200,path:n.pathname,type:`\u666E\u901A\u8BA2\u9605 [${A.name||A.id}]`,ua:u});o&&o.waitUntil?o.waitUntil(P):await P,Ne(t,st,{subType:"\u72EC\u7ACB\u666E\u901A\u8BA2\u9605",subName:A.name||A.id,ip:c,location:m,ua:u,time:h,viewsInfo:y>0?`${w} / ${y} \u6B21 (\u9605\u540E\u5373\u711A)`:`${w} \u6B21`},o);let M=n.searchParams.get("format")||"base64",V=_t(A.nodes);if(V.length===0)return new Response("404 Not Found",{status:404,headers:{"Content-Type":"text/plain; charset=utf-8"}});let O=V.join(`
+`),L=M==="raw"?O:pt(O);return new Response(L,{status:200,headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store, no-cache, must-revalidate, max-age=0",Pragma:"no-cache","Access-Control-Allow-Origin":"*","Subscription-Userinfo":"upload=0; download=0; total=1073741824000; expire=0","Profile-Update-Interval":"24"}})}let S=J.find(r=>r.id.toLowerCase()===wt.toLowerCase());if(S){let r=$e({request:e,userAgent:u,isAuthed:g,isWhitelisted:R,groupAllowedCountries:S.allowedCountries,globalAllowedCountries:at,proxyClientOnly:dt,isLocal:F});if(!r.allowed){let L=U(t,{time:h,ip:c,location:m,status:r.status,path:n.pathname,type:`\u{1F6AB} CF\u4F18\u9009\u8BA2\u9605\u62E6\u622A [${r.reason}]`,ua:u});return o&&o.waitUntil?o.waitUntil(L):await L,new Response(r.message,{status:r.status,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let d=n.searchParams.get("token")||n.searchParams.get("pwd")||"";if(j&&!g&&d!==j)return xt("CF\u4F18\u9009\u8BA2\u9605");let f=Ut(t,c);o&&o.waitUntil?o.waitUntil(f):await f;let y=S.maxViews!==void 0&&S.maxViews!==null&&S.maxViews>0?S.maxViews:0,w=(S.views||0)+1;if(y>0&&w>=y){let L=J.filter(x=>x.id.toLowerCase()!==S.id.toLowerCase()),B=rt(t,L);o&&o.waitUntil?o.waitUntil(B):await B}else{S.views=w;let L=rt(t,J);o&&o.waitUntil?o.waitUntil(L):await L}let P=U(t,{time:h,ip:c,location:m,status:200,path:n.pathname,type:`CF\u4F18\u9009\u8BA2\u9605 [${S.name||S.id}]`,ua:u});o&&o.waitUntil?o.waitUntil(P):await P,Ne(t,st,{subType:"\u72EC\u7ACB CF \u4F18\u9009\u8BA2\u9605",subName:S.name||S.id,ip:c,location:m,ua:u,time:h,viewsInfo:y>0?`${w} / ${y} \u6B21 (\u9605\u540E\u5373\u711A)`:`${w} \u6B21`},o);let M=n.searchParams.get("format")||"base64",V=S.baseVless&&S.baseVless.trim()?S.baseVless.trim():tt,O=W;if(Array.isArray(S.sources)&&S.sources.length>0)if(typeof S.sources[0]=="object")O=S.sources;else{let L=S.sources.map(B=>String(B).toLowerCase());O=W.filter(B=>B&&B.id&&L.includes(String(B.id).toLowerCase())),O.length===0&&(O=W)}return await jt(V,O,M)}if(n.pathname.startsWith("/api/")&&n.pathname!=="/api/captcha"){if(!g){if(!R){let d=await lt(t);!d.includes(c)&&!F&&(d.push(c),await Z(t,d))}let r=U(t,{time:h,ip:c,location:m,status:403,path:n.pathname,type:"\u{1F6AB} \u672A\u7ECF\u767B\u5F55\u8D8A\u6743\u63A2\u6D4BAPI\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981",ua:u});return o&&o.waitUntil?o.waitUntil(r):await r,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}if(!i||!l)return new Response(JSON.stringify({success:!1,error:"\u7CFB\u7EDF\u5C1A\u672A\u5B8C\u6210\u521D\u59CB\u5316\u914D\u7F6E"}),{status:500,headers:{"Content-Type":"application/json; charset=utf-8"}})}async function b(r,d=200){let f=typeof r=="string"?r:JSON.stringify(r);return Q(new Response(f,{status:d,headers:{"Content-Type":"application/json; charset=utf-8"}}))}if(n.pathname==="/api/session-ping"&&e.method==="POST")return g?b({success:!0}):new Response("Unauthorized",{status:401});if(n.pathname==="/api/security-config"&&e.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await e.json();return await Rt(t,r.token||""),r.allowedCountries!==void 0&&await ne(t,r.allowedCountries),r.proxyClientOnly!==void 0&&await se(t,r.proxyClientOnly),b({success:!0})}catch{return b({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/tg-config"&&e.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await e.json();return await he(t,{enabled:!!r.enabled,token:(r.token||"").trim(),chatId:(r.chatId||"").trim(),apiHost:(r.apiHost||"").trim()||"https://api.telegram.org"}),b({success:!0})}catch(r){return b({error:r.message||"Invalid JSON payload"},400)}}if(n.pathname==="/api/test-tg-notify"&&e.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await e.json(),d={enabled:!0,force:!0,token:(r.token||"").trim(),chatId:(r.chatId||"").trim(),apiHost:(r.apiHost||"").trim()||"https://api.telegram.org"};if(!d.token||!d.chatId)return b({error:"Bot Token \u548C Chat ID \u4E0D\u80FD\u4E3A\u7A7A"},400);let f=`\u{1F389} <b>Telegram \u8BA2\u9605\u901A\u77E5\u8FDE\u901A\u6027\u6D4B\u8BD5\u6210\u529F\uFF01</b>
 
 \u{1F4E1} <b>\u63A8\u9001\u670D\u52A1:</b> CF Workers \u8BA2\u9605\u901A\u77E5\u5F15\u64CE
-\u{1F310} <b>\u53D1\u8D77 IP:</b> <code>${J(c)}</code>
-\u{1F4CD} <b>\u53D1\u8D77\u4F4D\u7F6E:</b> ${J(h)}
-\u23F0 <b>\u6D4B\u8BD5\u65F6\u95F4:</b> ${J(m)}
-\u{1F4AC} <b>Chat ID:</b> <code>${J(d.chatId)}</code>
+\u{1F310} <b>\u53D1\u8D77 IP:</b> <code>${K(c)}</code>
+\u{1F4CD} <b>\u53D1\u8D77\u4F4D\u7F6E:</b> ${K(m)}
+\u23F0 <b>\u6D4B\u8BD5\u65F6\u95F4:</b> ${K(h)}
+\u{1F4AC} <b>Chat ID:</b> <code>${K(d.chatId)}</code>
 
-\u2705 \u673A\u5668\u4EBA\u914D\u7F6E\u6B63\u786E\uFF0C\u5F53\u6709\u5BA2\u6237\u7AEF\u62C9\u53D6\u8282\u70B9\u8BA2\u9605\u65F6\uFF0C\u5C06\u4F1A\u5728\u6B64\u5904\u5B9E\u65F6\u6536\u5230\u63A8\u9001\uFF01`,b=await Dt(e,g,d);return x(b,b.success?200:400)}catch(r){return x({error:r.message},500)}}let _t=["api","login","logout","favicon.ico","robots.txt","sub","assets","static","dashboard"];if(n.pathname==="/api/custom-groups"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=(r.id||"").trim()||rt(12,33),g=(r.name||"").trim();if(!g)return x({error:"\u8BA2\u9605\u540D\u79F0\u4E0D\u80FD\u4E3A\u7A7A"},400);if(_t.includes(d.toLowerCase()))return x({error:"\u6B64\u8BA2\u9605 ID \u4E3A\u7CFB\u7EDF\u4FDD\u7559\u5173\u952E\u5B57\uFF0C\u8BF7\u4F7F\u7528\u5176\u4ED6\u540D\u79F0"},400);let b=W.find(C=>C.id.toLowerCase()===d),y=W.filter(C=>C.id.toLowerCase()!==d),P=typeof r.maxViews=="number"?r.maxViews:parseInt(r.maxViews,10),U=!isNaN(P)&&P>0?Math.min(999,Math.max(0,P)):0,V=0;b&&b.maxViews===U?V=b.views||0:V=0;let A=Ot(r.nodes||"").join(`
-`),R=Array.isArray(r.allowedCountries)?r.allowedCountries.map(C=>String(C).trim().toUpperCase()).filter(Boolean):typeof r.allowedCountries=="string"?r.allowedCountries.split(",").map(C=>C.trim().toUpperCase()).filter(Boolean):[];return y.push({id:d,name:g,maxViews:U,views:V,nodes:A,allowedCountries:R}),await st(e,y),x({success:!0,id:d,group:{id:d,name:g}})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/custom-groups/batch-delete"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=(Array.isArray(r.ids)?r.ids:[]).map(b=>String(b).toLowerCase().trim()),g=W.filter(b=>!d.includes(b.id.toLowerCase()));return await st(e,g),x({success:!0,count:d.length})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname.startsWith("/api/custom-groups/")&&t.method==="DELETE"){if(!f)return new Response("Unauthorized",{status:401});let r=decodeURIComponent(n.pathname.replace("/api/custom-groups/","")).toLowerCase(),d=W.filter(g=>g.id!==r);return await st(e,d),x({success:!0})}if(n.pathname==="/api/cf-groups"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json();if(!r.name)return x({error:"\u7F3A\u5C11\u5FC5\u586B\u5B57\u6BB5"},400);let d=(r.id||"").trim()||rt(12,33);if(_t.includes(d.toLowerCase()))return x({error:"\u6B64\u8BA2\u9605 ID \u4E3A\u7CFB\u7EDF\u4FDD\u7559\u5173\u952E\u5B57\uFF0C\u8BF7\u4F7F\u7528\u5176\u4ED6\u540D\u79F0"},400);let g=H.find(A=>A.id===d),b=H.filter(A=>A.id!==d),y=typeof r.maxViews=="number"?r.maxViews:parseInt(r.maxViews,10),P=!isNaN(y)&&y>0?Math.min(999,Math.max(0,y)):0,U=0;g&&g.maxViews===P?U=g.views||0:U=0;let V=Array.isArray(r.allowedCountries)?r.allowedCountries.map(A=>String(A).trim().toUpperCase()).filter(Boolean):typeof r.allowedCountries=="string"?r.allowedCountries.split(",").map(A=>A.trim().toUpperCase()).filter(Boolean):[];return b.push({id:d,name:r.name,maxViews:P,views:U,baseVless:r.baseVless||"",sources:Array.isArray(r.sources)?r.sources:[],allowedCountries:V}),await it(e,b),x({success:!0,id:d,group:{id:d,name:r.name}})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/cf-groups/batch-delete"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=(Array.isArray(r.ids)?r.ids:[]).map(b=>String(b).toLowerCase().trim()),g=H.filter(b=>!d.includes(b.id.toLowerCase()));return await it(e,g),x({success:!0,count:d.length})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname.startsWith("/api/cf-groups/")&&t.method==="DELETE"){if(!f)return new Response("Unauthorized",{status:401});let r=decodeURIComponent(n.pathname.replace("/api/cf-groups/","")).toLowerCase(),d=H.filter(g=>g.id!==r);return await it(e,d),x({success:!0})}if(n.pathname==="/api/sources"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json();if(r.sources&&Array.isArray(r.sources)){let y=r.sources.filter(P=>P&&P.url&&Mt(P.url.trim())).map((P,U)=>({id:(P.id||"src_"+(U+1)).toLowerCase().trim(),name:P.name||"\u4F18\u9009\u6E90 "+(U+1),url:P.url.trim(),enabled:P.enabled!==!1}));return await wt(e,y),x({success:!0,count:y.length})}if(!r.name||!r.url)return x({error:"\u7F3A\u5C11\u5FC5\u586B\u5B57\u6BB5\uFF08\u540D\u79F0\u548C\u5730\u5740\u4E3A\u5FC5\u586B\uFF09"},400);if(!Mt(r.url.trim()))return x({error:"\u4F18\u9009\u6E90\u5730\u5740\u5FC5\u987B\u4E3A\u5408\u6CD5\u7684\u516C\u5171 HTTP/HTTPS \u5730\u5740\uFF0C\u7981\u6B62\u79C1\u6709\u7F51\u7EDC\u5730\u5740"},400);let d=(r.id||"src_"+rt(8,25)).toLowerCase().trim(),g=F.filter(y=>y.id!==d),b={id:d,name:r.name.trim(),url:r.url.trim(),enabled:!0};return g.push(b),await wt(e,g),x({success:!0,source:b})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname.startsWith("/api/sources/")&&t.method==="DELETE"){if(!f)return new Response("Unauthorized",{status:401});let r=decodeURIComponent(n.pathname.replace("/api/sources/","")).toLowerCase(),d=F.filter(g=>g.id!==r);return await wt(e,d),x({success:!0})}if(n.pathname==="/api/test-cf-nodes"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=r.baseVless||Q||e.BASE_VLESS||"",g=F;Array.isArray(r.sources)&&r.sources.length>0&&(g=r.sources);let b=await Ut(d,g,"raw"),y=await b.text();return x({success:b.ok,status:b.status,content:y},b.status)}catch(r){return x({success:!1,content:"\u751F\u6210\u6D4B\u8BD5\u8282\u70B9\u5931\u8D25: "+(r.message||String(r))},500)}}if(n.pathname==="/api/blocked-ips"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=Array.isArray(r.ips)?r.ips.map(y=>String(y).trim()).filter(y=>y&&!zt(y)):[],b=(await ct(e)).filter(y=>!d.includes(y));for(let y of b)await Lt(e,y);return await Y(e,d),x({success:!0,count:d.length})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/whitelist-ips"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=Array.isArray(r.ips)?r.ips.map(g=>String(g).trim()).filter(Boolean):[];return await ae(e,d),x({success:!0,count:d.length})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/logs/batch-delete"&&t.method==="POST"){if(!f)return new Response("Unauthorized",{status:401});try{let r=await t.json(),d=(Array.isArray(r.indices)?r.indices:[]).map(Number),b=(await vt(e)).filter((y,P)=>y&&!d.includes(P));return await se(e,b),x({success:!0,count:d.length})}catch{return x({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/clear-logs"&&t.method==="POST")return f?(await ie(e),x({success:!0})):new Response("Unauthorized",{status:401});if(n.pathname==="/api/captcha"){let{svgDataUri:r,captchaToken:d}=await B();return new Response(JSON.stringify({svg:r,token:d}),{headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}})}if(n.pathname==="/login"&&t.method==="POST"){if(!i||!l)return new Response(Ct({hasKV:i,hasAdmin:l}),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}});try{let r=await kt(e,c);if(!j&&!D&&r.count>=3&&r.lockSeconds>0){let{svgDataUri:tt,captchaToken:yt}=await B();return new Response(It("\u64CD\u4F5C\u8FC7\u4E8E\u9891\u7E41\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002",tt,yt,r.lockSeconds),{status:429,headers:{"Content-Type":"text/html; charset=utf-8"}})}let d=await t.formData(),g=d.get("password")||"",b=d.get("captcha")||"",y=d.get("captcha_token")||"",U=n.protocol==="https:"?"; Secure":"",V=await _(b,y);if(V&&(a&&g===a)){await Lt(e,c);let tt=await K();return new Response(null,{status:302,headers:{Location:"/","Set-Cookie":`auth_session=${tt}; Path=/; HttpOnly${U}; SameSite=Lax; Max-Age=600`}})}let R=await re(e,c),C=R.count,Z=R.lockSeconds,Pt=Math.ceil(Z/60),Bt="",Et="";if(V?(Bt="\u7BA1\u7406\u5458\u5BC6\u7801\u9519\u8BEF",Et="\u26A0\uFE0F \u7BA1\u7406\u5458\u5BC6\u7801\u9519\u8BEF"):(Bt="\u9A8C\u8BC1\u7801\u9519\u8BEF\u6216\u5DF2\u5931\u6548",Et="\u26A0\uFE0F \u9A8C\u8BC1\u7801\u9519\u8BEF"),C>=3&&!D&&!j){let tt=await ct(e);tt.includes(c)||(tt.push(c),await Y(e,tt));let yt=O(e,{time:m,ip:c,location:h,status:403,path:"/login",type:`\u{1F6AB} \u8FDE\u7EED\u767B\u5F55\u5931\u8D25\u8FBE3\u6B21 (${Bt})\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(yt):await yt,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let Ne=Math.max(0,3-C),jt=O(e,{time:m,ip:c,location:h,status:401,path:"/login",type:`${Et} (\u7B2C ${C} \u6B21\u5931\u8D25\uFF0C\u51B7\u5374\u9501\u5B9A ${Pt} \u5206\u949F${D?"\uFF0C\u767D\u540D\u5355\u8C41\u514D\u5C01\u7981":`\uFF0C\u5269\u4F59 ${Ne} \u6B21\u5C06\u88AB\u6C38\u4E45\u5C01\u7981`})`,ua:u});o&&o.waitUntil?o.waitUntil(jt):await jt;let{svgDataUri:De,captchaToken:Re}=await B(),Oe="\u9A8C\u8BC1\u7801\u6216\u5BC6\u7801\u9519\u8BEF\uFF0C\u8BF7\u91CD\u8BD5\u3002";return new Response(It(Oe,De,Re,D?0:Z),{status:401,headers:{"Content-Type":"text/html; charset=utf-8"}})}catch{return new Response("Bad Request",{status:400})}}if(n.pathname==="/logout"){let d=n.protocol==="https:"?"; Secure":"";return new Response(null,{status:302,headers:{Location:"/login","Set-Cookie":`auth_session=; Path=/; HttpOnly${d}; SameSite=Lax; Max-Age=0`}})}if(n.pathname==="/login"){if(!i||!l)return new Response(Ct({hasKV:i,hasAdmin:l}),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}});if(f)return new Response(null,{status:302,headers:{Location:"/"}});let{svgDataUri:r,captchaToken:d}=await B(),g=await kt(e,c),b=D?0:g.lockSeconds,y=b>0?`\u26A0\uFE0F \u5F53\u524D IP \u5904\u4E8E\u51B7\u5374\u9501\u5B9A\u72B6\u6001\uFF08\u5269\u4F59 ${b} \u79D2\uFF09\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002`:"";return new Response(It(y,r,d,b),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}})}if(n.pathname==="/"){if(!i||!l)return new Response(Ct({hasKV:i,hasAdmin:l}),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}});if(!f)return new Response(null,{status:302,headers:{Location:"/login"}});let r=await vt(e),d=Le(n.origin,M,F,W,H,r,z,G,nt,dt,at);return X(new Response(d,{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}}))}if(!D){let r=await ct(e);!r.includes(c)&&!j&&(r.push(c),await Y(e,r));let d=O(e,{time:m,ip:c,location:h,status:403,path:n.pathname,type:`\u{1F6AB} \u6076\u610F\u63A2\u6D4B\u4E0D\u5B58\u5728\u8DEF\u5F84 [${n.pathname}]\uFF0CIP \u5DF2\u88AB\u81EA\u52A8\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(d):await d,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let Vt=O(e,{time:m,ip:c,location:h,status:404,path:n.pathname,type:`\u26A0\uFE0F \u8BBF\u95EE\u4E0D\u5B58\u5728\u9875\u9762 [${n.pathname}] (\u767D\u540D\u5355\u8C41\u514D)`,ua:u});return o&&o.waitUntil?o.waitUntil(Vt):await Vt,new Response("404 Not Found",{status:404})}catch(n){return console.error("Unhandled Worker Exception:",n),new Response(`500 Internal Server Error: ${n.message||String(n)}`,{status:500,headers:{"Content-Type":"text/plain; charset=utf-8"}})}}};export{Ro as default};
+\u2705 \u673A\u5668\u4EBA\u914D\u7F6E\u6B63\u786E\uFF0C\u5F53\u6709\u5BA2\u6237\u7AEF\u62C9\u53D6\u8282\u70B9\u8BA2\u9605\u65F6\uFF0C\u5C06\u4F1A\u5728\u6B64\u5904\u5B9E\u65F6\u6536\u5230\u63A8\u9001\uFF01`,y=await Vt(t,f,d);return b(y,y.success?200:400)}catch(r){return b({error:r.message},500)}}let Ft=["api","login","logout","favicon.ico","robots.txt","sub","assets","static","dashboard"];if(n.pathname==="/api/custom-groups"&&e.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await e.json(),d=(r.name||"").trim();if(!d)return b({error:"\u8BA2\u9605\u540D\u79F0\u4E0D\u80FD\u4E3A\u7A7A"},400);if(d.length>30)return b({error:"\u8BA2\u9605\u540D\u79F0\u4E0D\u80FD\u8D85\u8FC730\u4E2A\u5B57"},400);let f=((r.id||"").trim()||ct(12,33)).toLowerCase();if(!/^[a-zA-Z0-9_-]{1,64}$/.test(f))return b({error:"\u8BA2\u9605 ID \u683C\u5F0F\u4E0D\u5408\u6CD5\uFF0C\u4EC5\u652F\u6301\u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u53CA\u8FDE\u5B57\u7B26"},400);if(Ft.includes(f))return b({error:"\u6B64\u8BA2\u9605 ID \u4E3A\u7CFB\u7EDF\u4FDD\u7559\u5173\u952E\u5B57\uFF0C\u8BF7\u4F7F\u7528\u5176\u4ED6\u540D\u79F0"},400);if(J.some(x=>x.id.toLowerCase()===f))return b({error:"\u6B64\u8BA2\u9605 ID \u5DF2\u5B58\u5728\u4E8E CF \u4F18\u9009\u8BA2\u9605\u4E2D\uFF0C\u8BF7\u4F7F\u7528\u5176\u4ED6 ID"},400);let y=_t(r.nodes||"");if(y.length===0)return b({error:"\u8282\u70B9\u5217\u8868\u4E0D\u80FD\u4E3A\u7A7A\uFF0C\u4E14\u5FC5\u987B\u5305\u542B\u81F3\u5C11\u4E00\u4E2A\u6709\u6548\u7684\u8282\u70B9\u94FE\u63A5\uFF08\u5982 vless://, vmess://, ss://, trojan:// \u7B49\uFF09"},400);let w=y.join(`
+`),P=typeof r.maxViews=="number"?r.maxViews:parseInt(r.maxViews,10),M=!isNaN(P)&&P>0?Math.min(999,Math.max(0,P)):0,V=H.find(x=>x.id.toLowerCase()===f),O=H.filter(x=>x.id.toLowerCase()!==f),L=0;V&&V.maxViews===M?L=V.views||0:L=0;let B=Array.isArray(r.allowedCountries)?r.allowedCountries.map(x=>String(x).trim().toUpperCase()).filter(x=>/^[A-Z]{2}$/.test(x)):typeof r.allowedCountries=="string"?r.allowedCountries.split(",").map(x=>x.trim().toUpperCase()).filter(x=>/^[A-Z]{2}$/.test(x)):[];return O.push({id:f,name:d,maxViews:M,views:L,nodes:w,allowedCountries:B}),await it(t,O),b({success:!0,id:f,group:{id:f,name:d}})}catch{return b({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/custom-groups/batch-delete"&&e.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await e.json(),d=(Array.isArray(r.ids)?r.ids:[]).map(y=>String(y).toLowerCase().trim()),f=H.filter(y=>!d.includes(y.id.toLowerCase()));return await it(t,f),b({success:!0,count:d.length})}catch{return b({error:"Invalid JSON payload"},400)}}if(n.pathname.startsWith("/api/custom-groups/")&&e.method==="DELETE"){if(!g)return new Response("Unauthorized",{status:401});let r=decodeURIComponent(n.pathname.replace("/api/custom-groups/","")).toLowerCase().trim(),d=H.filter(f=>f.id.toLowerCase()!==r);return await it(t,d),b({success:!0})}if(n.pathname==="/api/cf-groups"&&e.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await e.json(),d=(r.name||"").trim();if(!d)return b({error:"\u8BA2\u9605\u540D\u79F0\u4E0D\u80FD\u4E3A\u7A7A"},400);if(d.length>30)return b({error:"\u8BA2\u9605\u540D\u79F0\u4E0D\u80FD\u8D85\u8FC730\u4E2A\u5B57"},400);let f=((r.id||"").trim()||ct(12,33)).toLowerCase();if(!/^[a-zA-Z0-9_-]{1,64}$/.test(f))return b({error:"\u8BA2\u9605 ID \u683C\u5F0F\u4E0D\u5408\u6CD5\uFF0C\u4EC5\u652F\u6301\u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u53CA\u8FDE\u5B57\u7B26"},400);if(Ft.includes(f))return b({error:"\u6B64\u8BA2\u9605 ID \u4E3A\u7CFB\u7EDF\u4FDD\u7559\u5173\u952E\u5B57\uFF0C\u8BF7\u4F7F\u7528\u5176\u4ED6\u540D\u79F0"},400);if(H.some(x=>x.id.toLowerCase()===f))return b({error:"\u6B64\u8BA2\u9605 ID \u5DF2\u5B58\u5728\u4E8E\u666E\u901A\u8BA2\u9605\u4E2D\uFF0C\u8BF7\u4F7F\u7528\u5176\u4ED6 ID"},400);let y=(r.baseVless||"").trim();if(y){let x=ft(y);if(!x||!x.uuid||!x.port)return b({error:"\u57FA\u7840 VLESS \u6A21\u677F\u8282\u70B9\u683C\u5F0F\u4E0D\u5408\u6CD5\uFF0C\u672A\u80FD\u89E3\u6790\u51FA\u6709\u6548\u7684 UUID \u6216\u7AEF\u53E3"},400)}let w=typeof r.maxViews=="number"?r.maxViews:parseInt(r.maxViews,10),P=!isNaN(w)&&w>0?Math.min(999,Math.max(0,w)):0,M=J.find(x=>x.id.toLowerCase()===f),V=J.filter(x=>x.id.toLowerCase()!==f),O=0;M&&M.maxViews===P?O=M.views||0:O=0;let L=Array.isArray(r.allowedCountries)?r.allowedCountries.map(x=>String(x).trim().toUpperCase()).filter(x=>/^[A-Z]{2}$/.test(x)):typeof r.allowedCountries=="string"?r.allowedCountries.split(",").map(x=>x.trim().toUpperCase()).filter(x=>/^[A-Z]{2}$/.test(x)):[],B=Array.isArray(r.sources)?r.sources.filter(x=>x&&(x.url&&Lt(x.url.trim())||x.content&&typeof x.content=="string"&&x.content.trim())):[];return V.push({id:f,name:d,maxViews:P,views:O,baseVless:y,sources:B,allowedCountries:L}),await rt(t,V),b({success:!0,id:f,group:{id:f,name:d}})}catch{return b({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/cf-groups/batch-delete"&&e.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await e.json(),d=(Array.isArray(r.ids)?r.ids:[]).map(y=>String(y).toLowerCase().trim()),f=J.filter(y=>!d.includes(y.id.toLowerCase()));return await rt(t,f),b({success:!0,count:d.length})}catch{return b({error:"Invalid JSON payload"},400)}}if(n.pathname.startsWith("/api/cf-groups/")&&e.method==="DELETE"){if(!g)return new Response("Unauthorized",{status:401});let r=decodeURIComponent(n.pathname.replace("/api/cf-groups/","")).toLowerCase().trim(),d=J.filter(f=>f.id.toLowerCase()!==r);return await rt(t,d),b({success:!0})}if(n.pathname==="/api/sources"&&e.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await e.json();if(r.sources&&Array.isArray(r.sources)){let w=r.sources.filter(P=>P&&P.url&&Lt(P.url.trim())).map((P,M)=>({id:(P.id||"src_"+(M+1)).toLowerCase().trim(),name:P.name||"\u4F18\u9009\u6E90 "+(M+1),url:P.url.trim(),enabled:P.enabled!==!1}));return await It(t,w),b({success:!0,count:w.length})}if(!r.name||!r.url)return b({error:"\u7F3A\u5C11\u5FC5\u586B\u5B57\u6BB5\uFF08\u540D\u79F0\u548C\u5730\u5740\u4E3A\u5FC5\u586B\uFF09"},400);if(!Lt(r.url.trim()))return b({error:"\u4F18\u9009\u6E90\u5730\u5740\u5FC5\u987B\u4E3A\u5408\u6CD5\u7684\u516C\u5171 HTTP/HTTPS \u5730\u5740\uFF0C\u7981\u6B62\u79C1\u6709\u7F51\u7EDC\u5730\u5740"},400);let d=(r.id||"src_"+ct(8,25)).toLowerCase().trim(),f=W.filter(w=>w.id.toLowerCase()!==d),y={id:d,name:r.name.trim(),url:r.url.trim(),enabled:!0};return f.push(y),await It(t,f),b({success:!0,source:y})}catch{return b({error:"Invalid JSON payload"},400)}}if(n.pathname.startsWith("/api/sources/")&&e.method==="DELETE"){if(!g)return new Response("Unauthorized",{status:401});let r=decodeURIComponent(n.pathname.replace("/api/sources/","")).toLowerCase().trim(),d=W.filter(f=>f.id.toLowerCase()!==r);return await It(t,d),b({success:!0})}if(n.pathname==="/api/test-cf-nodes"&&e.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await e.json(),d=(r.baseVless||"").trim()||tt||t.BASE_VLESS||"";if(!d)return b({success:!1,content:"\u672A\u8BBE\u7F6E\u57FA\u7840 VLESS \u6A21\u677F\u8282\u70B9\uFF0C\u4E14\u672A\u68C0\u6D4B\u5230\u5168\u5C40\u57FA\u7840\u8282\u70B9\uFF0C\u8BF7\u5148\u5728\u5F39\u7A97\u8F93\u5165\u6216\u914D\u7F6E\u5168\u5C40\u57FA\u7840\u8282\u70B9"},400);let f=ft(d);if(!f||!f.uuid||!f.port)return b({success:!1,content:"\u57FA\u7840 VLESS \u6A21\u677F\u8282\u70B9\u683C\u5F0F\u4E0D\u5408\u6CD5\uFF0C\u672A\u80FD\u89E3\u6790\u51FA\u6709\u6548\u7684 VLESS \u8282\u70B9\u94FE\u63A5"},400);let y=W;Array.isArray(r.sources)&&r.sources.length>0&&(y=r.sources);let w=await jt(d,y,"raw"),P=await w.text();return b({success:w.ok,status:w.status,content:P},w.status)}catch(r){return b({success:!1,content:"\u751F\u6210\u6D4B\u8BD5\u8282\u70B9\u5931\u8D25: "+(r.message||String(r))},500)}}if(n.pathname==="/api/blocked-ips"&&e.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await e.json(),d=Array.isArray(r.ips)?r.ips.map(w=>String(w).trim()).filter(w=>w&&!Tt(w)):[],y=(await lt(t)).filter(w=>!d.includes(w));for(let w of y)await Ot(t,w);return await Z(t,d),b({success:!0,count:d.length})}catch{return b({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/whitelist-ips"&&e.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await e.json(),d=Array.isArray(r.ips)?r.ips.map(f=>String(f).trim()).filter(Boolean):[];return await re(t,d),b({success:!0,count:d.length})}catch{return b({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/logs/batch-delete"&&e.method==="POST"){if(!g)return new Response("Unauthorized",{status:401});try{let r=await e.json(),d=(Array.isArray(r.indices)?r.indices:[]).map(Number),y=(await Ct(t)).filter((w,P)=>w&&!d.includes(P));return await ce(t,y),b({success:!0,count:d.length})}catch{return b({error:"Invalid JSON payload"},400)}}if(n.pathname==="/api/clear-logs"&&e.method==="POST")return g?(await le(t),b({success:!0})):new Response("Unauthorized",{status:401});if(n.pathname==="/api/captcha"){let{svgDataUri:r,captchaToken:d}=await E();return new Response(JSON.stringify({svg:r,token:d}),{headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}})}if(n.pathname==="/login"&&e.method==="POST"){if(!i||!l)return new Response(Et({hasKV:i,hasAdmin:l}),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}});try{let r=await St(t,c);if(!F&&!R&&r.count>=3&&r.lockSeconds>0){let{svgDataUri:et,captchaToken:vt}=await E();return new Response(Bt("\u64CD\u4F5C\u8FC7\u4E8E\u9891\u7E41\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002",et,vt,r.lockSeconds),{status:429,headers:{"Content-Type":"text/html; charset=utf-8"}})}let d=await e.formData(),f=d.get("password")||"",y=d.get("captcha")||"",w=d.get("captcha_token")||"",M=n.protocol==="https:"?"; Secure":"",V=await _(y,w);if(V&&(a&&f===a)){await Ot(t,c);let et=await G();return new Response(null,{status:302,headers:{Location:"/","Set-Cookie":`auth_session=${et}; Path=/; HttpOnly${M}; SameSite=Lax; Max-Age=600`}})}let L=await de(t,c),B=L.count,x=L.lockSeconds,zt=Math.ceil(x/60),$t="",Nt="";if(V?($t="\u7BA1\u7406\u5458\u5BC6\u7801\u9519\u8BEF",Nt="\u26A0\uFE0F \u7BA1\u7406\u5458\u5BC6\u7801\u9519\u8BEF"):($t="\u9A8C\u8BC1\u7801\u9519\u8BEF\u6216\u5DF2\u5931\u6548",Nt="\u26A0\uFE0F \u9A8C\u8BC1\u7801\u9519\u8BEF"),B>=3&&!R&&!F){let et=await lt(t);et.includes(c)||(et.push(c),await Z(t,et));let vt=U(t,{time:h,ip:c,location:m,status:403,path:"/login",type:`\u{1F6AB} \u8FDE\u7EED\u767B\u5F55\u5931\u8D25\u8FBE3\u6B21 (${$t})\uFF0CIP \u5DF2\u88AB\u6C38\u4E45\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(vt):await vt,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let De=Math.max(0,3-B),Ht=U(t,{time:h,ip:c,location:m,status:401,path:"/login",type:`${Nt} (\u7B2C ${B} \u6B21\u5931\u8D25\uFF0C\u51B7\u5374\u9501\u5B9A ${zt} \u5206\u949F${R?"\uFF0C\u767D\u540D\u5355\u8C41\u514D\u5C01\u7981":`\uFF0C\u5269\u4F59 ${De} \u6B21\u5C06\u88AB\u6C38\u4E45\u5C01\u7981`})`,ua:u});o&&o.waitUntil?o.waitUntil(Ht):await Ht;let{svgDataUri:Re,captchaToken:Oe}=await E(),Ue="\u9A8C\u8BC1\u7801\u6216\u5BC6\u7801\u9519\u8BEF\uFF0C\u8BF7\u91CD\u8BD5\u3002";return new Response(Bt(Ue,Re,Oe,R?0:x),{status:401,headers:{"Content-Type":"text/html; charset=utf-8"}})}catch{return new Response("Bad Request",{status:400})}}if(n.pathname==="/logout"){let d=n.protocol==="https:"?"; Secure":"";return new Response(null,{status:302,headers:{Location:"/login","Set-Cookie":`auth_session=; Path=/; HttpOnly${d}; SameSite=Lax; Max-Age=0`}})}if(n.pathname==="/login"){if(!i||!l)return new Response(Et({hasKV:i,hasAdmin:l}),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}});if(g)return new Response(null,{status:302,headers:{Location:"/"}});let{svgDataUri:r,captchaToken:d}=await E(),f=await St(t,c),y=R?0:f.lockSeconds,w=y>0?`\u26A0\uFE0F \u5F53\u524D IP \u5904\u4E8E\u51B7\u5374\u9501\u5B9A\u72B6\u6001\uFF08\u5269\u4F59 ${y} \u79D2\uFF09\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002`:"";return new Response(Bt(w,r,d,y),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}})}if(n.pathname==="/"){if(!i||!l)return new Response(Et({hasKV:i,hasAdmin:l}),{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}});if(!g)return new Response(null,{status:302,headers:{Location:"/login"}});let r=await Ct(t),d=ze(n.origin,j,W,H,J,r,$,q,at,dt,st);return Q(new Response(d,{status:200,headers:{"Content-Type":"text/html; charset=utf-8"}}))}if(!R){let r=await lt(t);!r.includes(c)&&!F&&(r.push(c),await Z(t,r));let d=U(t,{time:h,ip:c,location:m,status:403,path:n.pathname,type:`\u{1F6AB} \u6076\u610F\u63A2\u6D4B\u4E0D\u5B58\u5728\u8DEF\u5F84 [${n.pathname}]\uFF0CIP \u5DF2\u88AB\u81EA\u52A8\u5C01\u7981`,ua:u});return o&&o.waitUntil?o.waitUntil(d):await d,new Response("403 Forbidden",{status:403,headers:{"Content-Type":"text/plain; charset=utf-8"}})}let Wt=U(t,{time:h,ip:c,location:m,status:404,path:n.pathname,type:`\u26A0\uFE0F \u8BBF\u95EE\u4E0D\u5B58\u5728\u9875\u9762 [${n.pathname}] (\u767D\u540D\u5355\u8C41\u514D)`,ua:u});return o&&o.waitUntil?o.waitUntil(Wt):await Wt,new Response("404 Not Found",{status:404})}catch(n){return console.error("Unhandled Worker Exception:",n),new Response(`500 Internal Server Error: ${n.message||String(n)}`,{status:500,headers:{"Content-Type":"text/plain; charset=utf-8"}})}}};export{Wo as default};

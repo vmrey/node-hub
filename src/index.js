@@ -40,7 +40,7 @@ import {
 } from './storage.js';
 import { encrypt, decrypt } from './cipherTool.js';
 import { createCaptchaPayload, verifyCaptcha } from './captcha.js';
-import { fetchIPsAndGenerateNodes, standardizeNodesText } from './nodes.js';
+import { fetchIPsAndGenerateNodes, standardizeNodesText, parseVlessTemplate } from './nodes.js';
 import { renderLoginPage, renderSetupNoticePage } from './views/loginView.js';
 import { renderDashboardPage } from './views/dashboardView.js';
 
@@ -834,19 +834,37 @@ export default {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
       try {
         const body = await request.json();
-        const targetId = (body.id || '').trim() || generateSecureRandomString(12, 33);
         const targetName = (body.name || '').trim();
         if (!targetName) {
           return authedJsonResponse({ error: '订阅名称不能为空' }, 400);
         }
-        if (RESERVED_GROUP_IDS.includes(targetId.toLowerCase())) {
+        if (targetName.length > 30) {
+          return authedJsonResponse({ error: '订阅名称不能超过30个字' }, 400);
+        }
+
+        const targetId = ((body.id || '').trim() || generateSecureRandomString(12, 33)).toLowerCase();
+        if (!/^[a-zA-Z0-9_-]{1,64}$/.test(targetId)) {
+          return authedJsonResponse({ error: '订阅 ID 格式不合法，仅支持字母、数字、下划线及连字符' }, 400);
+        }
+        if (RESERVED_GROUP_IDS.includes(targetId)) {
           return authedJsonResponse({ error: '此订阅 ID 为系统保留关键字，请使用其他名称' }, 400);
         }
-        const existing = currentCustomGroups.find(g => g.id.toLowerCase() === targetId);
-        const updated = currentCustomGroups.filter(g => g.id.toLowerCase() !== targetId);
+        if (currentCfGroups.some(g => g.id.toLowerCase() === targetId)) {
+          return authedJsonResponse({ error: '此订阅 ID 已存在于 CF 优选订阅中，请使用其他 ID' }, 400);
+        }
+
+        const cleanNodesList = standardizeNodesText(body.nodes || '');
+        if (cleanNodesList.length === 0) {
+          return authedJsonResponse({ error: '节点列表不能为空，且必须包含至少一个有效的节点链接（如 vless://, vmess://, ss://, trojan:// 等）' }, 400);
+        }
+        const cleanNodes = cleanNodesList.join('\n');
+
         const rawMax = typeof body.maxViews === 'number' ? body.maxViews : parseInt(body.maxViews, 10);
         const maxViews = (!isNaN(rawMax) && rawMax > 0) ? Math.min(999, Math.max(0, rawMax)) : 0;
-        
+
+        const existing = currentCustomGroups.find(g => g.id.toLowerCase() === targetId);
+        const updated = currentCustomGroups.filter(g => g.id.toLowerCase() !== targetId);
+
         let newViews = 0;
         if (existing && existing.maxViews === maxViews) {
           newViews = existing.views || 0;
@@ -854,11 +872,10 @@ export default {
           newViews = 0; // 修改了限制值或新建，重新计数
         }
 
-        const cleanNodes = standardizeNodesText(body.nodes || '').join('\n');
         const groupAllowed = Array.isArray(body.allowedCountries)
-          ? body.allowedCountries.map(c => String(c).trim().toUpperCase()).filter(Boolean)
+          ? body.allowedCountries.map(c => String(c).trim().toUpperCase()).filter(c => /^[A-Z]{2}$/.test(c))
           : (typeof body.allowedCountries === 'string'
-              ? body.allowedCountries.split(',').map(c => c.trim().toUpperCase()).filter(Boolean)
+              ? body.allowedCountries.split(',').map(c => c.trim().toUpperCase()).filter(c => /^[A-Z]{2}$/.test(c))
               : []);
 
         updated.push({
@@ -894,8 +911,8 @@ export default {
 
     if (url.pathname.startsWith('/api/custom-groups/') && request.method === 'DELETE') {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
-      const idToDelete = decodeURIComponent(url.pathname.replace('/api/custom-groups/', '')).toLowerCase();
-      const updated = currentCustomGroups.filter(g => g.id !== idToDelete);
+      const idToDelete = decodeURIComponent(url.pathname.replace('/api/custom-groups/', '')).toLowerCase().trim();
+      const updated = currentCustomGroups.filter(g => g.id.toLowerCase() !== idToDelete);
       await saveCustomNodeGroups(env, updated);
       return authedJsonResponse({ success: true });
     }
@@ -907,18 +924,39 @@ export default {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
       try {
         const body = await request.json();
-        if (!body.name) {
-          return authedJsonResponse({ error: '缺少必填字段' }, 400);
+        const targetName = (body.name || '').trim();
+        if (!targetName) {
+          return authedJsonResponse({ error: '订阅名称不能为空' }, 400);
         }
-        const targetId = (body.id || '').trim() || generateSecureRandomString(12, 33);
-        if (RESERVED_GROUP_IDS.includes(targetId.toLowerCase())) {
+        if (targetName.length > 30) {
+          return authedJsonResponse({ error: '订阅名称不能超过30个字' }, 400);
+        }
+
+        const targetId = ((body.id || '').trim() || generateSecureRandomString(12, 33)).toLowerCase();
+        if (!/^[a-zA-Z0-9_-]{1,64}$/.test(targetId)) {
+          return authedJsonResponse({ error: '订阅 ID 格式不合法，仅支持字母、数字、下划线及连字符' }, 400);
+        }
+        if (RESERVED_GROUP_IDS.includes(targetId)) {
           return authedJsonResponse({ error: '此订阅 ID 为系统保留关键字，请使用其他名称' }, 400);
         }
-        const existing = currentCfGroups.find(g => g.id === targetId);
-        const updated = currentCfGroups.filter(g => g.id !== targetId);
+        if (currentCustomGroups.some(g => g.id.toLowerCase() === targetId)) {
+          return authedJsonResponse({ error: '此订阅 ID 已存在于普通订阅中，请使用其他 ID' }, 400);
+        }
+
+        const rawBaseVless = (body.baseVless || '').trim();
+        if (rawBaseVless) {
+          const parsedVless = parseVlessTemplate(rawBaseVless);
+          if (!parsedVless || !parsedVless.uuid || !parsedVless.port) {
+            return authedJsonResponse({ error: '基础 VLESS 模板节点格式不合法，未能解析出有效的 UUID 或端口' }, 400);
+          }
+        }
+
         const rawMax = typeof body.maxViews === 'number' ? body.maxViews : parseInt(body.maxViews, 10);
         const maxViews = (!isNaN(rawMax) && rawMax > 0) ? Math.min(999, Math.max(0, rawMax)) : 0;
-        
+
+        const existing = currentCfGroups.find(g => g.id.toLowerCase() === targetId);
+        const updated = currentCfGroups.filter(g => g.id.toLowerCase() !== targetId);
+
         let newViews = 0;
         if (existing && existing.maxViews === maxViews) {
           newViews = existing.views || 0;
@@ -927,22 +965,29 @@ export default {
         }
 
         const groupAllowed = Array.isArray(body.allowedCountries)
-          ? body.allowedCountries.map(c => String(c).trim().toUpperCase()).filter(Boolean)
+          ? body.allowedCountries.map(c => String(c).trim().toUpperCase()).filter(c => /^[A-Z]{2}$/.test(c))
           : (typeof body.allowedCountries === 'string'
-              ? body.allowedCountries.split(',').map(c => c.trim().toUpperCase()).filter(Boolean)
+              ? body.allowedCountries.split(',').map(c => c.trim().toUpperCase()).filter(c => /^[A-Z]{2}$/.test(c))
               : []);
+
+        const validatedSources = Array.isArray(body.sources)
+          ? body.sources.filter(s => s && (
+              (s.url && isValidPublicUrl(s.url.trim())) ||
+              (s.content && typeof s.content === 'string' && s.content.trim())
+            ))
+          : [];
 
         updated.push({
           id: targetId,
-          name: body.name,
+          name: targetName,
           maxViews: maxViews,
           views: newViews,
-          baseVless: body.baseVless || '',
-          sources: Array.isArray(body.sources) ? body.sources : [],
+          baseVless: rawBaseVless,
+          sources: validatedSources,
           allowedCountries: groupAllowed
         });
         await saveCfNodeGroups(env, updated);
-        return authedJsonResponse({ success: true, id: targetId, group: { id: targetId, name: body.name } });
+        return authedJsonResponse({ success: true, id: targetId, group: { id: targetId, name: targetName } });
       } catch {
         return authedJsonResponse({ error: 'Invalid JSON payload' }, 400);
       }
@@ -966,8 +1011,8 @@ export default {
 
     if (url.pathname.startsWith('/api/cf-groups/') && request.method === 'DELETE') {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
-      const idToDelete = decodeURIComponent(url.pathname.replace('/api/cf-groups/', '')).toLowerCase();
-      const updated = currentCfGroups.filter(g => g.id !== idToDelete);
+      const idToDelete = decodeURIComponent(url.pathname.replace('/api/cf-groups/', '')).toLowerCase().trim();
+      const updated = currentCfGroups.filter(g => g.id.toLowerCase() !== idToDelete);
       await saveCfNodeGroups(env, updated);
       return authedJsonResponse({ success: true });
     }
@@ -999,7 +1044,7 @@ export default {
           return authedJsonResponse({ error: '优选源地址必须为合法的公共 HTTP/HTTPS 地址，禁止私有网络地址' }, 400);
         }
         const targetId = (body.id || ('src_' + generateSecureRandomString(8, 25))).toLowerCase().trim();
-        const updated = sources.filter(s => s.id !== targetId);
+        const updated = sources.filter(s => s.id.toLowerCase() !== targetId);
         const newSource = {
           id: targetId,
           name: body.name.trim(),
@@ -1019,8 +1064,8 @@ export default {
     // ==========================================================
     if (url.pathname.startsWith('/api/sources/') && request.method === 'DELETE') {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
-      const idToDelete = decodeURIComponent(url.pathname.replace('/api/sources/', '')).toLowerCase();
-      const updated = sources.filter(s => s.id !== idToDelete);
+      const idToDelete = decodeURIComponent(url.pathname.replace('/api/sources/', '')).toLowerCase().trim();
+      const updated = sources.filter(s => s.id.toLowerCase() !== idToDelete);
       await saveSources(env, updated);
       return authedJsonResponse({ success: true });
     }
@@ -1032,9 +1077,22 @@ export default {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
       try {
         const body = await request.json();
-        const testBase = body.baseVless || currentBaseVless || env.BASE_VLESS || '';
-        let testSources = sources;
+        const testBase = (body.baseVless || '').trim() || currentBaseVless || env.BASE_VLESS || '';
+        if (!testBase) {
+          return authedJsonResponse({
+            success: false,
+            content: '未设置基础 VLESS 模板节点，且未检测到全局基础节点，请先在弹窗输入或配置全局基础节点'
+          }, 400);
+        }
+        const parsedVless = parseVlessTemplate(testBase);
+        if (!parsedVless || !parsedVless.uuid || !parsedVless.port) {
+          return authedJsonResponse({
+            success: false,
+            content: '基础 VLESS 模板节点格式不合法，未能解析出有效的 VLESS 节点链接'
+          }, 400);
+        }
 
+        let testSources = sources;
         if (Array.isArray(body.sources) && body.sources.length > 0) {
           testSources = body.sources;
         }

@@ -490,7 +490,7 @@ export function standardizeNodesText(rawText) {
 }
 
 // 解析 VLESS 模板节点（支持多行节点、整段Base64订阅、单节点等各类输入，自动选取第一个有效合法节点）
-function parseVlessTemplate(baseVless) {
+export function parseVlessTemplate(baseVless) {
   if (!baseVless || typeof baseVless !== 'string') return null;
   let text = baseVless.trim();
   if (!text) return null;

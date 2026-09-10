@@ -163,7 +163,7 @@ async function saveTgConfig() {
 }
 
 function randomGroupId() {
-  document.getElementById('form-group-id').value = generateRandomString(12, 33);
+  document.getElementById('form-group-id').value = generateRandomString(12, 33).toLowerCase();
 }
 
 function updateNodeStats() {
@@ -192,7 +192,7 @@ function openAddGroupModal() {
 function openEditGroupModal(id) {
   document.getElementById('modal-group-title').innerText = '编辑普通订阅';
   document.getElementById('form-group-id').value = id;
-  const target = allGroupsData.find(g => g.id === id);
+  const target = allGroupsData.find(g => g.id.toLowerCase() === String(id).toLowerCase());
   document.getElementById('form-group-name').value = target ? (target.name || '') : '';
   document.getElementById('form-group-max-views').value = (target && target.maxViews > 0) ? target.maxViews : '';
   const countryEl = document.getElementById('form-group-allowed-countries');
@@ -395,9 +395,12 @@ async function submitGroupForm(e) {
   e.preventDefault();
   let id = document.getElementById('form-group-id').value.trim();
   if (!id) {
-    id = generateRandomString(12, 33);
+    id = generateRandomString(12, 33).toLowerCase();
     document.getElementById('form-group-id').value = id;
+  } else {
+    id = id.toLowerCase();
   }
+
   const name = document.getElementById('form-group-name').value.trim();
   if (!name) {
     showToast('请输入订阅名称！', 'error');
@@ -430,8 +433,17 @@ async function submitGroupForm(e) {
     return;
   }
 
+  // 校验节点有效性：至少应包含一个支持的协议链接或 Base64 订阅文本
+  const validProtocolRegex = /^(vless|vmess|ss|ssr|trojan|tuic|hysteria|hysteria2|hy2|wireguard|wg|socks|socks5):\\/\\//i;
+  const isBase64Block = rawNodes.length > 20 && /^[A-Za-z0-9+\\/=\\r\\n\\s]+$/.test(rawNodes) && !rawNodes.includes('://');
+  const hasValidProtocolNode = nodes.some(n => validProtocolRegex.test(n) || n.toLowerCase().startsWith('vless='));
+  if (!hasValidProtocolNode && !isBase64Block) {
+    showToast('未能识别到有效的节点链接，请确认包含 vless://、vmess://、ss:// 等合法协议节点或 Base64 文本！', 'error');
+    return;
+  }
+
   const rawCountries = document.getElementById('form-group-allowed-countries') ? document.getElementById('form-group-allowed-countries').value.trim() : '';
-  const allowedCountries = rawCountries ? rawCountries.split(',').map(c => c.trim().toUpperCase()).filter(Boolean) : [];
+  const allowedCountries = rawCountries ? rawCountries.split(',').map(c => c.trim().toUpperCase()).filter(c => /^[A-Z]{2}$/.test(c)) : [];
 
   try {
     const res = await fetch('/api/custom-groups', {
@@ -442,7 +454,10 @@ async function submitGroupForm(e) {
 
     if (res.ok) {
       showToast('普通订阅【' + name + '】保存成功！', 'success');
-      setTimeout(() => location.reload(), 600);
+      setTimeout(() => {
+        window.location.hash = '#custom-sub';
+        location.reload();
+      }, 600);
     } else if (res.status === 401) {
       showToast('登录会话已超时，请重新登录！', 'error');
       setTimeout(() => location.href = '/login', 1200);
@@ -462,7 +477,7 @@ async function submitGroupForm(e) {
 }
 
 async function deleteGroup(id) {
-  const target = allGroupsData.find(g => g.id === id);
+  const target = allGroupsData.find(g => g.id.toLowerCase() === String(id).toLowerCase());
   const name = target ? target.name : id;
 
   const confirmed = await showConfirmDialog({
@@ -475,12 +490,27 @@ async function deleteGroup(id) {
 
   if (!confirmed) return;
 
-  const res = await fetch('/api/custom-groups/' + encodeURIComponent(id), { method: 'DELETE' });
-  if (res.ok) {
-    showToast('普通订阅已成功删除！', 'success');
-    setTimeout(() => location.reload(), 600);
-  } else {
-    showToast('删除失败，请稍后重试', 'error');
+  try {
+    const res = await fetch('/api/custom-groups/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (res.ok) {
+      showToast('普通订阅已成功删除！', 'success');
+      setTimeout(() => {
+        window.location.hash = '#custom-sub';
+        location.reload();
+      }, 600);
+    } else if (res.status === 401) {
+      showToast('登录会话已超时，请重新登录！', 'error');
+      setTimeout(() => location.href = '/login', 1200);
+    } else {
+      let errMsg = '删除失败，请稍后重试';
+      try {
+        const data = await res.json();
+        errMsg = data.error || data.message || errMsg;
+      } catch {}
+      showToast(errMsg, 'error');
+    }
+  } catch (err) {
+    showToast('网络请求异常: ' + err.message, 'error');
   }
 }
 
@@ -489,7 +519,7 @@ async function deleteGroup(id) {
 // ==========================================
 function openAddCfGroupModal() {
   document.getElementById('modal-cf-group-title').innerText = '添加新 CF 优选订阅';
-  document.getElementById('form-cf-group-id').value = generateRandomString(12, 33);
+  document.getElementById('form-cf-group-id').value = generateRandomString(12, 33).toLowerCase();
   document.getElementById('form-cf-group-name').value = '';
   document.getElementById('form-cf-group-max-views').value = '';
   const countryEl = document.getElementById('form-cf-group-allowed-countries');
@@ -505,7 +535,7 @@ function openAddCfGroupModal() {
 function openEditCfGroupModal(id) {
   document.getElementById('modal-cf-group-title').innerText = '编辑 CF 优选订阅';
   document.getElementById('form-cf-group-id').value = id;
-  const target = allCfGroupsData.find(g => g.id === id);
+  const target = allCfGroupsData.find(g => g.id.toLowerCase() === String(id).toLowerCase());
   document.getElementById('form-cf-group-name').value = target ? (target.name || '') : '';
   document.getElementById('form-cf-group-max-views').value = (target && target.maxViews > 0) ? target.maxViews : '';
   const countryEl = document.getElementById('form-cf-group-allowed-countries');
@@ -527,10 +557,22 @@ async function submitCfGroupForm(e) {
   e.preventDefault();
   let id = document.getElementById('form-cf-group-id').value.trim();
   if (!id) {
-    id = generateRandomString(12, 33);
+    id = generateRandomString(12, 33).toLowerCase();
     document.getElementById('form-cf-group-id').value = id;
+  } else {
+    id = id.toLowerCase();
   }
+
   const name = document.getElementById('form-cf-group-name').value.trim();
+  if (!name) {
+    showToast('请输入优选订阅名称！', 'error');
+    return;
+  }
+  if (name.length > 30) {
+    showToast('订阅名称/备注不能超过30个字！', 'error');
+    return;
+  }
+
   const maxViewsRaw = document.getElementById('form-cf-group-max-views').value.trim();
   let maxViews = 0;
   if (maxViewsRaw) {
@@ -541,54 +583,63 @@ async function submitCfGroupForm(e) {
     }
     maxViews = val;
   }
-  const baseVless = document.getElementById('form-cf-group-base').value.trim();
 
-  if (name.length > 30) {
-    showToast('订阅名称/备注不能超过30个字！', 'error');
-    return;
+  const baseVless = document.getElementById('form-cf-group-base').value.trim();
+  if (baseVless) {
+    const isVless = baseVless.toLowerCase().startsWith('vless://') || baseVless.toLowerCase().startsWith('vless=');
+    const isBase64 = /^[A-Za-z0-9+\\/=\\s]+$/.test(baseVless) && baseVless.length > 20;
+    if (!isVless && !isBase64) {
+      showToast('基础模板节点格式不正确，必须为有效的 vless:// 节点链接（或 Base64 编码）！', 'error');
+      return;
+    }
   }
 
   // 1. 如果在弹窗内编辑了优选源文本域，一并同步保存优选源
   const sourcesTextEl = document.getElementById('global-sources-text');
   if (sourcesTextEl) {
     const rawText = sourcesTextEl.value.trim();
-    const lines = rawText.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
-    const parsedSources = [];
-    let counter = 1;
+    if (rawText) {
+      const lines = rawText.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
+      const parsedSources = [];
+      let counter = 1;
 
-    for (const line of lines) {
-      let srcName = '';
-      let srcUrl = '';
-      let srcId = '';
+      for (const line of lines) {
+        let srcName = '';
+        let srcUrl = '';
+        let srcId = '';
 
-      if (line.includes(',')) {
-        const parts = line.split(',');
-        srcName = parts[0].trim();
-        srcUrl = parts.slice(1).join(',').trim();
-      } else {
-        srcUrl = line.trim();
-      }
-
-      if (srcUrl.startsWith('http://') || srcUrl.startsWith('https://')) {
-        const existing = allSourcesData.find(s => s.url === srcUrl);
-        if (existing) {
-          srcId = existing.id;
-          if (!srcName) srcName = existing.name;
+        if (line.includes(',')) {
+          const parts = line.split(',');
+          srcName = parts[0].trim();
+          srcUrl = parts.slice(1).join(',').trim();
         } else {
-          srcId = 'src_' + counter + '_' + generateRandomString(6);
-          if (!srcName) srcName = '优选源 ' + counter;
+          srcUrl = line.trim();
         }
-        parsedSources.push({
-          id: srcId.toLowerCase(),
-          name: srcName || ('优选源 ' + counter),
-          url: srcUrl,
-          enabled: true
-        });
-        counter++;
-      }
-    }
 
-    if (parsedSources.length > 0) {
+        if (srcUrl.startsWith('http://') || srcUrl.startsWith('https://')) {
+          const existing = allSourcesData.find(s => s.url === srcUrl);
+          if (existing) {
+            srcId = existing.id;
+            if (!srcName) srcName = existing.name;
+          } else {
+            srcId = 'src_' + counter + '_' + generateRandomString(6).toLowerCase();
+            if (!srcName) srcName = '优选源 ' + counter;
+          }
+          parsedSources.push({
+            id: srcId.toLowerCase(),
+            name: srcName || ('优选源 ' + counter),
+            url: srcUrl,
+            enabled: true
+          });
+          counter++;
+        }
+      }
+
+      if (parsedSources.length === 0) {
+        showToast('优选源配置中未识别到有效的 http:// 或 https:// 接口地址！', 'error');
+        return;
+      }
+
       await fetch('/api/sources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -599,25 +650,41 @@ async function submitCfGroupForm(e) {
 
   // 2. 保存 CF 优选订阅
   const rawCountries = document.getElementById('form-cf-group-allowed-countries') ? document.getElementById('form-cf-group-allowed-countries').value.trim() : '';
-  const allowedCountries = rawCountries ? rawCountries.split(',').map(c => c.trim().toUpperCase()).filter(Boolean) : [];
+  const allowedCountries = rawCountries ? rawCountries.split(',').map(c => c.trim().toUpperCase()).filter(c => /^[A-Z]{2}$/.test(c)) : [];
 
-  const res = await fetch('/api/cf-groups', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, name, maxViews, baseVless, sources: [], allowedCountries })
-  });
+  try {
+    const res = await fetch('/api/cf-groups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, name, maxViews, baseVless, sources: [], allowedCountries })
+    });
 
-  if (res.ok) {
-    showToast('CF 优选订阅【' + name + '】保存成功！', 'success');
-    setTimeout(() => location.reload(), 600);
-  } else {
-    const err = await res.text();
-    showToast('保存失败: ' + err, 'error');
+    if (res.ok) {
+      showToast('CF 优选订阅【' + name + '】保存成功！', 'success');
+      setTimeout(() => {
+        window.location.hash = '#cf-sub';
+        location.reload();
+      }, 600);
+    } else if (res.status === 401) {
+      showToast('登录会话已超时，请重新登录！', 'error');
+      setTimeout(() => location.href = '/login', 1200);
+    } else {
+      let errMsg = '保存失败';
+      try {
+        const data = await res.json();
+        errMsg = data.error || data.message || JSON.stringify(data);
+      } catch {
+        errMsg = await res.text();
+      }
+      showToast('保存失败: ' + errMsg, 'error');
+    }
+  } catch (err) {
+    showToast('网络请求异常: ' + (err.message || '请检查网络'), 'error');
   }
 }
 
 async function deleteCfGroup(id) {
-  const target = allCfGroupsData.find(g => g.id === id);
+  const target = allCfGroupsData.find(g => g.id.toLowerCase() === String(id).toLowerCase());
   const name = target ? target.name : id;
 
   const confirmed = await showConfirmDialog({
@@ -630,12 +697,27 @@ async function deleteCfGroup(id) {
 
   if (!confirmed) return;
 
-  const res = await fetch('/api/cf-groups/' + encodeURIComponent(id), { method: 'DELETE' });
-  if (res.ok) {
-    showToast('CF 优选订阅已成功删除！', 'success');
-    setTimeout(() => location.reload(), 600);
-  } else {
-    showToast('删除失败，请稍后重试', 'error');
+  try {
+    const res = await fetch('/api/cf-groups/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (res.ok) {
+      showToast('CF 优选订阅已成功删除！', 'success');
+      setTimeout(() => {
+        window.location.hash = '#cf-sub';
+        location.reload();
+      }, 600);
+    } else if (res.status === 401) {
+      showToast('登录会话已超时，请重新登录！', 'error');
+      setTimeout(() => location.href = '/login', 1200);
+    } else {
+      let errMsg = '删除失败，请稍后重试';
+      try {
+        const data = await res.json();
+        errMsg = data.error || data.message || errMsg;
+      } catch {}
+      showToast(errMsg, 'error');
+    }
+  } catch (err) {
+    showToast('网络请求异常: ' + err.message, 'error');
   }
 }
 
@@ -768,16 +850,17 @@ async function testModalCfNodes() {
 
 // 2. 测试已有 CF 独立订阅组
 async function testCfGroup(id) {
-  const target = allCfGroupsData.find(g => g.id === id);
+  const target = allCfGroupsData.find(g => g.id.toLowerCase() === String(id).toLowerCase());
   const name = target ? target.name : id;
   const baseVless = target ? (target.baseVless || '') : '';
+  const sources = target && Array.isArray(target.sources) ? target.sources : [];
 
   showToast('正在测试【' + name + '】优选节点生成...', 'info', 1800);
   try {
     const res = await fetch('/api/test-cf-nodes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ baseVless })
+      body: JSON.stringify({ baseVless, sources })
     });
 
     const data = await res.json();
@@ -1524,7 +1607,13 @@ async function batchDeletePlainGroups() {
     });
     if (res.ok) {
       showToast('已成功批量删除 ' + idsToDelete.length + ' 个普通订阅！', 'success');
-      setTimeout(() => location.reload(), 600);
+      setTimeout(() => {
+        window.location.hash = '#custom-sub';
+        location.reload();
+      }, 600);
+    } else if (res.status === 401) {
+      showToast('登录会话已超时，请重新登录！', 'error');
+      setTimeout(() => location.href = '/login', 1200);
     } else {
       showToast('批量删除失败，请稍后重试', 'error');
     }
@@ -1560,7 +1649,13 @@ async function batchDeleteCfGroups() {
     });
     if (res.ok) {
       showToast('已成功批量删除 ' + idsToDelete.length + ' 个 CF 优选订阅！', 'success');
-      setTimeout(() => location.reload(), 600);
+      setTimeout(() => {
+        window.location.hash = '#cf-sub';
+        location.reload();
+      }, 600);
+    } else if (res.status === 401) {
+      showToast('登录会话已超时，请重新登录！', 'error');
+      setTimeout(() => location.href = '/login', 1200);
     } else {
       showToast('批量删除失败，请稍后重试', 'error');
     }
