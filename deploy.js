@@ -49,18 +49,52 @@ if (!kvId) {
   }
 }
 
-// 3. 自动注入真实 KV ID 到 wrangler.toml
+// 3. 自动注入真实 KV ID 到 wrangler.toml (使用安全的块解析逻辑，避免正则误伤)
 if (kvId && fs.existsSync(tomlPath)) {
-  let tomlContent = fs.readFileSync(tomlPath, 'utf8');
-  const kvSectionRegex = /(?:#\s*)?\[\[kv_namespaces\]\][\s\S]*?(?:#\s*)?binding\s*=\s*["']KV["'][\s\S]*?(?:#\s*)?id\s*=\s*["'][^"']*["']/;
-  const newKvSection = `[[kv_namespaces]]\nbinding = "KV"\nid = "${kvId}"`;
+  const content = fs.readFileSync(tomlPath, 'utf8');
+  
+  let lines = content.split('\n');
+  let result = [];
+  let insideKv = false;
+  let skipCurrentKv = false;
+  let tempBlock = [];
 
-  if (kvSectionRegex.test(tomlContent)) {
-    tomlContent = tomlContent.replace(kvSectionRegex, newKvSection);
-  } else {
-    tomlContent += `\n${newKvSection}\n`;
+  for (let line of lines) {
+    if (line.trim().startsWith('[')) {
+      if (insideKv && !skipCurrentKv) {
+        result.push(...tempBlock);
+      }
+      if (line.trim().startsWith('[[kv_namespaces]]')) {
+        insideKv = true;
+        skipCurrentKv = false;
+        tempBlock = [line];
+      } else {
+        insideKv = false;
+        result.push(line);
+      }
+    } else if (insideKv) {
+      tempBlock.push(line);
+      if (/binding\s*=\s*["']KV["']/.test(line)) {
+        skipCurrentKv = true;
+      }
+    } else {
+      result.push(line);
+    }
   }
-  fs.writeFileSync(tomlPath, tomlContent, 'utf8');
+  if (insideKv && !skipCurrentKv) {
+    result.push(...tempBlock);
+  }
+
+  while (result.length > 0 && result[result.length - 1].trim() === '') {
+    result.pop();
+  }
+  
+  result.push('');
+  result.push('[[kv_namespaces]]');
+  result.push('binding = "KV"');
+  result.push(`id = "${kvId}"`);
+  
+  fs.writeFileSync(tomlPath, result.join('\n') + '\n', 'utf8');
   console.log(`💾 已自动将真实 KV ID (${kvId}) 写入 wrangler.toml，无需任何手动修改！`);
 }
 
