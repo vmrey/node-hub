@@ -123,7 +123,7 @@ export function renderPlainSubTab(origin, subToken, plainGroups) {
           <h3 id="modal-group-title">添加新普通订阅</h3>
           <button class="drawer-close" onclick="closeGroupModal()">&times;</button>
         </div>
-        <form onsubmit="submitGroupForm(event)" style="display: flex; flex-direction: column; flex: 1; height: calc(100% - 65px);">
+        <form onsubmit="submitGroupForm(event)" novalidate style="display: flex; flex-direction: column; flex: 1; height: calc(100% - 65px);">
           <input type="hidden" id="form-group-id" />
           <div class="drawer-body">
             <div class="form-field">

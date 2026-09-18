@@ -112,7 +112,7 @@ export function renderCfSubTab(origin, subToken, cfGroups, sources) {
           <h3 id="modal-cf-group-title">添加新 CF 优选订阅</h3>
           <button class="drawer-close" onclick="closeCfGroupModal()">&times;</button>
         </div>
-        <form onsubmit="submitCfGroupForm(event)" style="display: flex; flex-direction: column; flex: 1; height: calc(100% - 65px);">
+        <form onsubmit="submitCfGroupForm(event)" novalidate style="display: flex; flex-direction: column; flex: 1; height: calc(100% - 65px);">
           <input type="hidden" id="form-cf-group-id" />
           <div class="drawer-body">
             <div class="form-field">

@@ -18,7 +18,7 @@ export function renderLoginPage(errorMessage = '', captchaSvgDataUri = '', captc
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="cloudflare-insights-beacon" content="false">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-  <title>登陆面板</title>
+  <title>登录面板</title>
   <script>
     // 拦截并阻断 Cloudflare 边缘自动注入的 beacon 性能探针脚本，防止报错
     (function() {
@@ -266,7 +266,7 @@ export function renderLoginPage(errorMessage = '', captchaSvgDataUri = '', captc
 <body>
   <div class="card">
     <div class="card-icon">⚡</div>
-    <h2>登陆面板</h2>
+    <h2>登录面板</h2>
     <p class="subtitle">请输入管理员密码及验证码以进入控制面板</p>
     ${errorMessage ? `<div class="error-msg" id="error-alert">${escapeHtml(errorMessage)}</div>` : ''}
     <form method="POST" id="login-form">

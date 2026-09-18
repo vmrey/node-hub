@@ -22,7 +22,7 @@ var Gt="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",qt=(t=
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="cloudflare-insights-beacon" content="false">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>\u26A1</text></svg>">
-  <title>\u767B\u9646\u9762\u677F</title>
+  <title>\u767B\u5F55\u9762\u677F</title>
   <script>
     // \u62E6\u622A\u5E76\u963B\u65AD Cloudflare \u8FB9\u7F18\u81EA\u52A8\u6CE8\u5165\u7684 beacon \u6027\u80FD\u63A2\u9488\u811A\u672C\uFF0C\u9632\u6B62\u62A5\u9519
     (function() {
@@ -270,7 +270,7 @@ var Gt="X0qP-4iIdcUrmtGnLWw531shzKavoT8bufRMZlDHSFye2Q76CgxjBpA_Vk9YNOJE",qt=(t=
 <body>
   <div class="card">
     <div class="card-icon">\u26A1</div>
-    <h2>\u767B\u9646\u9762\u677F</h2>
+    <h2>\u767B\u5F55\u9762\u677F</h2>
     <p class="subtitle">\u8BF7\u8F93\u5165\u7BA1\u7406\u5458\u5BC6\u7801\u53CA\u9A8C\u8BC1\u7801\u4EE5\u8FDB\u5165\u63A7\u5236\u9762\u677F</p>
     ${t?`<div class="error-msg" id="error-alert">${Ie(t)}</div>`:""}
     <form method="POST" id="login-form">
@@ -4413,7 +4413,7 @@ async function handleLogout() {
           <h3 id="modal-group-title">\u6DFB\u52A0\u65B0\u666E\u901A\u8BA2\u9605</h3>
           <button class="drawer-close" onclick="closeGroupModal()">&times;</button>
         </div>
-        <form onsubmit="submitGroupForm(event)" style="display: flex; flex-direction: column; flex: 1; height: calc(100% - 65px);">
+        <form onsubmit="submitGroupForm(event)" novalidate style="display: flex; flex-direction: column; flex: 1; height: calc(100% - 65px);">
           <input type="hidden" id="form-group-id" />
           <div class="drawer-body">
             <div class="form-field">
@@ -4560,7 +4560,7 @@ async function handleLogout() {
           <h3 id="modal-cf-group-title">\u6DFB\u52A0\u65B0 CF \u4F18\u9009\u8BA2\u9605</h3>
           <button class="drawer-close" onclick="closeCfGroupModal()">&times;</button>
         </div>
-        <form onsubmit="submitCfGroupForm(event)" style="display: flex; flex-direction: column; flex: 1; height: calc(100% - 65px);">
+        <form onsubmit="submitCfGroupForm(event)" novalidate style="display: flex; flex-direction: column; flex: 1; height: calc(100% - 65px);">
           <input type="hidden" id="form-cf-group-id" />
           <div class="drawer-body">
             <div class="form-field">
