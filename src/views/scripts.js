@@ -1202,16 +1202,15 @@ async function removeWhitelistIP(ip) {
 
 // 清空所有白名单 IP
 async function clearAllWhitelistIPs() {
-  if (!whitelistIPsData || whitelistIPsData.length === 0) {
-    showToast('当前白名单列表已为空', 'info');
-    return;
-  }
+  // 白名单数据是页面加载时的快照，可能滞后于服务端，故不做空判断短路，始终弹确认框
+  const knownCount = Array.isArray(whitelistIPsData) ? whitelistIPsData.length : 0;
+  const countSuffix = knownCount > 0 ? '（共 ' + knownCount + ' 项）' : '';
 
   const confirmed = await showConfirmDialog({
     title: '清空所有白名单',
-    message: '确定要清空所有白名单（共 ' + whitelistIPsData.length + ' 项）吗？清空后所有之前放行的 IP 将恢复常规安全检测。',
+    message: '确定要清空所有白名单' + countSuffix + '吗？清空后所有之前放行的 IP 将恢复常规安全检测。',
     icon: '🗑️',
-    confirmText: '确认清空 (' + whitelistIPsData.length + ')',
+    confirmText: knownCount > 0 ? '确认清空 (' + knownCount + ')' : '确认清空',
     confirmType: 'danger'
   });
   if (!confirmed) return;
@@ -1441,16 +1440,15 @@ async function unblockIP(ip) {
 
 // 清空所有黑名单 IP
 async function clearAllBlockedIPs() {
-  if (!blockedIPsData || blockedIPsData.length === 0) {
-    showToast('当前黑名单列表已为空', 'info');
-    return;
-  }
+  // 黑名单数据是页面加载时的快照，可能滞后于服务端（如期间发生的自动封禁），故不做空判断短路，始终弹确认框
+  const knownCount = Array.isArray(blockedIPsData) ? blockedIPsData.length : 0;
+  const countSuffix = knownCount > 0 ? '（共 ' + knownCount + ' 项）' : '';
 
   const confirmed = await showConfirmDialog({
     title: '清空所有黑名单',
-    message: '确定要清空所有黑名单（共 ' + blockedIPsData.length + ' 项）吗？清空后所有被屏蔽的 IP 将立即解封并允许正常访问。',
+    message: '确定要清空所有黑名单' + countSuffix + '吗？清空后所有被屏蔽的 IP 将立即解封并允许正常访问。',
     icon: '🗑️',
-    confirmText: '确认全部解封 (' + blockedIPsData.length + ')',
+    confirmText: knownCount > 0 ? '确认全部解封 (' + knownCount + ')' : '确认全部解封',
     confirmType: 'danger'
   });
   if (!confirmed) return;
@@ -1947,6 +1945,12 @@ async function clearAllLogs() {
     hideLoading();
     showToast('请求异常: ' + err.message, 'error');
   }
+}
+
+// 刷新访问日志（重载页面拉取最新记录，期间显示全局加载蒙版）
+function refreshLogs() {
+  showLoading('正在刷新访问日志，请稍候...');
+  setTimeout(() => location.reload(), 300);
 }
 
 // ==========================================

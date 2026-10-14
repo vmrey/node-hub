@@ -22,7 +22,7 @@ export function renderLogsTab(logs = [], blockedIPs = [], whitelistIPs = []) {
             <span class="node-count-badge">最近 ${logs.length} 条记录</span>
           </div>
           <div style="display: flex; gap: 8px;">
-            <button class="btn-action btn-secondary" onclick="location.reload()">🔄 刷新日志</button>
+            <button class="btn-action btn-secondary" onclick="refreshLogs()">🔄 刷新日志</button>
             <button class="btn-action btn-danger" onclick="clearAllLogs()">🗑️ 清空所有日志</button>
           </div>
         </div>
