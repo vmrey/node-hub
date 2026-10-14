@@ -733,7 +733,12 @@ export default {
       if (!isAuthed) return new Response('Unauthorized', { status: 401 });
       try {
         const body = await request.json();
-        await saveToken(env, body.token || '');
+        const token = String(body.token ?? '').trim();
+        // 空串代表显式关闭 Token 校验（免 Token 访问），其余必须为 12~33 位字母数字，避免弱令牌且保证可安全拼接进订阅链接
+        if (token && !/^[a-zA-Z0-9]{12,33}$/.test(token)) {
+          return authedJsonResponse({ error: '安全令牌必须为 12~33 位字母或数字 (a-zA-Z0-9)' }, 400);
+        }
+        await saveToken(env, token);
         if (body.allowedCountries !== undefined) {
           await saveAllowedCountries(env, body.allowedCountries);
         }
@@ -1460,9 +1465,11 @@ export default {
     // ==========================================================
     if (!isWhitelisted) {
       const currentBlocked = await getBlockedIPs(env);
+      let banned = false;
       if (!currentBlocked.includes(clientIP) && !isLocal) {
         currentBlocked.push(clientIP);
         await saveBlockedIPs(env, currentBlocked);
+        banned = true;
       }
 
       const banLogPromise = recordAccessLog(env, {
@@ -1471,7 +1478,7 @@ export default {
         location: clientLocation,
         status: 403,
         path: url.pathname,
-        type: `🚫 恶意探测不存在路径 [${url.pathname}]，IP 已被自动封禁`,
+        type: `🚫 恶意探测不存在路径 [${url.pathname}]${banned ? '，IP 已被自动封禁' : '，本地回环地址已豁免封禁'}`,
         ua: userAgent
       });
       if (ctx && ctx.waitUntil) ctx.waitUntil(banLogPromise);

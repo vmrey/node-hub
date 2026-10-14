@@ -285,6 +285,11 @@ async function saveSecurityConfig() {
     return;
   }
 
+  if (!/^[a-zA-Z0-9]{12,33}$/.test(token)) {
+    showToast('订阅鉴权令牌必须为 12~33 位字母或数字 (a-zA-Z0-9)！', 'error');
+    return;
+  }
+
   const res = await fetch('/api/security-config', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -639,6 +644,7 @@ async function submitCfGroupForm(e) {
   const sourcesTextEl = document.getElementById('global-sources-text');
   if (sourcesTextEl) {
     const rawText = sourcesTextEl.value.trim();
+    if (rawText) {
       // 兼容多行换行以及单行内以空格、分号等分隔的多个 URL
       const rawLines = rawText.replace(/\\r\\n|\\r/g, '\\n').split('\\n').map(l => l.trim()).filter(Boolean);
       const expandedLines = [];
