@@ -1036,7 +1036,22 @@ export default {
         const body = await request.json();
         // 支持批量传递 { sources: [...] }
         if (body.sources && Array.isArray(body.sources)) {
-          const validated = body.sources.filter(s => s && s.url && isValidPublicUrl(s.url.trim())).map((s, idx) => {
+          // 预处理：若单个 source 包含多个以空白符分隔的 URL，自动拆分为多条
+          const flatSources = [];
+          for (const s of body.sources) {
+            if (!s || !s.url) continue;
+            const u = String(s.url).trim();
+            const urlMatches = u.match(/https?:\/\/[^\s]+/gi);
+            if (urlMatches && urlMatches.length > 1) {
+              for (const singleUrl of urlMatches) {
+                flatSources.push({ ...s, url: singleUrl, id: '' });
+              }
+            } else {
+              flatSources.push(s);
+            }
+          }
+
+          const validated = flatSources.filter(s => s && s.url && isValidPublicUrl(s.url.trim())).map((s, idx) => {
             const u = s.url.trim();
             let defaultName = '优选源 ' + (idx + 1);
             if (u.includes('ips-v4')) defaultName = 'Cloudflare IPv4';
@@ -1132,7 +1147,20 @@ export default {
 
         let testSources = sources;
         if (Array.isArray(body.sources) && body.sources.length > 0) {
-          testSources = body.sources;
+          const flat = [];
+          for (const s of body.sources) {
+            if (!s || !s.url) continue;
+            const u = String(s.url).trim();
+            const urlMatches = u.match(/https?:\/\/[^\s]+/gi);
+            if (urlMatches && urlMatches.length > 1) {
+              for (const singleUrl of urlMatches) {
+                flat.push({ ...s, url: singleUrl });
+              }
+            } else {
+              flat.push(s);
+            }
+          }
+          testSources = flat;
         }
 
         const res = await fetchIPsAndGenerateNodes(testBase, testSources, 'raw');

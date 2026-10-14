@@ -639,12 +639,21 @@ async function submitCfGroupForm(e) {
   const sourcesTextEl = document.getElementById('global-sources-text');
   if (sourcesTextEl) {
     const rawText = sourcesTextEl.value.trim();
-    if (rawText) {
-      const lines = rawText.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
+      // 兼容多行换行以及单行内以空格、分号等分隔的多个 URL
+      const rawLines = rawText.replace(/\\r\\n|\\r/g, '\\n').split('\\n').map(l => l.trim()).filter(Boolean);
+      const expandedLines = [];
+      for (const l of rawLines) {
+        const urlMatches = l.match(/https?:\\/\\/[^\\s]+/gi);
+        if (urlMatches && urlMatches.length > 1 && !l.includes(',')) {
+          urlMatches.forEach(u => expandedLines.push(u));
+        } else {
+          expandedLines.push(l);
+        }
+      }
       const parsedSources = [];
       let counter = 1;
 
-      for (const line of lines) {
+      for (const line of expandedLines) {
         let srcName = '';
         let srcUrl = '';
         let srcId = '';
@@ -857,11 +866,27 @@ function copyTestResultContent() {
 async function testModalCfNodes() {
   const baseVless = document.getElementById('form-cf-group-base').value.trim();
   const rawText = document.getElementById('global-sources-text').value.trim();
-  const lines = rawText.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (!rawText) {
+    showToast('请先在文本框中配置至少一个优选源！', 'error');
+    return;
+  }
+
+  // 兼容多行换行以及单行内以空格、分号等分隔的多个 URL
+  const rawLines = rawText.replace(/\\r\\n|\\r/g, '\\n').split('\\n').map(l => l.trim()).filter(Boolean);
+  const expandedLines = [];
+  for (const l of rawLines) {
+    const urlMatches = l.match(/https?:\\/\\/[^\\s]+/gi);
+    if (urlMatches && urlMatches.length > 1 && !l.includes(',')) {
+      urlMatches.forEach(u => expandedLines.push(u));
+    } else {
+      expandedLines.push(l);
+    }
+  }
+
   const parsedSources = [];
   let counter = 1;
 
-  for (const line of lines) {
+  for (const line of expandedLines) {
     let srcName = '';
     let srcUrl = '';
     if (line.includes(',')) {

@@ -678,7 +678,7 @@ export async function fetchIPsAndGenerateNodes(baseVless, selectedSources, forma
     if (!source.url) return { source, text: '' };
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
       const res = await fetch(source.url, {
         signal: controller.signal,
         headers: {
@@ -687,10 +687,14 @@ export async function fetchIPsAndGenerateNodes(baseVless, selectedSources, forma
         }
       });
       clearTimeout(timeoutId);
-      if (!res.ok) return { source, text: '' };
+      if (!res.ok) {
+        console.warn(`[fetchIPsAndGenerateNodes] 优选源响应非 200: ${source.url}, HTTP ${res.status}`);
+        return { source, text: '' };
+      }
       const text = await res.text();
       return { source, text };
-    } catch {
+    } catch (err) {
+      console.warn(`[fetchIPsAndGenerateNodes] 优选源请求失败: ${source.url}, 错误: ${err.message || err}`);
       return { source, text: '' };
     }
   });
