@@ -300,6 +300,17 @@ export function renderLoginPage(errorMessage = '', captchaSvgDataUri = '', captc
   </div>
 
   <script>
+    // 从浏览器后退/前进缓存 (BFCache) 恢复时强制重载：已登录用户会被服务端重定向回控制台，避免展示登录前的陈旧页面
+    window.addEventListener('pageshow', function (e) { if (e.persisted) location.reload(); });
+
+    // 页面离开时（含登录成功后的跳转）立即清空密码与验证码：此时表单数据已采集完毕不影响提交，同时保证浏览器缓存的页面快照中不残留凭证
+    window.addEventListener('pagehide', function () {
+      const pwdEl = document.getElementById('password');
+      const captchaEl = document.getElementById('captcha');
+      if (pwdEl) pwdEl.value = '';
+      if (captchaEl) captchaEl.value = '';
+    });
+
     let remainingLockSeconds = ${lockSeconds || 0};
     if (remainingLockSeconds > 0) {
       const btn = document.getElementById('login-submit-btn');
@@ -356,6 +367,9 @@ export function renderLoginPage(errorMessage = '', captchaSvgDataUri = '', captc
         if (data && data.svg && data.token) {
           img.src = data.svg;
           tokenInput.value = data.token;
+          // 换图后旧验证码立即失效，清空输入框避免用户提交已失效的值
+          const captchaInputEl = document.getElementById('captcha');
+          if (captchaInputEl) captchaInputEl.value = '';
         }
       } catch (err) {
         console.error('刷新验证码失败', err);

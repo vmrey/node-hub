@@ -391,6 +391,9 @@ window.addEventListener('hashchange', () => {
   }
 });
 
+// 从浏览器后退/前进缓存 (BFCache) 恢复时强制重载：登出后返回不会看到陈旧的已登录页面
+window.addEventListener('pageshow', function (e) { if (e.persisted) location.reload(); });
+
 initActiveTab();
 
 async function pasteClipboard(id) {
