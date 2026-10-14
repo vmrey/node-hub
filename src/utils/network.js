@@ -26,25 +26,102 @@ export function formatHostAddress(host) {
 }
 
 /**
- * 从可能包含端口号或方括号的文本行中精准提取纯净的主机名（IP 地址或域名）
+ * 辅助方法：解析 IPv6 CIDR，将全 0 子网网段基址转换为首个可用主机地址（如 2400:cb00:: 转换为 2400:cb00::1）
+ */
+export function resolveIpv6Cidr(rawIp) {
+  let ip = (rawIp || '').trim();
+  if (ip.includes('/')) {
+    ip = ip.split('/')[0].trim();
+  }
+  if (ip.endsWith('::')) {
+    return `${ip}1`;
+  }
+  if (ip.endsWith('::0')) {
+    return ip.slice(0, -3) + '::1';
+  }
+  if (ip.endsWith(':0')) {
+    return ip.slice(0, -2) + ':1';
+  }
+  return ip;
+}
+
+/**
+ * 辅助方法：从可能包含端口、CIDR 子网掩码或中括号的主机字符串中解析出标准 Host 与 Port
+ * 兼容：
+ * - IPv4: 1.1.1.1 / 1.1.1.1:443
+ * - IPv4 CIDR: 173.245.48.0/20（自动转首个可用地址 173.245.48.1）
+ * - IPv6: [2606:4700::1]:443 / 2606:4700::1
+ * - IPv6 CIDR: 2400:cb00::/32（自动转首个可用地址 [2400:cb00::1]）
+ * - 域名: example.com / example.com:443
+ */
+export function parseHostAndPort(rawHost, defaultPort = '') {
+  let clean = String(rawHost || '').trim().replace(/^["']|["']$/g, '').trim();
+  if (!clean) return null;
+
+  let port = defaultPort ? String(defaultPort).trim() : '';
+
+  // 1. 中括号包裹的 IPv6（含可能带端口或 CIDR，如 [2400:cb00::/32]:443 或 [2606:4700::1]）
+  if (clean.startsWith('[')) {
+    const bracketMatch = clean.match(/^\[([^\]]+)\](?::(\d+))?$/);
+    if (bracketMatch) {
+      let inner = bracketMatch[1].trim();
+      if (bracketMatch[2]) port = bracketMatch[2];
+      if (inner.includes('/')) {
+        inner = resolveIpv6Cidr(inner);
+      }
+      return { host: `[${inner}]`, port };
+    }
+  }
+
+  // 2. IPv4 带 CIDR（如 173.245.48.0/20 或 173.245.48.0/20:443）
+  const ipv4CidrMatch = clean.match(/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})\/(\d{1,2})(?::(\d+))?$/);
+  if (ipv4CidrMatch) {
+    let ip = ipv4CidrMatch[1];
+    if (ipv4CidrMatch[3]) port = ipv4CidrMatch[3];
+    // 若网段基址以 .0 结尾，智能转换为该网段首个可用主机地址 .1（确保客户端套接字握手兼容）
+    ip = ip.replace(/\.0$/, '.1');
+    return { host: ip, port };
+  }
+
+  // 3. IPv6 带 CIDR（如 2400:cb00::/32 或 2606:4700::/32:443）
+  if (clean.includes(':') && clean.includes('/')) {
+    const ipv6CidrMatch = clean.match(/^([a-fA-F0-9:]+)\/(\d{1,3})(?::(\d+))?$/);
+    if (ipv6CidrMatch) {
+      let ip = ipv6CidrMatch[1];
+      if (ipv6CidrMatch[3]) port = ipv6CidrMatch[3];
+      ip = resolveIpv6Cidr(ip);
+      return { host: `[${ip}]`, port };
+    }
+  }
+
+  // 4. 标准 IPv4 格式（如 1.1.1.1:443 或 1.1.1.1）
+  const ipv4Match = clean.match(/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})(?::(\d+))?$/);
+  if (ipv4Match) {
+    if (ipv4Match[2]) port = ipv4Match[2];
+    return { host: ipv4Match[1], port };
+  }
+
+  // 5. 纯 IPv6 格式（至少含两个冒号）
+  if ((clean.match(/:/g) || []).length >= 2) {
+    return { host: `[${clean}]`, port };
+  }
+
+  // 6. 域名格式（如 cf.090227.xyz:443 或 example.com）
+  const domainMatch = clean.match(/^([a-zA-Z0-9.-]+)(?::(\d+))?$/);
+  if (domainMatch) {
+    if (domainMatch[2]) port = domainMatch[2];
+    return { host: domainMatch[1], port };
+  }
+
+  return { host: clean.split(':')[0].trim(), port };
+}
+
+/**
+ * 从可能包含端口号或方括号的文本行中精准提取纯净的主机名（IP 地址或域名，支持 CIDR 网段自动转可用 IP）
  */
 export function extractCleanHost(targetHost) {
-  let clean = targetHost.trim();
-  if (!clean) return '';
-  // 带方括号的 IPv6
-  if (clean.startsWith('[')) {
-    const match = clean.match(/^\[([^\]]+)\](?::\d+)?/);
-    if (match) return `[${match[1]}]`;
-  }
-  // 不带方括号的纯 IPv6
-  if ((clean.match(/:/g) || []).length >= 2) return `[${clean}]`;
-  // 带可选端口的 IPv4
-  const ipv4Match = clean.match(/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})(?::\d+)?/);
-  if (ipv4Match) return ipv4Match[1];
-  // 带可选端口的域名
-  const domainMatch = clean.match(/^([a-zA-Z0-9.-]+)(?::\d+)?/);
-  if (domainMatch) return domainMatch[1];
-  return clean.split(':')[0].trim();
+  const parsed = parseHostAndPort(targetHost);
+  return parsed ? parsed.host : '';
 }
 
 /**

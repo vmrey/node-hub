@@ -26,7 +26,10 @@ export {
 };
 
 // 默认内置优选源配置
-const DEFAULT_SOURCES = [
+export const DEFAULT_SOURCES = [
+  { id: 'cf_v4', name: 'CF 官方 IPv4', url: 'https://www.cloudflare.com/ips-v4/', enabled: true },
+  { id: 'cf_v6', name: 'CF 官方 IPv6', url: 'https://www.cloudflare.com/ips-v6/', enabled: true },
+  { id: 'cf_api', name: 'CF 官方接口', url: 'https://api.cloudflare.com/client/v4/ips', enabled: true },
   { id: 'cmcc', name: '中国移动 (CMCC)', url: 'https://cf.090227.xyz/cmcc?ips=10', enabled: true },
   { id: 'cu', name: '中国联通 (CU)', url: 'https://cf.090227.xyz/cu?ips=10', enabled: true },
   { id: 'ct', name: '中国电信 (CT)', url: 'https://cf.090227.xyz/ct?ips=10', enabled: true }
@@ -149,6 +152,11 @@ export async function getSources(env) {
           try { parsed = JSON.parse(stored); } catch {}
         }
         if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+          // 若存储中仍为旧版仅含三网的旧默认源，自动无缝升级补充 CF 官方默认接口
+          const hasCfSource = parsed.some(s => s && s.url && (s.url.includes('ips-v4') || s.url.includes('ips-v6') || s.url.includes('client/v4/ips')));
+          if (!hasCfSource && parsed.length === 3 && parsed.every(s => ['cmcc', 'cu', 'ct'].includes(s.id))) {
+            return DEFAULT_SOURCES;
+          }
           return parsed;
         }
       }

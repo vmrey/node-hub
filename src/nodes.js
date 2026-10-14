@@ -1,5 +1,5 @@
 import { safeBase64Encode, safeBase64Decode, safeEncodeURIComponent, safeDecodeURIComponent } from './utils/encoding.js';
-import { isIpAddress, formatHostAddress } from './utils/network.js';
+import { isIpAddress, formatHostAddress, extractCleanHost, parseHostAndPort } from './utils/network.js';
 
 // 解析单条 VLESS 字符串（内部基础解析方法，支持小火箭私有Base64、标准Xray明文、多协议等）
 function parseSingleVless(rawInput) {
@@ -519,37 +519,108 @@ export function parseVlessTemplate(baseVless) {
   return null;
 }
 
-// 辅助方法：从优选源行中解析 Host (兼容 IPv4, IPv6, 域名与指定端口)
-function extractCleanHost(targetHost) {
-  let clean = targetHost.trim();
-  if (!clean) return '';
+/**
+ * 智能解析优选源响应内容，兼容多类数据格式：
+ * 1. Cloudflare 官方 JSON 接口 (https://api.cloudflare.com/client/v4/ips)：含 result.ipv4_cidrs 与 result.ipv6_cidrs
+ * 2. Cloudflare 官方纯文本接口 (https://www.cloudflare.com/ips-v4 / ips-v6)：纯多行 CIDR 网段文本
+ * 3. 常见优选 IP 接口 / 测速 CSV 格式：包含 IP、端口、测速延迟、数据中心备注等
+ * 4. 常见第三方 JSON API 格式：{ code: 200, data: [...] } 或 [ ... ]
+ */
+function extractIPEntriesFromText(text) {
+  if (!text || typeof text !== 'string') return [];
+  const trimmed = text.trim().replace(/^\uFEFF/, '');
+  if (!trimmed) return [];
 
-  // 1. 如果包含 IPv6 方括号 [2606:4700::1]:443 或 [2606:4700::1]
-  if (clean.startsWith('[')) {
-    const match = clean.match(/^\[([^\]]+)\](?::\d+)?/);
-    if (match) {
-      return `[${match[1]}]`;
+  const entries = [];
+
+  // 1. 优先尝试作为 JSON 格式解析
+  if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+    try {
+      const data = JSON.parse(trimmed);
+      if (data && typeof data === 'object') {
+        // 1.1 Cloudflare 官方 API 格式：{ result: { ipv4_cidrs: [...], ipv6_cidrs: [...] } }
+        if (data.result && typeof data.result === 'object') {
+          if (Array.isArray(data.result.ipv4_cidrs)) {
+            data.result.ipv4_cidrs.forEach(item => entries.push({ raw: item, tag: 'IPv4' }));
+          }
+          if (Array.isArray(data.result.ipv6_cidrs)) {
+            data.result.ipv6_cidrs.forEach(item => entries.push({ raw: item, tag: 'IPv6' }));
+          }
+          if (Array.isArray(data.result)) {
+            data.result.forEach(item => entries.push({ raw: item }));
+          }
+        } else if (Array.isArray(data.ipv4_cidrs) || Array.isArray(data.ipv6_cidrs)) {
+          if (Array.isArray(data.ipv4_cidrs)) {
+            data.ipv4_cidrs.forEach(item => entries.push({ raw: item, tag: 'IPv4' }));
+          }
+          if (Array.isArray(data.ipv6_cidrs)) {
+            data.ipv6_cidrs.forEach(item => entries.push({ raw: item, tag: 'IPv6' }));
+          }
+        } else if (Array.isArray(data.data)) {
+          data.data.forEach(item => entries.push({ raw: item }));
+        } else if (Array.isArray(data.ips)) {
+          data.ips.forEach(item => entries.push({ raw: item }));
+        } else if (Array.isArray(data)) {
+          data.forEach(item => entries.push({ raw: item }));
+        } else {
+          for (const val of Object.values(data)) {
+            if (Array.isArray(val)) {
+              val.forEach(item => entries.push({ raw: item }));
+            }
+          }
+        }
+      }
+    } catch {
+      // JSON 解析失败则平滑降级为纯文本行解析
     }
   }
 
-  // 2. 纯 IPv6 未带中括号（包含多个冒号，如 2606:4700:4700::1111）
-  if ((clean.match(/:/g) || []).length >= 2) {
-    return `[${clean}]`;
+  if (entries.length > 0) {
+    return entries;
   }
 
-  // 3. IPv4 格式 (1.1.1.1:443 或 1.1.1.1)
-  const ipv4Match = clean.match(/^((?:[0-9]{1,3}\.){3}[0-9]{1,3})(?::\d+)?/);
-  if (ipv4Match) {
-    return ipv4Match[1];
+  // 2. 纯文本行解析（支持 ips-v4, ips-v6, 常见优选列表与 CSV）
+  const lines = trimmed.replace(/\r\n|\r/g, '\n').split('\n');
+  for (let line of lines) {
+    line = line.trim();
+    if (!line || line.startsWith('//') || line.startsWith(';')) continue;
+
+    // 检查是否有行内备注 #
+    let remark = '';
+    if (line.includes('#')) {
+      const parts = line.split('#');
+      line = parts[0].trim();
+      remark = parts.slice(1).join('#').trim();
+    }
+    if (!line) continue;
+
+    // 检查逗号分隔：区分是一行多 IP 还是 CSV (ip,port,remark...)
+    if (line.includes(',')) {
+      const parts = line.split(',').map(p => p.trim()).filter(Boolean);
+      // 如果第二个元素是端口数字（1-65535），则为 CSV 格式 (ip,port,remark...)
+      if (parts.length >= 2 && /^\d+$/.test(parts[1]) && parseInt(parts[1], 10) > 0 && parseInt(parts[1], 10) <= 65535) {
+        entries.push({ raw: parts[0], port: parts[1], remark: remark || parts.slice(2).join('-') });
+        continue;
+      } else {
+        // 多个以逗号隔开的独立 IP/CIDR 地址
+        for (const part of parts) {
+          entries.push({ raw: part, remark });
+        }
+        continue;
+      }
+    }
+
+    // 检查空格分隔（某些测速工具输出 ip port）
+    const spaceParts = line.split(/\s+/).filter(Boolean);
+    if (spaceParts.length >= 2 && /^\d+$/.test(spaceParts[1]) && parseInt(spaceParts[1], 10) > 0 && parseInt(spaceParts[1], 10) <= 65535) {
+      entries.push({ raw: spaceParts[0], port: spaceParts[1], remark: remark || spaceParts.slice(2).join('-') });
+      continue;
+    }
+
+    entries.push({ raw: line, remark });
   }
 
-  // 4. 域名格式 (example.com:443 或 example.com)
-  const domainMatch = clean.match(/^([a-zA-Z0-9.-]+)(?::\d+)?/);
-  if (domainMatch) {
-    return domainMatch[1];
-  }
-
-  return clean.split(':')[0].trim();
+  return entries;
 }
 
 // 核心方法：抓取优选源并根据基础节点生成优选节点
@@ -579,11 +650,12 @@ export async function fetchIPsAndGenerateNodes(baseVless, selectedSources, forma
     if (!source.url) return { source, text: '' };
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
       const res = await fetch(source.url, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)',
+          'Accept': 'text/html,application/xhtml+xml,application/xml,text/plain,application/json,*/*'
         }
       });
       clearTimeout(timeoutId);
@@ -600,30 +672,38 @@ export async function fetchIPsAndGenerateNodes(baseVless, selectedSources, forma
 
   results.forEach(({ source, text }) => {
     if (!text) return;
-    const lines = text.replace(/,|\r\n|\r/g, '\n').split('\n');
+    const entries = extractIPEntriesFromText(text);
 
-    lines.forEach((line) => {
-      line = line.trim();
-      if (!line) return;
+    entries.forEach((entry) => {
+      let rawHost = '';
+      let entryPort = entry.port || '';
+      let remoteRemark = entry.remark || '';
 
-      // 提取 IP / 域名部分 以及 可能存在的 # 后的备注
-      let targetHost = '';
-      let remoteRemark = '';
-
-      if (line.includes('#')) {
-        const parts = line.split('#');
-        targetHost = parts[0].trim();
-        remoteRemark = parts.slice(1).join('#').trim();
+      if (typeof entry.raw === 'object' && entry.raw !== null) {
+        rawHost = entry.raw.ip || entry.raw.host || entry.raw.cidr || entry.raw.address || '';
+        if (!entryPort) entryPort = entry.raw.port || '';
+        if (!remoteRemark) remoteRemark = entry.raw.remark || entry.raw.tag || entry.raw.name || entry.raw.colo || '';
       } else {
-        targetHost = line.trim();
+        rawHost = String(entry.raw || '').trim();
       }
 
-      const cleanHost = extractCleanHost(targetHost);
-      if (!cleanHost) return;
+      if (!rawHost) return;
+
+      const hostInfo = parseHostAndPort(rawHost, entryPort);
+      if (!hostInfo || !hostInfo.host) return;
+
+      const cleanHost = hostInfo.host;
+      const targetPort = hostInfo.port || parsed.port || '443';
 
       let prefix = '';
       if (remoteRemark) {
         prefix = remoteRemark.replace(/^CF\s*/i, '').trim();
+      } else if (entry.tag) {
+        if (source && source.name && !source.name.startsWith('源-') && !source.name.startsWith('http')) {
+          prefix = `${source.name.replace(/\s*\(.*?\)/g, '').trim()}-${entry.tag}`;
+        } else {
+          prefix = entry.tag;
+        }
       } else if (source && source.name && !source.name.startsWith('源-') && !source.name.startsWith('http')) {
         prefix = source.name.replace(/\s*\(.*?\)/g, '').trim();
       }
@@ -633,6 +713,7 @@ export async function fetchIPsAndGenerateNodes(baseVless, selectedSources, forma
 
       const vlessLink = buildStandardVless(parsed, {
         host: cleanHost,
+        port: targetPort,
         remark: finalRemark
       });
 

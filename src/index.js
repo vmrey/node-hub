@@ -1036,29 +1036,43 @@ export default {
         const body = await request.json();
         // 支持批量传递 { sources: [...] }
         if (body.sources && Array.isArray(body.sources)) {
-          const validated = body.sources.filter(s => s && s.url && isValidPublicUrl(s.url.trim())).map((s, idx) => ({
-            id: (s.id || ('src_' + (idx + 1))).toLowerCase().trim(),
-            name: s.name || ('优选源 ' + (idx + 1)),
-            url: s.url.trim(),
-            enabled: s.enabled !== false
-          }));
+          const validated = body.sources.filter(s => s && s.url && isValidPublicUrl(s.url.trim())).map((s, idx) => {
+            const u = s.url.trim();
+            let defaultName = '优选源 ' + (idx + 1);
+            if (u.includes('ips-v4')) defaultName = 'Cloudflare IPv4';
+            else if (u.includes('ips-v6')) defaultName = 'Cloudflare IPv6';
+            else if (u.includes('client/v4/ips')) defaultName = 'Cloudflare 官方 IP';
+            return {
+              id: (s.id || ('src_' + (idx + 1))).toLowerCase().trim(),
+              name: s.name || defaultName,
+              url: u,
+              enabled: s.enabled !== false
+            };
+          });
           await saveSources(env, validated);
           return authedJsonResponse({ success: true, count: validated.length });
         }
 
         // 兼容单条传递 { id, name, url }
-        if (!body.name || !body.url) {
+        const u = body.url ? body.url.trim() : '';
+        let targetName = body.name ? body.name.trim() : '';
+        if (!targetName && u) {
+          if (u.includes('ips-v4')) targetName = 'Cloudflare IPv4';
+          else if (u.includes('ips-v6')) targetName = 'Cloudflare IPv6';
+          else if (u.includes('client/v4/ips')) targetName = 'Cloudflare 官方 IP';
+        }
+        if (!targetName || !u) {
           return authedJsonResponse({ error: '缺少必填字段（名称和地址为必填）' }, 400);
         }
-        if (!isValidPublicUrl(body.url.trim())) {
+        if (!isValidPublicUrl(u)) {
           return authedJsonResponse({ error: '优选源地址必须为合法的公共 HTTP/HTTPS 地址，禁止私有网络地址' }, 400);
         }
         const targetId = (body.id || ('src_' + generateSecureRandomString(8, 25))).toLowerCase().trim();
         const updated = sources.filter(s => s.id.toLowerCase() !== targetId);
         const newSource = {
           id: targetId,
-          name: body.name.trim(),
-          url: body.url.trim(),
+          name: targetName,
+          url: u,
           enabled: true
         };
         updated.push(newSource);

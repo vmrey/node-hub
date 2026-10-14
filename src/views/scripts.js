@@ -553,7 +553,7 @@ function openAddCfGroupModal() {
   document.getElementById('form-cf-group-base').value = '';
   const sourcesTextEl = document.getElementById('global-sources-text');
   if (sourcesTextEl) {
-    sourcesTextEl.value = allSourcesData.map(s => (s.name && !s.name.startsWith('源-') ? (s.name + ',' + s.url) : s.url)).join('\\n');
+    sourcesTextEl.value = allSourcesData.map(s => (s.name && !s.name.startsWith('源-') && !s.name.startsWith('优选源') ? (s.name + ',' + s.url) : s.url)).join('\\n');
   }
   document.getElementById('cf-group-modal').classList.add('active');
 }
@@ -570,7 +570,7 @@ function openEditCfGroupModal(id) {
   
   const sourcesTextEl = document.getElementById('global-sources-text');
   if (sourcesTextEl) {
-    sourcesTextEl.value = allSourcesData.map(s => (s.name && !s.name.startsWith('源-') ? (s.name + ',' + s.url) : s.url)).join('\\n');
+    sourcesTextEl.value = allSourcesData.map(s => (s.name && !s.name.startsWith('源-') && !s.name.startsWith('优选源') ? (s.name + ',' + s.url) : s.url)).join('\\n');
   }
   document.getElementById('cf-group-modal').classList.add('active');
 }
@@ -649,7 +649,12 @@ async function submitCfGroupForm(e) {
             if (!srcName) srcName = existing.name;
           } else {
             srcId = 'src_' + counter + '_' + generateRandomString(6).toLowerCase();
-            if (!srcName) srcName = '优选源 ' + counter;
+            if (!srcName) {
+              if (srcUrl.includes('ips-v4')) srcName = 'Cloudflare IPv4';
+              else if (srcUrl.includes('ips-v6')) srcName = 'Cloudflare IPv6';
+              else if (srcUrl.includes('client/v4/ips')) srcName = 'Cloudflare 官方 IP';
+              else srcName = '优选源 ' + counter;
+            }
           }
           parsedSources.push({
             id: srcId.toLowerCase(),
@@ -846,9 +851,15 @@ async function testModalCfNodes() {
       srcUrl = line.trim();
     }
     if (srcUrl.startsWith('http://') || srcUrl.startsWith('https://')) {
+      if (!srcName) {
+        if (srcUrl.includes('ips-v4')) srcName = 'Cloudflare IPv4';
+        else if (srcUrl.includes('ips-v6')) srcName = 'Cloudflare IPv6';
+        else if (srcUrl.includes('client/v4/ips')) srcName = 'Cloudflare 官方 IP';
+        else srcName = '优选源 ' + counter;
+      }
       parsedSources.push({
         id: 'test_src_' + counter,
-        name: srcName || ('优选源 ' + counter),
+        name: srcName,
         url: srcUrl,
         enabled: true
       });
