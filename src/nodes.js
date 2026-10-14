@@ -523,10 +523,11 @@ export function parseVlessTemplate(baseVless) {
  * 智能解析优选源响应内容，兼容多类数据格式：
  * 1. Cloudflare 官方 JSON 接口 (https://api.cloudflare.com/client/v4/ips)：含 result.ipv4_cidrs 与 result.ipv6_cidrs
  * 2. Cloudflare 官方纯文本接口 (https://www.cloudflare.com/ips-v4 / ips-v6)：纯多行 CIDR 网段文本
- * 3. 常见优选 IP 接口 / 测速 CSV 格式：包含 IP、端口、测速延迟、数据中心备注等
- * 4. 常见第三方 JSON API 格式：{ code: 200, data: [...] } 或 [ ... ]
+ * 3. IPDB 优选/反代接口 (https://ipdb.api.030101.xyz/?type=bestproxy&country=true / type=cfv4;proxy)：含带地区标签 IP#Country 或纯 IP/CIDR
+ * 4. Wetest 优选 API (https://www.wetest.vip/api/cf2dns/get_cloudflare_ip)：JSON 结构含 info.CM/CU/CT 等线路数组与 colo 机场机房标识
+ * 5. 常见第三方测速源：CSV (ip,port,remark...)、纯文本行或空格分隔 (ip port)
  */
-function extractIPEntriesFromText(text) {
+export function extractIPEntriesFromText(text) {
   if (!text || typeof text !== 'string') return [];
   const trimmed = text.trim().replace(/^\uFEFF/, '');
   if (!trimmed) return [];
@@ -538,6 +539,26 @@ function extractIPEntriesFromText(text) {
     try {
       const data = JSON.parse(trimmed);
       if (data && typeof data === 'object') {
+        // 辅助提取器：提取包含数组字典的容器对象（如 data.info / data.data 等各类分类线路集合）
+        const extractFromContainerObject = (container) => {
+          if (!container || typeof container !== 'object') return false;
+          let found = false;
+          for (const [key, val] of Object.entries(container)) {
+            if (Array.isArray(val)) {
+              val.forEach(item => {
+                if (item && typeof item === 'object') {
+                  const tag = [item.line_name || item.isp || key, item.colo || item.city || item.datacenter].filter(Boolean).join('-');
+                  entries.push({ raw: item, tag: tag || undefined });
+                } else {
+                  entries.push({ raw: item });
+                }
+              });
+              found = true;
+            }
+          }
+          return found;
+        };
+
         // 1.1 Cloudflare 官方 API 格式：{ result: { ipv4_cidrs: [...], ipv6_cidrs: [...] } }
         if (data.result && typeof data.result === 'object') {
           if (Array.isArray(data.result.ipv4_cidrs)) {
@@ -548,6 +569,8 @@ function extractIPEntriesFromText(text) {
           }
           if (Array.isArray(data.result)) {
             data.result.forEach(item => entries.push({ raw: item }));
+          } else if (typeof data.result === 'object') {
+            extractFromContainerObject(data.result);
           }
         } else if (Array.isArray(data.ipv4_cidrs) || Array.isArray(data.ipv6_cidrs)) {
           if (Array.isArray(data.ipv4_cidrs)) {
@@ -562,12 +585,17 @@ function extractIPEntriesFromText(text) {
           data.ips.forEach(item => entries.push({ raw: item }));
         } else if (Array.isArray(data)) {
           data.forEach(item => entries.push({ raw: item }));
-        } else {
-          for (const val of Object.values(data)) {
-            if (Array.isArray(val)) {
-              val.forEach(item => entries.push({ raw: item }));
-            }
+        } else if (data.info && typeof data.info === 'object') {
+          // 适配 wetest.vip 等带 info: { CM: [...], CU: [...], CT: [...] } 格式
+          if (Array.isArray(data.info)) {
+            data.info.forEach(item => entries.push({ raw: item }));
+          } else {
+            extractFromContainerObject(data.info);
           }
+        } else if (data.data && typeof data.data === 'object') {
+          extractFromContainerObject(data.data);
+        } else {
+          extractFromContainerObject(data);
         }
       }
     } catch {
@@ -682,7 +710,10 @@ export async function fetchIPsAndGenerateNodes(baseVless, selectedSources, forma
       if (typeof entry.raw === 'object' && entry.raw !== null) {
         rawHost = entry.raw.ip || entry.raw.host || entry.raw.cidr || entry.raw.address || '';
         if (!entryPort) entryPort = entry.raw.port || '';
-        if (!remoteRemark) remoteRemark = entry.raw.remark || entry.raw.tag || entry.raw.name || entry.raw.colo || '';
+        if (!remoteRemark) {
+          const detailTag = [entry.raw.line_name || entry.raw.isp, entry.raw.colo || entry.raw.city || entry.raw.datacenter].filter(Boolean).join('-');
+          remoteRemark = entry.raw.remark || entry.raw.tag || entry.raw.name || detailTag || '';
+        }
       } else {
         rawHost = String(entry.raw || '').trim();
       }
@@ -695,17 +726,22 @@ export async function fetchIPsAndGenerateNodes(baseVless, selectedSources, forma
       const cleanHost = hostInfo.host;
       const targetPort = hostInfo.port || parsed.port || '443';
 
+      const srcNameClean = (source && source.name && !source.name.startsWith('源-') && !source.name.startsWith('http'))
+        ? source.name.replace(/\s*\(.*?\)/g, '').trim()
+        : '';
+      const tagClean = (remoteRemark || entry.tag || '').replace(/^CF\s*/i, '').trim();
+
       let prefix = '';
-      if (remoteRemark) {
-        prefix = remoteRemark.replace(/^CF\s*/i, '').trim();
-      } else if (entry.tag) {
-        if (source && source.name && !source.name.startsWith('源-') && !source.name.startsWith('http')) {
-          prefix = `${source.name.replace(/\s*\(.*?\)/g, '').trim()}-${entry.tag}`;
+      if (srcNameClean && tagClean) {
+        if (srcNameClean.toLowerCase().includes(tagClean.toLowerCase())) {
+          prefix = srcNameClean;
         } else {
-          prefix = entry.tag;
+          prefix = `${srcNameClean}-${tagClean}`;
         }
-      } else if (source && source.name && !source.name.startsWith('源-') && !source.name.startsWith('http')) {
-        prefix = source.name.replace(/\s*\(.*?\)/g, '').trim();
+      } else if (srcNameClean) {
+        prefix = srcNameClean;
+      } else if (tagClean) {
+        prefix = tagClean;
       }
 
       const displayHost = cleanHost.replace(/^\[|\]$/g, '');

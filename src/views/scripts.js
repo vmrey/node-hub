@@ -668,7 +668,13 @@ async function submitCfGroupForm(e) {
               if (srcUrl.includes('ips-v4')) srcName = 'Cloudflare IPv4';
               else if (srcUrl.includes('ips-v6')) srcName = 'Cloudflare IPv6';
               else if (srcUrl.includes('client/v4/ips')) srcName = 'Cloudflare 官方 IP';
-              else srcName = '优选源 ' + counter;
+              else if (srcUrl.includes('ipdb.api.030101.xyz')) {
+                if (srcUrl.includes('bestproxy')) srcName = 'IPDB 优质反代';
+                else if (srcUrl.includes('cfv4')) srcName = 'IPDB CFv4反代';
+                else srcName = 'IPDB 优选 IP';
+              } else if (srcUrl.includes('wetest.vip')) {
+                srcName = 'Wetest 优选 IP';
+              } else srcName = '优选源 ' + counter;
             }
           }
           parsedSources.push({
@@ -870,7 +876,13 @@ async function testModalCfNodes() {
         if (srcUrl.includes('ips-v4')) srcName = 'Cloudflare IPv4';
         else if (srcUrl.includes('ips-v6')) srcName = 'Cloudflare IPv6';
         else if (srcUrl.includes('client/v4/ips')) srcName = 'Cloudflare 官方 IP';
-        else srcName = '优选源 ' + counter;
+        else if (srcUrl.includes('ipdb.api.030101.xyz')) {
+          if (srcUrl.includes('bestproxy')) srcName = 'IPDB 优质反代';
+          else if (srcUrl.includes('cfv4')) srcName = 'IPDB CFv4反代';
+          else srcName = 'IPDB 优选 IP';
+        } else if (srcUrl.includes('wetest.vip')) {
+          srcName = 'Wetest 优选 IP';
+        } else srcName = '优选源 ' + counter;
       }
       parsedSources.push({
         id: 'test_src_' + counter,

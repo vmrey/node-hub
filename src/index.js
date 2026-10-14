@@ -1042,6 +1042,13 @@ export default {
             if (u.includes('ips-v4')) defaultName = 'Cloudflare IPv4';
             else if (u.includes('ips-v6')) defaultName = 'Cloudflare IPv6';
             else if (u.includes('client/v4/ips')) defaultName = 'Cloudflare 官方 IP';
+            else if (u.includes('ipdb.api.030101.xyz')) {
+              if (u.includes('bestproxy')) defaultName = 'IPDB 优质反代';
+              else if (u.includes('cfv4')) defaultName = 'IPDB CFv4反代';
+              else defaultName = 'IPDB 优选 IP';
+            } else if (u.includes('wetest.vip')) {
+              defaultName = 'Wetest 优选 IP';
+            }
             return {
               id: (s.id || ('src_' + (idx + 1))).toLowerCase().trim(),
               name: s.name || defaultName,
@@ -1060,6 +1067,13 @@ export default {
           if (u.includes('ips-v4')) targetName = 'Cloudflare IPv4';
           else if (u.includes('ips-v6')) targetName = 'Cloudflare IPv6';
           else if (u.includes('client/v4/ips')) targetName = 'Cloudflare 官方 IP';
+          else if (u.includes('ipdb.api.030101.xyz')) {
+            if (u.includes('bestproxy')) targetName = 'IPDB 优质反代';
+            else if (u.includes('cfv4')) targetName = 'IPDB CFv4反代';
+            else targetName = 'IPDB 优选 IP';
+          } else if (u.includes('wetest.vip')) {
+            targetName = 'Wetest 优选 IP';
+          }
         }
         if (!targetName || !u) {
           return authedJsonResponse({ error: '缺少必填字段（名称和地址为必填）' }, 400);

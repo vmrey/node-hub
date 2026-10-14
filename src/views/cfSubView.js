@@ -165,9 +165,9 @@ export function renderCfSubTab(origin, subToken, cfGroups, sources) {
                   <button type="button" class="btn-action btn-danger" style="height: 26px; font-size: 11px; padding: 0 8px;" onclick="clearInput('global-sources-text')">清空</button>
                 </div>
               </div>
-              <textarea id="global-sources-text" class="form-textarea" style="min-height: 140px; font-family: monospace; font-size: 12px; line-height: 1.6;" placeholder="CF-IPv4,https://www.cloudflare.com/ips-v4/&#10;CF-IPv6,https://www.cloudflare.com/ips-v6/&#10;CF官方,https://api.cloudflare.com/client/v4/ips&#10;https://cf.090227.xyz/cmcc?ips=10">${sources.map(s => (s.name && !s.name.startsWith('源-') && !s.name.startsWith('优选源') ? `${s.name},${s.url}` : s.url)).join('\n')}</textarea>
+              <textarea id="global-sources-text" class="form-textarea" style="min-height: 140px; font-family: monospace; font-size: 12px; line-height: 1.6;" placeholder="CF-IPv4,https://www.cloudflare.com/ips-v4/&#10;CF-IPv6,https://www.cloudflare.com/ips-v6/&#10;CF官方,https://api.cloudflare.com/client/v4/ips&#10;优质反代,https://ipdb.api.030101.xyz/?type=bestproxy&country=true&#10;CFv4反代,https://ipdb.api.030101.xyz/?type=cfv4;proxy&#10;Wetest优选,https://www.wetest.vip/api/cf2dns/get_cloudflare_ip?key=o1zrmHAF&type=v4">${sources.map(s => (s.name && !s.name.startsWith('源-') && !s.name.startsWith('优选源') ? `${s.name},${s.url}` : s.url)).join('\n')}</textarea>
               <div style="font-size: 12px; color: var(--text-muted); padding: 0 2px;">
-                <span>💡 一行一个接口源（格式：<code>名称,URL</code> 或单纯 <code>URL</code>）。原生兼容 Cloudflare 官方 IPv4/IPv6 网段列表与 client/v4/ips JSON 接口</span>
+                <span>💡 一行一个接口源（格式：<code>名称,URL</code> 或单纯 <code>URL</code>）。原生兼容 Cloudflare 官方接口、IPDB 反代源与 Wetest 优选 API</span>
               </div>
             </div>
           </div>
