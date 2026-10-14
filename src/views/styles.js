@@ -1027,6 +1027,64 @@ input:disabled {
   to { transform: translateX(120%); opacity: 0; }
 }
 
+/* 全局全屏加载遮罩蒙版 (Loading Mask) */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  pointer-events: none;
+}
+.loading-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.loading-box {
+  background: var(--bg-dialog);
+  border: 1px solid var(--border-color);
+  padding: 26px 36px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 20px 45px var(--shadow-modal);
+  transform: scale(0.92);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 240px;
+}
+.loading-overlay.active .loading-box {
+  transform: scale(1);
+}
+.loading-spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid rgba(140, 140, 140, 0.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: loadingSpin 0.8s linear infinite;
+}
+@keyframes loadingSpin {
+  to { transform: rotate(360deg); }
+}
+.loading-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-title);
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
 /* 全局自定义确认/删除/警告对话框 */
 .dialog-overlay {
   position: fixed;

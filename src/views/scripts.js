@@ -42,6 +42,21 @@ function showToast(message, type = 'info', duration = 2500) {
 }
 
 // ==========================================
+// 全局全屏加载蒙版遮罩 (Loading Mask)
+// ==========================================
+function showLoading(text = '正在处理中，请稍候...') {
+  const overlay = document.getElementById('loading-overlay');
+  const textEl = document.getElementById('loading-text');
+  if (textEl) textEl.innerText = text;
+  if (overlay) overlay.classList.add('active');
+}
+
+function hideLoading() {
+  const overlay = document.getElementById('loading-overlay');
+  if (overlay) overlay.classList.remove('active');
+}
+
+// ==========================================
 // 全局统一 UI 封装：确认/删除/警告 Dialog 系统
 // ==========================================
 function showConfirmDialog({
@@ -1158,6 +1173,8 @@ async function clearAllWhitelistIPs() {
   });
   if (!confirmed) return;
 
+  showLoading('正在清空所有白名单 IP，请稍候...');
+
   try {
     const res = await fetch('/api/whitelist-ips', {
       method: 'POST',
@@ -1171,9 +1188,11 @@ async function clearAllWhitelistIPs() {
         location.reload();
       }, 600);
     } else {
+      hideLoading();
       showToast('清空白名单失败', 'error');
     }
   } catch (err) {
+    hideLoading();
     showToast('请求异常: ' + err.message, 'error');
   }
 }
@@ -1393,6 +1412,8 @@ async function clearAllBlockedIPs() {
   });
   if (!confirmed) return;
 
+  showLoading('正在清空所有黑名单 IP，请稍候...');
+
   try {
     const res = await fetch('/api/blocked-ips', {
       method: 'POST',
@@ -1406,9 +1427,11 @@ async function clearAllBlockedIPs() {
         location.reload();
       }, 600);
     } else {
+      hideLoading();
       showToast('清空黑名单失败', 'error');
     }
   } catch (err) {
+    hideLoading();
     showToast('请求异常: ' + err.message, 'error');
   }
 }
@@ -1650,6 +1673,8 @@ async function batchDeletePlainGroups() {
 
   if (!confirmed) return;
 
+  showLoading('正在批量删除选中的普通订阅，请稍候...');
+
   try {
     const res = await fetch('/api/custom-groups/batch-delete', {
       method: 'POST',
@@ -1663,12 +1688,15 @@ async function batchDeletePlainGroups() {
         location.reload();
       }, 600);
     } else if (res.status === 401) {
+      hideLoading();
       showToast('登录会话已超时，请重新登录！', 'error');
       setTimeout(() => location.href = '/login', 1200);
     } else {
+      hideLoading();
       showToast('批量删除失败，请稍后重试', 'error');
     }
   } catch (err) {
+    hideLoading();
     showToast('请求异常: ' + err.message, 'error');
   }
 }
@@ -1692,6 +1720,8 @@ async function batchDeleteCfGroups() {
 
   if (!confirmed) return;
 
+  showLoading('正在批量删除选中的 CF 优选订阅，请稍候...');
+
   try {
     const res = await fetch('/api/cf-groups/batch-delete', {
       method: 'POST',
@@ -1705,12 +1735,15 @@ async function batchDeleteCfGroups() {
         location.reload();
       }, 600);
     } else if (res.status === 401) {
+      hideLoading();
       showToast('登录会话已超时，请重新登录！', 'error');
       setTimeout(() => location.href = '/login', 1200);
     } else {
+      hideLoading();
       showToast('批量删除失败，请稍后重试', 'error');
     }
   } catch (err) {
+    hideLoading();
     showToast('请求异常: ' + err.message, 'error');
   }
 }
@@ -1733,6 +1766,8 @@ async function batchDeleteWhitelistIPs() {
   });
   if (!confirmed) return;
 
+  showLoading('正在批量移除选中白名单 IP，请稍候...');
+
   const currentIPs = whitelistIPsData.filter(ip => !ipsToDelete.includes(ip));
   try {
     const res = await fetch('/api/whitelist-ips', {
@@ -1747,9 +1782,11 @@ async function batchDeleteWhitelistIPs() {
         location.reload();
       }, 600);
     } else {
+      hideLoading();
       showToast('批量移除白名单失败', 'error');
     }
   } catch (err) {
+    hideLoading();
     showToast('请求异常: ' + err.message, 'error');
   }
 }
@@ -1772,6 +1809,8 @@ async function batchDeleteBlacklistIPs() {
   });
   if (!confirmed) return;
 
+  showLoading('正在批量解除选中 IP 拦截，请稍候...');
+
   const currentIPs = blockedIPsData.filter(ip => !ipsToDelete.includes(ip));
   try {
     const res = await fetch('/api/blocked-ips', {
@@ -1786,9 +1825,11 @@ async function batchDeleteBlacklistIPs() {
         location.reload();
       }, 600);
     } else {
+      hideLoading();
       showToast('批量解封黑名单失败', 'error');
     }
   } catch (err) {
+    hideLoading();
     showToast('请求异常: ' + err.message, 'error');
   }
 }
@@ -1813,6 +1854,8 @@ async function batchDeleteLogs() {
 
   if (!confirmed) return;
 
+  showLoading('正在批量删除选中的访问日志，请稍候...');
+
   try {
     const res = await fetch('/api/logs/batch-delete', {
       method: 'POST',
@@ -1823,9 +1866,11 @@ async function batchDeleteLogs() {
       showToast('已成功批量删除 ' + indicesToDelete.length + ' 条访问日志！', 'success');
       setTimeout(() => location.reload(), 600);
     } else {
+      hideLoading();
       showToast('批量删除日志失败，请稍后重试', 'error');
     }
   } catch (err) {
+    hideLoading();
     showToast('请求异常: ' + err.message, 'error');
   }
 }
@@ -1841,6 +1886,8 @@ async function clearAllLogs() {
   });
   if (!confirmed) return;
 
+  showLoading('正在清空全部访问历史日志，请稍候...');
+
   try {
     const res = await fetch('/api/clear-logs', {
       method: 'POST',
@@ -1850,9 +1897,11 @@ async function clearAllLogs() {
       showToast('已清空所有访问日志', 'success');
       setTimeout(() => location.reload(), 600);
     } else {
+      hideLoading();
       showToast('清空日志失败', 'error');
     }
   } catch (err) {
+    hideLoading();
     showToast('请求异常: ' + err.message, 'error');
   }
 }

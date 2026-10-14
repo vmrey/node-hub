@@ -185,6 +185,14 @@ export function renderDashboardPage(origin, subToken, sources, plainGroups = [],
   <!-- 全局自定义通知 Toast 容器 -->
   <div class="toast-container" id="toast-container"></div>
 
+  <!-- 全局全屏加载遮罩蒙版 (Loading Mask) -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-box">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loading-text">正在处理中，请稍候...</div>
+    </div>
+  </div>
+
   <!-- 全局自定义确认/删除/警告对话框 -->
   <div class="dialog-overlay" id="app-dialog">
     <div class="dialog-box">
