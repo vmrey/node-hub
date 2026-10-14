@@ -30,3 +30,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# 本地自动化测试脚本（外部生成，不纳入版本库）
+test-*.js
