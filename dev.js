@@ -12,6 +12,14 @@ if (!fs.existsSync(wranglerDir)) {
   fs.mkdirSync(wranglerDir, { recursive: true });
 }
 
+// 自动清理可能导致 workerd 报 SQLITE_BUSY 崩溃的残留锁文件及临时文件
+try {
+  const tmpDir = path.join(wranglerDir, 'tmp');
+  if (fs.existsSync(tmpDir)) fs.rmSync(tmpDir, { recursive: true, force: true });
+  const obsDir = path.join(wranglerDir, 'state', 'v3', 'observability');
+  if (fs.existsSync(obsDir)) fs.rmSync(obsDir, { recursive: true, force: true });
+} catch {}
+
 // 保证本地开发环境具有 ADMIN 密码环境变量（若根目录存在 .dev.vars 则同步，若无则自动注入默认密码）
 const rootDevVars = path.join(rootDir, '.dev.vars');
 const innerDevVars = path.join(wranglerDir, '.dev.vars');
